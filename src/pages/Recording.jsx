@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import CameraView from '../components/teleprompter/CameraView';
-import { createPageUrl } from './utils';
+import { createPageUrl } from '@/utils';
 
 export default function Recording() {
   const [settings, setSettings] = useState(null);
