@@ -47,13 +47,15 @@ export default function CameraView({
         video: { 
           facingMode: cameraFacing,
           width: { ideal: 1920 },
-          height: { ideal: 1080 }
+          height: { ideal: 1080 },
+          frameRate: { ideal: 30 }
         },
         audio: {
           echoCancellation: true,
           noiseSuppression: true,
           autoGainControl: true,
-          sampleRate: 48000
+          sampleRate: 48000,
+          channelCount: 2
         }
       });
       if (videoRef.current) {
@@ -98,8 +100,8 @@ export default function CameraView({
       }
       
       let options = {
-        videoBitsPerSecond: 2500000,
-        audioBitsPerSecond: 128000
+        videoBitsPerSecond: 5000000,
+        audioBitsPerSecond: 192000
       };
       
       // Try different mimeTypes - prefer formats that work well on mobile galleries
@@ -127,7 +129,7 @@ export default function CameraView({
         }
       };
       
-      mediaRecorderRef.current.start(100);
+      mediaRecorderRef.current.start(1000);
       setIsRecording(true);
       if (!isDragging) {
         setIsPaused(false);
