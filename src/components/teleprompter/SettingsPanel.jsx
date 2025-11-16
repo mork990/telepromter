@@ -23,7 +23,9 @@ export default function SettingsPanel({
   cameraFacing,
   setCameraFacing,
   scrollSpeed,
-  setScrollSpeed
+  setScrollSpeed,
+  backgroundOpacity,
+  setBackgroundOpacity
 }) {
   return (
     <div className="space-y-4">
@@ -150,6 +152,33 @@ export default function SettingsPanel({
             step={10}
             className="w-full"
           />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Palette className="w-4 h-4" />
+            כהות רקע על המצלמה
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex items-center justify-between text-sm text-gray-600">
+            <span>שקוף</span>
+            <span className="font-medium">{backgroundOpacity}%</span>
+            <span>אטום</span>
+          </div>
+          <Slider
+            value={[backgroundOpacity]}
+            onValueChange={(value) => setBackgroundOpacity(value[0])}
+            min={0}
+            max={100}
+            step={5}
+            className="w-full"
+          />
+          <p className="text-xs text-gray-500 text-right">
+            שולט בכמה שהרקע מכסה את המצלמה בזמן צילום
+          </p>
         </CardContent>
       </Card>
     </div>

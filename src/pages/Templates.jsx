@@ -30,7 +30,8 @@ export default function Templates() {
       fontSize: template.font_size,
       textColor: template.text_color,
       backgroundColor: template.background_color,
-      scrollSpeed: template.scroll_speed
+      scrollSpeed: template.scroll_speed,
+      backgroundOpacity: template.background_opacity || 80
     });
     window.location.href = createPageUrl('Home') + '?' + params.toString();
   };

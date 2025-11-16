@@ -11,6 +11,7 @@ export default function Settings() {
   const [backgroundColor, setBackgroundColor] = useState('#000000');
   const [cameraFacing, setCameraFacing] = useState('user');
   const [scrollSpeed, setScrollSpeed] = useState(50);
+  const [backgroundOpacity, setBackgroundOpacity] = useState(80);
 
   useEffect(() => {
     // Load saved settings from localStorage
@@ -22,6 +23,7 @@ export default function Settings() {
       setBackgroundColor(settings.backgroundColor || '#000000');
       setCameraFacing(settings.cameraFacing || 'user');
       setScrollSpeed(settings.scrollSpeed || 50);
+      setBackgroundOpacity(settings.backgroundOpacity || 80);
     }
   }, []);
 
@@ -31,7 +33,8 @@ export default function Settings() {
       textColor,
       backgroundColor,
       cameraFacing,
-      scrollSpeed
+      scrollSpeed,
+      backgroundOpacity
     };
     localStorage.setItem('teleprompterSettings', JSON.stringify(settings));
     alert('ההגדרות נשמרו בהצלחה!');
@@ -67,6 +70,8 @@ export default function Settings() {
           setCameraFacing={setCameraFacing}
           scrollSpeed={scrollSpeed}
           setScrollSpeed={setScrollSpeed}
+          backgroundOpacity={backgroundOpacity}
+          setBackgroundOpacity={setBackgroundOpacity}
         />
 
         <div className="mt-6 space-y-3">

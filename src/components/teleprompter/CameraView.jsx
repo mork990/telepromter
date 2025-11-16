@@ -9,6 +9,7 @@ export default function CameraView({
   backgroundColor,
   cameraFacing,
   scrollSpeed,
+  backgroundOpacity,
   onStop 
 }) {
   const videoRef = useRef(null);
@@ -20,6 +21,9 @@ export default function CameraView({
   const [scrollPosition, setScrollPosition] = useState(0);
   const scrollIntervalRef = useRef(null);
   const containerRef = useRef(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStartY = useRef(0);
+  const dragStartScroll = useRef(0);
 
   useEffect(() => {
     startCamera();
@@ -140,6 +144,31 @@ export default function CameraView({
     setScrollPosition(prev => Math.max(0, prev + adjustment));
   };
 
+  const handleTouchStart = (e) => {
+    if (!isRecording) return;
+    setIsDragging(true);
+    setIsPaused(true);
+    dragStartY.current = e.touches[0].clientY;
+    dragStartScroll.current = scrollPosition;
+  };
+
+  const handleTouchMove = (e) => {
+    if (!isDragging) return;
+    const deltaY = dragStartY.current - e.touches[0].clientY;
+    setScrollPosition(Math.max(0, dragStartScroll.current + deltaY));
+  };
+
+  const handleTouchEnd = () => {
+    setIsDragging(false);
+  };
+
+  const hexToRgba = (hex, opacity) => {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${opacity / 100})`;
+  };
+
   return (
     <div className="fixed inset-0 bg-black z-50 flex flex-col">
       {/* Video Background */}
@@ -155,8 +184,11 @@ export default function CameraView({
 
       {/* Teleprompter Overlay */}
       <div 
-        className="absolute inset-0 pointer-events-none overflow-hidden"
-        style={{ backgroundColor: `${backgroundColor}CC` }}
+        className="absolute inset-0 overflow-hidden"
+        style={{ backgroundColor: hexToRgba(backgroundColor, backgroundOpacity) }}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
       >
         <div
           ref={containerRef}
@@ -167,12 +199,12 @@ export default function CameraView({
           }}
         >
           <div
-            className="text-right leading-relaxed whitespace-pre-wrap"
+            className="text-right leading-relaxed whitespace-pre-wrap select-none"
             style={{
               fontSize: `${fontSize}px`,
               color: textColor,
               fontWeight: 500,
-              textShadow: '2px 2px 4px rgba(0,0,0,0.5)'
+              textShadow: '2px 2px 4px rgba(0,0,0,0.8)'
             }}
             dir="rtl"
           >

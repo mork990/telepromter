@@ -13,7 +13,8 @@ export default function Recording() {
       textColor: params.get('textColor') || '#FFFFFF',
       backgroundColor: params.get('backgroundColor') || '#000000',
       scrollSpeed: parseInt(params.get('scrollSpeed')) || 50,
-      cameraFacing: params.get('cameraFacing') || 'user'
+      cameraFacing: params.get('cameraFacing') || 'user',
+      backgroundOpacity: parseInt(params.get('backgroundOpacity')) || 80
     });
   }, []);
 
@@ -37,6 +38,7 @@ export default function Recording() {
       backgroundColor={settings.backgroundColor}
       cameraFacing={settings.cameraFacing}
       scrollSpeed={settings.scrollSpeed}
+      backgroundOpacity={settings.backgroundOpacity}
       onStop={handleStop}
     />
   );

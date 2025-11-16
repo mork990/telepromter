@@ -24,6 +24,7 @@ export default function Home() {
   const [backgroundColor, setBackgroundColor] = useState('#000000');
   const [scrollSpeed, setScrollSpeed] = useState(50);
   const [cameraFacing, setCameraFacing] = useState('user');
+  const [backgroundOpacity, setBackgroundOpacity] = useState(80);
   const [templateName, setTemplateName] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -39,6 +40,7 @@ export default function Home() {
       setBackgroundColor(settings.backgroundColor || '#000000');
       setCameraFacing(settings.cameraFacing || 'user');
       setScrollSpeed(settings.scrollSpeed || 50);
+      setBackgroundOpacity(settings.backgroundOpacity || 80);
     }
 
     // Load current text
@@ -56,6 +58,7 @@ export default function Home() {
       setTextColor(params.get('textColor') || '#FFFFFF');
       setBackgroundColor(params.get('backgroundColor') || '#000000');
       setScrollSpeed(parseInt(params.get('scrollSpeed')) || 50);
+      setBackgroundOpacity(parseInt(params.get('backgroundOpacity')) || 80);
     }
   }, []);
 
@@ -80,7 +83,8 @@ export default function Home() {
         font_size: fontSize,
         text_color: textColor,
         background_color: backgroundColor,
-        scroll_speed: scrollSpeed
+        scroll_speed: scrollSpeed,
+        background_opacity: backgroundOpacity
       });
       alert('התבנית נשמרה בהצלחה!');
       setTemplateName('');
@@ -105,7 +109,8 @@ export default function Home() {
       textColor,
       backgroundColor,
       cameraFacing,
-      scrollSpeed
+      scrollSpeed,
+      backgroundOpacity
     };
     localStorage.setItem('teleprompterSettings', JSON.stringify(settings));
 
@@ -115,7 +120,8 @@ export default function Home() {
       textColor,
       backgroundColor,
       scrollSpeed,
-      cameraFacing
+      cameraFacing,
+      backgroundOpacity
     });
     
     window.location.href = createPageUrl('Recording') + '?' + params.toString();
@@ -128,7 +134,8 @@ export default function Home() {
       textColor,
       backgroundColor,
       cameraFacing,
-      scrollSpeed
+      scrollSpeed,
+      backgroundOpacity
     };
     localStorage.setItem('teleprompterSettings', JSON.stringify(settings));
     window.location.href = createPageUrl('Settings');
