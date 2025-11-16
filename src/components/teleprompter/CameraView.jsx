@@ -210,6 +210,7 @@ export default function CameraView({
           playsInline
           muted
           className="w-full h-full object-cover"
+          style={{ transform: cameraFacing === 'user' ? 'scaleX(-1)' : 'none' }}
         />
       </div>
 
