@@ -94,6 +94,7 @@ export default function CameraView({
       
       mediaRecorderRef.current.start(100);
       setIsRecording(true);
+      setIsPaused(false);
     } catch (error) {
       console.error('Error starting recording:', error);
       alert('שגיאה בהתחלת ההקלטה');
@@ -145,7 +146,9 @@ export default function CameraView({
 
   const handleTouchStart = (e) => {
     setIsDragging(true);
-    setIsPaused(true);
+    if (isRecording) {
+      setIsPaused(true);
+    }
     dragStartY.current = e.touches[0].clientY;
     dragStartScroll.current = scrollPosition;
   };
@@ -158,6 +161,9 @@ export default function CameraView({
 
   const handleTouchEnd = () => {
     setIsDragging(false);
+    if (isRecording) {
+      setIsPaused(false);
+    }
   };
 
   const hexToRgba = (hex, opacity) => {
