@@ -28,6 +28,44 @@ export default function Home() {
   const [isSaving, setIsSaving] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
 
+  // Load settings and text on mount
+  React.useEffect(() => {
+    // Load settings
+    const savedSettings = localStorage.getItem('teleprompterSettings');
+    if (savedSettings) {
+      const settings = JSON.parse(savedSettings);
+      setFontSize(settings.fontSize || 32);
+      setTextColor(settings.textColor || '#FFFFFF');
+      setBackgroundColor(settings.backgroundColor || '#000000');
+      setCameraFacing(settings.cameraFacing || 'user');
+      setScrollSpeed(settings.scrollSpeed || 50);
+    }
+
+    // Load current text
+    const savedText = localStorage.getItem('currentText');
+    if (savedText) {
+      setText(savedText);
+    }
+
+    // Load from URL params if coming from templates
+    const params = new URLSearchParams(window.location.search);
+    const urlText = params.get('text');
+    if (urlText) {
+      setText(urlText);
+      setFontSize(parseInt(params.get('fontSize')) || 32);
+      setTextColor(params.get('textColor') || '#FFFFFF');
+      setBackgroundColor(params.get('backgroundColor') || '#000000');
+      setScrollSpeed(parseInt(params.get('scrollSpeed')) || 50);
+    }
+  }, []);
+
+  // Save text whenever it changes
+  React.useEffect(() => {
+    if (text) {
+      localStorage.setItem('currentText', text);
+    }
+  }, [text]);
+
   const handleSaveTemplate = async () => {
     if (!text.trim() || !templateName.trim()) {
       alert('אנא הזן שם ותוכן לתבנית');
@@ -61,6 +99,16 @@ export default function Home() {
       return;
     }
 
+    // Save current settings before navigating
+    const settings = {
+      fontSize,
+      textColor,
+      backgroundColor,
+      cameraFacing,
+      scrollSpeed
+    };
+    localStorage.setItem('teleprompterSettings', JSON.stringify(settings));
+
     const params = new URLSearchParams({
       text,
       fontSize,
@@ -71,6 +119,19 @@ export default function Home() {
     });
     
     window.location.href = createPageUrl('Recording') + '?' + params.toString();
+  };
+
+  const goToSettings = () => {
+    // Save current state before navigating
+    const settings = {
+      fontSize,
+      textColor,
+      backgroundColor,
+      cameraFacing,
+      scrollSpeed
+    };
+    localStorage.setItem('teleprompterSettings', JSON.stringify(settings));
+    window.location.href = createPageUrl('Settings');
   };
 
   return (
@@ -165,12 +226,10 @@ export default function Home() {
               </DialogContent>
             </Dialog>
 
-            <Link to={createPageUrl('Settings')} className="block">
-              <Button variant="outline" className="w-full h-12">
-                <Settings className="w-4 h-4 ml-2" />
-                הגדרות
-              </Button>
-            </Link>
+            <Button variant="outline" className="w-full h-12" onClick={goToSettings}>
+              <Settings className="w-4 h-4 ml-2" />
+              הגדרות
+            </Button>
           </div>
         </div>
 

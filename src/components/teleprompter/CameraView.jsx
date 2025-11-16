@@ -13,6 +13,8 @@ export default function CameraView({
 }) {
   const videoRef = useRef(null);
   const streamRef = useRef(null);
+  const mediaRecorderRef = useRef(null);
+  const recordedChunksRef = useRef([]);
   const [isRecording, setIsRecording] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [scrollPosition, setScrollPosition] = useState(0);
@@ -37,7 +39,7 @@ export default function CameraView({
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: cameraFacing },
-        audio: false
+        audio: true
       });
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
@@ -69,10 +71,68 @@ export default function CameraView({
     }
   };
 
-  const handleRecordToggle = () => {
-    setIsRecording(!isRecording);
-    if (!isRecording) {
+  const startRecording = async () => {
+    try {
+      recordedChunksRef.current = [];
+      
+      const options = { mimeType: 'video/webm;codecs=vp8,opus' };
+      if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+        options.mimeType = 'video/webm';
+      }
+      
+      mediaRecorderRef.current = new MediaRecorder(streamRef.current, options);
+      
+      mediaRecorderRef.current.ondataavailable = (event) => {
+        if (event.data && event.data.size > 0) {
+          recordedChunksRef.current.push(event.data);
+        }
+      };
+      
+      mediaRecorderRef.current.start(100);
+      setIsRecording(true);
       setScrollPosition(0);
+    } catch (error) {
+      console.error('Error starting recording:', error);
+      alert('שגיאה בהתחלת ההקלטה');
+    }
+  };
+
+  const stopRecording = () => {
+    return new Promise((resolve) => {
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+        mediaRecorderRef.current.onstop = () => {
+          const blob = new Blob(recordedChunksRef.current, { type: 'video/webm' });
+          resolve(blob);
+        };
+        mediaRecorderRef.current.stop();
+        setIsRecording(false);
+      } else {
+        resolve(null);
+      }
+    });
+  };
+
+  const downloadVideo = (blob) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.style.display = 'none';
+    a.href = url;
+    a.download = `טלפרומפטר-${new Date().getTime()}.webm`;
+    document.body.appendChild(a);
+    a.click();
+    URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  };
+
+  const handleRecordToggle = async () => {
+    if (isRecording) {
+      const blob = await stopRecording();
+      if (blob) {
+        downloadVideo(blob);
+        alert('הוידאו נשמר בהצלחה! בדוק את תיקיית ההורדות שלך.');
+      }
+    } else {
+      await startRecording();
     }
   };
 
