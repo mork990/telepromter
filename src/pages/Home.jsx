@@ -3,19 +3,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { Video, Settings, BookOpen, Save } from "lucide-react";
+import { Video, Settings } from "lucide-react";
 import TextInput from '../components/teleprompter/TextInput';
 import PrompterPreview from '../components/teleprompter/PrompterPreview';
 import { base44 } from '@/api/base44Client';
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+
 
 export default function Home() {
   const [text, setText] = useState('');
@@ -25,9 +19,6 @@ export default function Home() {
   const [scrollSpeed, setScrollSpeed] = useState(50);
   const [cameraFacing, setCameraFacing] = useState('user');
   const [backgroundOpacity, setBackgroundOpacity] = useState(80);
-  const [templateName, setTemplateName] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
-  const [dialogOpen, setDialogOpen] = useState(false);
 
   // Load settings and text on mount
   React.useEffect(() => {
@@ -69,33 +60,7 @@ export default function Home() {
     }
   }, [text]);
 
-  const handleSaveTemplate = async () => {
-    if (!text.trim() || !templateName.trim()) {
-      alert('אנא הזן שם ותוכן לתבנית');
-      return;
-    }
 
-    setIsSaving(true);
-    try {
-      await base44.entities.Template.create({
-        name: templateName,
-        text: text,
-        font_size: fontSize,
-        text_color: textColor,
-        background_color: backgroundColor,
-        scroll_speed: scrollSpeed,
-        background_opacity: backgroundOpacity
-      });
-      alert('התבנית נשמרה בהצלחה!');
-      setTemplateName('');
-      setDialogOpen(false);
-    } catch (error) {
-      console.error('Error saving template:', error);
-      alert('שגיאה בשמירת התבנית');
-    } finally {
-      setIsSaving(false);
-    }
-  };
 
   const startRecording = () => {
     if (!text.trim()) {
