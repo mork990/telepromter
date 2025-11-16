@@ -81,13 +81,24 @@ export default function CameraView({
     try {
       recordedChunksRef.current = [];
       
-      let options = {};
+      // Ensure we have audio track
+      const audioTracks = streamRef.current.getAudioTracks();
+      if (audioTracks.length === 0) {
+        alert('לא נמצא מיקרופון. אנא וודא שנתת הרשאות למיקרופון.');
+        return;
+      }
+      
+      let options = {
+        videoBitsPerSecond: 2500000,
+        audioBitsPerSecond: 128000
+      };
       
       // Try different mimeTypes for better iOS compatibility
       const mimeTypes = [
-        'video/mp4',
+        'video/mp4;codecs=h264,aac',
+        'video/webm;codecs=h264,opus',
         'video/webm;codecs=vp8,opus',
-        'video/webm;codecs=vp8',
+        'video/mp4',
         'video/webm',
         ''
       ];
@@ -95,6 +106,7 @@ export default function CameraView({
       for (const mimeType of mimeTypes) {
         if (mimeType === '' || MediaRecorder.isTypeSupported(mimeType)) {
           if (mimeType) options.mimeType = mimeType;
+          console.log('Using mimeType:', mimeType || 'default');
           break;
         }
       }
@@ -107,7 +119,7 @@ export default function CameraView({
         }
       };
       
-      mediaRecorderRef.current.start(1000);
+      mediaRecorderRef.current.start(100);
       setIsRecording(true);
       if (!isDragging) {
         setIsPaused(false);
