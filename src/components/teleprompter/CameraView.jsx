@@ -94,7 +94,6 @@ export default function CameraView({
       
       mediaRecorderRef.current.start(100);
       setIsRecording(true);
-      setScrollPosition(0);
     } catch (error) {
       console.error('Error starting recording:', error);
       alert('שגיאה בהתחלת ההקלטה');
@@ -145,7 +144,6 @@ export default function CameraView({
   };
 
   const handleTouchStart = (e) => {
-    if (!isRecording) return;
     setIsDragging(true);
     setIsPaused(true);
     dragStartY.current = e.touches[0].clientY;

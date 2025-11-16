@@ -43,9 +43,9 @@ export default function SettingsPanel({
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex items-center justify-between text-sm text-gray-600">
-            <span>קטן</span>
-            <span className="font-medium">{fontSize}px</span>
             <span>גדול</span>
+            <span className="font-medium">{fontSize}px</span>
+            <span>קטן</span>
           </div>
           <Slider
             value={[fontSize]}
@@ -140,9 +140,9 @@ export default function SettingsPanel({
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex items-center justify-between text-sm text-gray-600">
-            <span>איטי</span>
-            <span className="font-medium">{scrollSpeed}</span>
             <span>מהיר</span>
+            <span className="font-medium">{scrollSpeed}</span>
+            <span>איטי</span>
           </div>
           <Slider
             value={[scrollSpeed]}
@@ -164,9 +164,9 @@ export default function SettingsPanel({
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex items-center justify-between text-sm text-gray-600">
-            <span>שקוף</span>
-            <span className="font-medium">{backgroundOpacity}%</span>
             <span>אטום</span>
+            <span className="font-medium">{backgroundOpacity}%</span>
+            <span>שקוף</span>
           </div>
           <Slider
             value={[backgroundOpacity]}
