@@ -81,9 +81,22 @@ export default function CameraView({
     try {
       recordedChunksRef.current = [];
       
-      const options = { mimeType: 'video/webm;codecs=vp8,opus' };
-      if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-        options.mimeType = 'video/webm';
+      let options = {};
+      
+      // Try different mimeTypes for better iOS compatibility
+      const mimeTypes = [
+        'video/mp4',
+        'video/webm;codecs=vp8,opus',
+        'video/webm;codecs=vp8',
+        'video/webm',
+        ''
+      ];
+      
+      for (const mimeType of mimeTypes) {
+        if (mimeType === '' || MediaRecorder.isTypeSupported(mimeType)) {
+          if (mimeType) options.mimeType = mimeType;
+          break;
+        }
       }
       
       mediaRecorderRef.current = new MediaRecorder(streamRef.current, options);
@@ -94,14 +107,14 @@ export default function CameraView({
         }
       };
       
-      mediaRecorderRef.current.start(100);
+      mediaRecorderRef.current.start(1000);
       setIsRecording(true);
       if (!isDragging) {
         setIsPaused(false);
       }
     } catch (error) {
       console.error('Error starting recording:', error);
-      alert('שגיאה בהתחלת ההקלטה');
+      alert('שגיאה בהתחלת ההקלטה: ' + error.message);
     }
   };
 
@@ -109,7 +122,8 @@ export default function CameraView({
     return new Promise((resolve) => {
       if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
         mediaRecorderRef.current.onstop = () => {
-          const blob = new Blob(recordedChunksRef.current, { type: 'video/webm' });
+          const mimeType = mediaRecorderRef.current.mimeType || 'video/webm';
+          const blob = new Blob(recordedChunksRef.current, { type: mimeType });
           resolve(blob);
         };
         mediaRecorderRef.current.stop();
@@ -125,7 +139,8 @@ export default function CameraView({
     const a = document.createElement('a');
     a.style.display = 'none';
     a.href = url;
-    a.download = `טלפרומפטר-${new Date().getTime()}.webm`;
+    const extension = blob.type.includes('mp4') ? 'mp4' : 'webm';
+    a.download = `טלפרומפטר-${new Date().getTime()}.${extension}`;
     document.body.appendChild(a);
     a.click();
     URL.revokeObjectURL(url);
