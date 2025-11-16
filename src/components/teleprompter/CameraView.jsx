@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { Circle, Square, Pause, Play, FastForward, Rewind } from "lucide-react";
+import { Circle, Square, Pause, Play, FastForward, Rewind, Download } from "lucide-react";
 
 export default function CameraView({ 
   text, 
@@ -24,6 +24,7 @@ export default function CameraView({
   const [isDragging, setIsDragging] = useState(false);
   const dragStartY = useRef(0);
   const dragStartScroll = useRef(0);
+  const [recordedVideo, setRecordedVideo] = useState(null);
 
   useEffect(() => {
     startCamera();
@@ -94,7 +95,9 @@ export default function CameraView({
       
       mediaRecorderRef.current.start(100);
       setIsRecording(true);
-      setIsPaused(false);
+      if (!isDragging) {
+        setIsPaused(false);
+      }
     } catch (error) {
       console.error('Error starting recording:', error);
       alert('שגיאה בהתחלת ההקלטה');
@@ -132,11 +135,17 @@ export default function CameraView({
     if (isRecording) {
       const blob = await stopRecording();
       if (blob) {
-        downloadVideo(blob);
-        alert('הוידאו נשמר בהצלחה! בדוק את תיקיית ההורדות שלך.');
+        setRecordedVideo(blob);
       }
     } else {
       await startRecording();
+    }
+  };
+
+  const handleDownload = () => {
+    if (recordedVideo) {
+      downloadVideo(recordedVideo);
+      setRecordedVideo(null);
     }
   };
 
@@ -220,50 +229,79 @@ export default function CameraView({
       {/* Controls */}
       <div className="absolute bottom-8 inset-x-0 pointer-events-auto z-10">
         <div className="flex items-center justify-center gap-4 px-6">
-          <Button
-            variant="secondary"
-            size="icon"
-            className="rounded-full h-14 w-14"
-            onClick={() => handleSpeedAdjust(-100)}
-          >
-            <Rewind className="w-6 h-6" />
-          </Button>
+          {recordedVideo ? (
+            <>
+              <Button
+                variant="default"
+                className="rounded-full h-16 px-8 bg-green-600 hover:bg-green-700"
+                onClick={handleDownload}
+              >
+                <Download className="w-5 h-5 ml-2" />
+                הורד וידאו
+              </Button>
+              <Button
+                variant="outline"
+                className="rounded-full"
+                onClick={() => setRecordedVideo(null)}
+              >
+                צלם שוב
+              </Button>
+              <Button
+                variant="outline"
+                className="rounded-full"
+                onClick={onStop}
+              >
+                סיום
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button
+                variant="secondary"
+                size="icon"
+                className="rounded-full h-14 w-14"
+                onClick={() => handleSpeedAdjust(-100)}
+              >
+                <Rewind className="w-6 h-6" />
+              </Button>
 
-          <Button
-            variant="secondary"
-            size="icon"
-            className="rounded-full h-14 w-14"
-            onClick={() => setIsPaused(!isPaused)}
-            disabled={!isRecording}
-          >
-            {isPaused ? <Play className="w-6 h-6" /> : <Pause className="w-6 h-6" />}
-          </Button>
+              <Button
+                variant="secondary"
+                size="icon"
+                className="rounded-full h-14 w-14"
+                onClick={() => setIsPaused(!isPaused)}
+                disabled={!isRecording}
+              >
+                {isPaused ? <Play className="w-6 h-6" /> : <Pause className="w-6 h-6" />}
+              </Button>
 
-          <Button
-            variant={isRecording ? "destructive" : "default"}
-            size="icon"
-            className="rounded-full h-20 w-20"
-            onClick={handleRecordToggle}
-          >
-            {isRecording ? <Square className="w-8 h-8" /> : <Circle className="w-8 h-8" />}
-          </Button>
+              <Button
+                variant={isRecording ? "destructive" : "default"}
+                size="icon"
+                className="rounded-full h-20 w-20"
+                onClick={handleRecordToggle}
+              >
+                {isRecording ? <Square className="w-8 h-8" /> : <Circle className="w-8 h-8" />}
+              </Button>
 
-          <Button
-            variant="secondary"
-            size="icon"
-            className="rounded-full h-14 w-14"
-            onClick={() => handleSpeedAdjust(100)}
-          >
-            <FastForward className="w-6 h-6" />
-          </Button>
+              <Button
+                variant="secondary"
+                size="icon"
+                className="rounded-full h-14 w-14"
+                onClick={() => handleSpeedAdjust(100)}
+              >
+                <FastForward className="w-6 h-6" />
+              </Button>
 
-          <Button
-            variant="outline"
-            className="rounded-full"
-            onClick={onStop}
-          >
-            סיום
-          </Button>
+              <Button
+                variant="outline"
+                className="rounded-full"
+                onClick={onStop}
+              >
+                סיום
+              </Button>
+            </>
+          )}
         </div>
       </div>
 
