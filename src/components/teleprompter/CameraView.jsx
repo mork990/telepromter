@@ -46,9 +46,9 @@ export default function CameraView({
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { 
           facingMode: cameraFacing,
-          width: { ideal: 1920 },
-          height: { ideal: 1080 },
-          frameRate: { ideal: 30 }
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+          frameRate: { ideal: 30, max: 30 }
         },
         audio: {
           echoCancellation: true,
@@ -100,8 +100,8 @@ export default function CameraView({
       }
       
       let options = {
-        videoBitsPerSecond: 5000000,
-        audioBitsPerSecond: 192000
+        videoBitsPerSecond: 3000000,
+        audioBitsPerSecond: 128000
       };
       
       // Try different mimeTypes - prefer formats that work well on mobile galleries
@@ -129,7 +129,7 @@ export default function CameraView({
         }
       };
       
-      mediaRecorderRef.current.start(1000);
+      mediaRecorderRef.current.start(500);
       setIsRecording(true);
       if (!isDragging) {
         setIsPaused(false);
