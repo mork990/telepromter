@@ -1,14 +1,10 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { Video, Settings } from "lucide-react";
 import TextInput from '../components/teleprompter/TextInput';
 import PrompterPreview from '../components/teleprompter/PrompterPreview';
-import { base44 } from '@/api/base44Client';
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 
 
 export default function Home() {
@@ -120,12 +116,6 @@ export default function Home() {
                 פרומפטר
               </h1>
             </div>
-            <Link to={createPageUrl('Templates')}>
-              <Button variant="outline" size="sm">
-                <BookOpen className="w-4 h-4 ml-2" />
-                תבניות
-              </Button>
-            </Link>
           </div>
         </div>
       </div>
@@ -164,45 +154,10 @@ export default function Home() {
             התחל צילום
           </Button>
 
-          <div className="grid grid-cols-2 gap-3">
-            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline" className="h-12" disabled={!text.trim()}>
-                  <Save className="w-4 h-4 ml-2" />
-                  שמור תבנית
-                </Button>
-              </DialogTrigger>
-              <DialogContent dir="rtl">
-                <DialogHeader>
-                  <DialogTitle>שמירת תבנית</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4 pt-4">
-                  <div className="space-y-2">
-                    <Label>שם התבנית</Label>
-                    <Input
-                      value={templateName}
-                      onChange={(e) => setTemplateName(e.target.value)}
-                      placeholder="הזן שם לתבנית..."
-                      className="text-right"
-                      dir="rtl"
-                    />
-                  </div>
-                  <Button
-                    onClick={handleSaveTemplate}
-                    disabled={isSaving}
-                    className="w-full"
-                  >
-                    {isSaving ? 'שומר...' : 'שמור'}
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-
-            <Button variant="outline" className="w-full h-12" onClick={goToSettings}>
-              <Settings className="w-4 h-4 ml-2" />
-              הגדרות
-            </Button>
-          </div>
+          <Button variant="outline" className="w-full h-12" onClick={goToSettings}>
+            <Settings className="w-4 h-4 ml-2" />
+            הגדרות
+          </Button>
         </div>
 
         {/* Info Card */}
