@@ -26,8 +26,6 @@ export default function CameraView({
   const dragStartScroll = useRef(0);
   const [recordedVideo, setRecordedVideo] = useState(null);
   const [isRecordingPaused, setIsRecordingPaused] = useState(false);
-  const canvasRef = useRef(null);
-  const animationFrameRef = useRef(null);
 
   useEffect(() => {
     startCamera();
@@ -79,79 +77,10 @@ export default function CameraView({
     }
   };
 
-  const drawCanvas = () => {
-    const canvas = canvasRef.current;
-    const video = videoRef.current;
-    if (!canvas || !video) return;
-
-    const ctx = canvas.getContext('2d');
-    canvas.width = video.videoWidth || 1280;
-    canvas.height = video.videoHeight || 720;
-
-    // Draw video frame
-    if (cameraFacing === 'user') {
-      ctx.save();
-      ctx.scale(-1, 1);
-      ctx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
-      ctx.restore();
-    } else {
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    }
-
-    // Draw background overlay
-    const bgOpacity = backgroundOpacity / 100;
-    const r = parseInt(backgroundColor.slice(1, 3), 16);
-    const g = parseInt(backgroundColor.slice(3, 5), 16);
-    const b = parseInt(backgroundColor.slice(5, 7), 16);
-    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${bgOpacity})`;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    // Draw text
-    ctx.fillStyle = textColor;
-    ctx.font = `${fontSize * 2}px Arial`;
-    ctx.textAlign = 'right';
-    ctx.direction = 'rtl';
-    ctx.shadowColor = 'rgba(0,0,0,0.8)';
-    ctx.shadowBlur = 4;
-    ctx.shadowOffsetX = 2;
-    ctx.shadowOffsetY = 2;
-
-    const lines = text.split('\n');
-    const lineHeight = fontSize * 2.5;
-    const startY = canvas.height / 2 - scrollPosition * 2;
-
-    lines.forEach((line, index) => {
-      const y = startY + index * lineHeight;
-      if (y > -lineHeight && y < canvas.height + lineHeight) {
-        ctx.fillText(line, canvas.width - 40, y);
-      }
-    });
-
-    if (isRecording && !isRecordingPaused) {
-      animationFrameRef.current = requestAnimationFrame(drawCanvas);
-    }
-  };
-
   const startRecording = async () => {
     try {
       recordedChunksRef.current = [];
       
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-
-      // Start drawing to canvas
-      drawCanvas();
-      animationFrameRef.current = requestAnimationFrame(drawCanvas);
-
-      // Get canvas stream
-      const canvasStream = canvas.captureStream(30);
-      
-      // Get audio from original stream
-      const audioTrack = streamRef.current.getAudioTracks()[0];
-      if (audioTrack) {
-        canvasStream.addTrack(audioTrack);
-      }
-
       let options = {};
       
       // Try different mimeTypes for better iOS compatibility
@@ -170,7 +99,7 @@ export default function CameraView({
         }
       }
       
-      mediaRecorderRef.current = new MediaRecorder(canvasStream, options);
+      mediaRecorderRef.current = new MediaRecorder(streamRef.current, options);
       
       mediaRecorderRef.current.ondataavailable = (event) => {
         if (event.data && event.data.size > 0) {
@@ -191,9 +120,6 @@ export default function CameraView({
 
   const stopRecording = () => {
     return new Promise((resolve) => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
       if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
         mediaRecorderRef.current.onstop = () => {
           const mimeType = mediaRecorderRef.current.mimeType || 'video/webm';
@@ -241,9 +167,6 @@ export default function CameraView({
 
   const handlePauseRecording = () => {
     if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
       mediaRecorderRef.current.pause();
       setIsRecordingPaused(true);
       setIsPaused(true);
@@ -253,7 +176,6 @@ export default function CameraView({
   const handleResumeRecording = () => {
     if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'paused') {
       mediaRecorderRef.current.resume();
-      animationFrameRef.current = requestAnimationFrame(drawCanvas);
       setIsRecordingPaused(false);
       setIsPaused(false);
     }
@@ -295,9 +217,6 @@ export default function CameraView({
 
   return (
     <div className="fixed inset-0 bg-black z-50 flex flex-col">
-      {/* Hidden Canvas for Recording */}
-      <canvas ref={canvasRef} style={{ display: 'none' }} />
-      
       {/* Video Background */}
       <div className="absolute inset-0">
         <video
