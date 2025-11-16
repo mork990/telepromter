@@ -44,8 +44,17 @@ export default function CameraView({
   const startCamera = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: cameraFacing },
-        audio: true
+        video: { 
+          facingMode: cameraFacing,
+          width: { ideal: 1920 },
+          height: { ideal: 1080 }
+        },
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+          sampleRate: 48000
+        }
       });
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
@@ -135,7 +144,10 @@ export default function CameraView({
       if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
         mediaRecorderRef.current.onstop = () => {
           const mimeType = mediaRecorderRef.current.mimeType || 'video/webm';
+          console.log('Recording stopped with chunks:', recordedChunksRef.current.length);
+          console.log('MimeType:', mimeType);
           const blob = new Blob(recordedChunksRef.current, { type: mimeType });
+          console.log('Blob size:', blob.size, 'bytes');
           resolve(blob);
         };
         mediaRecorderRef.current.stop();
