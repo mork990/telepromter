@@ -102,13 +102,12 @@ export default function CameraView({
         audioBitsPerSecond: 128000
       };
       
-      // Try different mimeTypes for better iOS compatibility
+      // Try different mimeTypes - prefer formats that work well on mobile galleries
       const mimeTypes = [
-        'video/mp4;codecs=h264,aac',
-        'video/webm;codecs=h264,opus',
         'video/webm;codecs=vp8,opus',
-        'video/mp4',
+        'video/webm;codecs=vp9,opus',
         'video/webm',
+        'video/mp4',
         ''
       ];
       
@@ -159,16 +158,22 @@ export default function CameraView({
   };
 
   const downloadVideo = (blob) => {
-    const url = URL.createObjectURL(blob);
+    // Create new blob with explicit type to ensure audio is included
+    const finalBlob = new Blob([blob], { type: blob.type || 'video/webm' });
+    
+    const url = URL.createObjectURL(finalBlob);
     const a = document.createElement('a');
     a.style.display = 'none';
     a.href = url;
-    const extension = blob.type.includes('mp4') ? 'mp4' : 'webm';
+    const extension = finalBlob.type.includes('mp4') ? 'mp4' : 'webm';
     a.download = `טלפרומפטר-${new Date().getTime()}.${extension}`;
     document.body.appendChild(a);
     a.click();
-    URL.revokeObjectURL(url);
-    document.body.removeChild(a);
+    
+    setTimeout(() => {
+      URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    }, 100);
   };
 
   const handleRecordToggle = async () => {
