@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { Circle, Square, Pause, Play, FastForward, Rewind, Download } from "lucide-react";
+import { Circle, Square, Pause, Play, FastForward, Rewind, Download, Scissors } from "lucide-react";
 
 export default function CameraView({ 
   text, 
@@ -25,6 +25,7 @@ export default function CameraView({
   const dragStartY = useRef(0);
   const dragStartScroll = useRef(0);
   const [recordedVideo, setRecordedVideo] = useState(null);
+  const [isRecordingPaused, setIsRecordingPaused] = useState(false);
 
   useEffect(() => {
     startCamera();
@@ -149,6 +150,22 @@ export default function CameraView({
     }
   };
 
+  const handlePauseRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+      mediaRecorderRef.current.pause();
+      setIsRecordingPaused(true);
+      setIsPaused(true);
+    }
+  };
+
+  const handleResumeRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'paused') {
+      mediaRecorderRef.current.resume();
+      setIsRecordingPaused(false);
+      setIsPaused(false);
+    }
+  };
+
   const handleSpeedAdjust = (adjustment) => {
     setScrollPosition(prev => Math.max(0, prev + adjustment));
   };
@@ -164,6 +181,7 @@ export default function CameraView({
 
   const handleTouchMove = (e) => {
     if (!isDragging) return;
+    e.preventDefault(); // Prevent pull-to-refresh
     const deltaY = dragStartY.current - e.touches[0].clientY;
     setScrollPosition(Math.max(0, dragStartScroll.current + deltaY));
   };
@@ -261,6 +279,7 @@ export default function CameraView({
                 size="icon"
                 className="rounded-full h-14 w-14"
                 onClick={() => handleSpeedAdjust(-100)}
+                disabled={isRecording && isRecordingPaused}
               >
                 <Rewind className="w-6 h-6" />
               </Button>
@@ -270,10 +289,32 @@ export default function CameraView({
                 size="icon"
                 className="rounded-full h-14 w-14"
                 onClick={() => setIsPaused(!isPaused)}
-                disabled={!isRecording}
+                disabled={!isRecording || isRecordingPaused}
               >
                 {isPaused ? <Play className="w-6 h-6" /> : <Pause className="w-6 h-6" />}
               </Button>
+
+              {isRecording && !isRecordingPaused && (
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="rounded-full h-14 w-14 bg-yellow-500 hover:bg-yellow-600 text-white border-0"
+                  onClick={handlePauseRecording}
+                >
+                  <Scissors className="w-6 h-6" />
+                </Button>
+              )}
+
+              {isRecording && isRecordingPaused && (
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="rounded-full h-14 w-14 bg-green-500 hover:bg-green-600 text-white border-0"
+                  onClick={handleResumeRecording}
+                >
+                  <Play className="w-6 h-6" />
+                </Button>
+              )}
 
               <Button
                 variant={isRecording ? "destructive" : "default"}
@@ -289,6 +330,7 @@ export default function CameraView({
                 size="icon"
                 className="rounded-full h-14 w-14"
                 onClick={() => handleSpeedAdjust(100)}
+                disabled={isRecording && isRecordingPaused}
               >
                 <FastForward className="w-6 h-6" />
               </Button>
@@ -306,10 +348,16 @@ export default function CameraView({
       </div>
 
       {/* Recording Indicator */}
-      {isRecording && !isPaused && (
+      {isRecording && !isRecordingPaused && (
         <div className="absolute top-6 right-6 flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-full pointer-events-none">
           <div className="w-3 h-3 bg-white rounded-full animate-pulse" />
           <span className="text-sm font-medium">מצלם</span>
+        </div>
+      )}
+      {isRecording && isRecordingPaused && (
+        <div className="absolute top-6 right-6 flex items-center gap-2 bg-yellow-500 text-white px-4 py-2 rounded-full pointer-events-none">
+          <Scissors className="w-4 h-4" />
+          <span className="text-sm font-medium">הפסקה</span>
         </div>
       )}
     </div>
