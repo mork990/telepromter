@@ -1,6 +1,8 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Circle, Square, Pause, Play, FastForward, Rewind, Download, Scissors } from "lucide-react";
+import { FFmpeg } from '@ffmpeg/ffmpeg';
+import { fetchFile, toBlobURL } from '@ffmpeg/util';
 
 export default function CameraView({ 
   text, 
@@ -26,11 +28,31 @@ export default function CameraView({
   const dragStartScroll = useRef(0);
   const [recordedVideo, setRecordedVideo] = useState(null);
   const [isRecordingPaused, setIsRecordingPaused] = useState(false);
+  const [isConverting, setIsConverting] = useState(false);
+  const ffmpegRef = useRef(null);
 
   useEffect(() => {
+    loadFFmpeg();
     startCamera();
     return () => stopCamera();
   }, [cameraFacing]);
+
+  const loadFFmpeg = async () => {
+    if (ffmpegRef.current) return;
+    
+    try {
+      const ffmpeg = new FFmpeg();
+      ffmpegRef.current = ffmpeg;
+      
+      const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd';
+      await ffmpeg.load({
+        coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
+        wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+      });
+    } catch (error) {
+      console.error('Error loading FFmpeg:', error);
+    }
+  };
 
   useEffect(() => {
     if (!isPaused && isRecording) {
@@ -161,21 +183,51 @@ export default function CameraView({
     });
   };
 
+  const convertToMP4 = async (blob) => {
+    if (!ffmpegRef.current || blob.type.includes('mp4')) {
+      return blob;
+    }
+
+    try {
+      setIsConverting(true);
+      const ffmpeg = ffmpegRef.current;
+      
+      const inputName = 'input.webm';
+      const outputName = 'output.mp4';
+      
+      await ffmpeg.writeFile(inputName, await fetchFile(blob));
+      
+      await ffmpeg.exec([
+        '-i', inputName,
+        '-c:v', 'libx264',
+        '-preset', 'fast',
+        '-crf', '22',
+        '-c:a', 'aac',
+        '-b:a', '192k',
+        outputName
+      ]);
+      
+      const data = await ffmpeg.readFile(outputName);
+      const mp4Blob = new Blob([data.buffer], { type: 'video/mp4' });
+      
+      await ffmpeg.deleteFile(inputName);
+      await ffmpeg.deleteFile(outputName);
+      
+      setIsConverting(false);
+      return mp4Blob;
+    } catch (error) {
+      console.error('Error converting to MP4:', error);
+      setIsConverting(false);
+      return blob;
+    }
+  };
+
   const downloadVideo = (blob) => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.style.display = 'none';
     a.href = url;
-    
-    // Determine file extension based on mimeType
-    let extension = 'mp4';
-    if (blob.type.includes('webm')) {
-      extension = 'webm';
-    } else if (blob.type.includes('mp4') || blob.type.includes('h264')) {
-      extension = 'mp4';
-    }
-    
-    a.download = `טלפרומפטר-${new Date().getTime()}.${extension}`;
+    a.download = `טלפרומפטר-${new Date().getTime()}.mp4`;
     document.body.appendChild(a);
     a.click();
     
@@ -189,7 +241,8 @@ export default function CameraView({
     if (isRecording) {
       const blob = await stopRecording();
       if (blob) {
-        setRecordedVideo(blob);
+        const mp4Blob = await convertToMP4(blob);
+        setRecordedVideo(mp4Blob);
       }
     } else {
       await startRecording();
@@ -412,6 +465,12 @@ export default function CameraView({
         <div className="absolute top-6 right-6 flex items-center gap-2 bg-yellow-500 text-white px-4 py-2 rounded-full pointer-events-none">
           <Scissors className="w-4 h-4" />
           <span className="text-sm font-medium">הפסקה</span>
+        </div>
+      )}
+      {isConverting && (
+        <div className="absolute top-6 right-6 flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-full pointer-events-none">
+          <div className="w-3 h-3 bg-white rounded-full animate-spin border-2 border-transparent border-t-white" />
+          <span className="text-sm font-medium">ממיר ל-MP4...</span>
         </div>
       )}
     </div>
