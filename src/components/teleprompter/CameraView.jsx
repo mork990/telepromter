@@ -46,8 +46,8 @@ export default function CameraView({
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { 
           facingMode: cameraFacing,
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
+          width: { ideal: 1920 },
+          height: { ideal: 1080 },
           frameRate: { ideal: 30, max: 30 }
         },
         audio: {
@@ -100,14 +100,16 @@ export default function CameraView({
       }
       
       let options = {
-        videoBitsPerSecond: 3000000,
-        audioBitsPerSecond: 128000
+        videoBitsPerSecond: 8000000,
+        audioBitsPerSecond: 192000
       };
       
-      // Try different mimeTypes - prefer formats that work well on mobile galleries
+      // Try different mimeTypes - prefer high quality formats
       const mimeTypes = [
-        'video/webm;codecs=vp8,opus',
         'video/webm;codecs=vp9,opus',
+        'video/webm;codecs=h264,opus',
+        'video/mp4;codecs=h264,aac',
+        'video/webm;codecs=vp8,opus',
         'video/webm',
         'video/mp4',
         ''
@@ -160,14 +162,19 @@ export default function CameraView({
   };
 
   const downloadVideo = (blob) => {
-    // Create new blob with explicit type to ensure audio is included
-    const finalBlob = new Blob([blob], { type: blob.type || 'video/webm' });
-    
-    const url = URL.createObjectURL(finalBlob);
+    const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.style.display = 'none';
     a.href = url;
-    const extension = finalBlob.type.includes('mp4') ? 'mp4' : 'webm';
+    
+    // Determine file extension based on mimeType
+    let extension = 'mp4';
+    if (blob.type.includes('webm')) {
+      extension = 'webm';
+    } else if (blob.type.includes('mp4') || blob.type.includes('h264')) {
+      extension = 'mp4';
+    }
+    
     a.download = `טלפרומפטר-${new Date().getTime()}.${extension}`;
     document.body.appendChild(a);
     a.click();
