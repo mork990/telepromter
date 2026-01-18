@@ -42,15 +42,31 @@ export default function CameraView({
     
     try {
       const ffmpeg = new FFmpeg();
-      ffmpegRef.current = ffmpeg;
       
-      const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd';
+      const baseURL = 'https://unpkg.com/@ffmpeg/core-mt@0.12.6/dist/esm';
       await ffmpeg.load({
         coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
         wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+        workerURL: await toBlobURL(`${baseURL}/ffmpeg-core.worker.js`, 'text/javascript'),
       });
+      
+      ffmpegRef.current = ffmpeg;
+      console.log('FFmpeg loaded successfully');
     } catch (error) {
       console.error('Error loading FFmpeg:', error);
+      // Try single-threaded version as fallback
+      try {
+        const ffmpeg = new FFmpeg();
+        const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd';
+        await ffmpeg.load({
+          coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
+          wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+        });
+        ffmpegRef.current = ffmpeg;
+        console.log('FFmpeg loaded (single-threaded fallback)');
+      } catch (fallbackError) {
+        console.error('FFmpeg fallback also failed:', fallbackError);
+      }
     }
   };
 
@@ -184,7 +200,14 @@ export default function CameraView({
   };
 
   const convertToMP4 = async (blob) => {
-    if (!ffmpegRef.current || blob.type.includes('mp4')) {
+    // If already MP4, return as-is
+    if (blob.type.includes('mp4')) {
+      return blob;
+    }
+
+    // If FFmpeg not loaded, return original blob
+    if (!ffmpegRef.current) {
+      console.log('FFmpeg not available, returning original blob');
       return blob;
     }
 
@@ -195,29 +218,34 @@ export default function CameraView({
       const inputName = 'input.webm';
       const outputName = 'output.mp4';
       
-      await ffmpeg.writeFile(inputName, await fetchFile(blob));
+      const arrayBuffer = await blob.arrayBuffer();
+      await ffmpeg.writeFile(inputName, new Uint8Array(arrayBuffer));
       
       await ffmpeg.exec([
         '-i', inputName,
         '-c:v', 'libx264',
-        '-preset', 'fast',
-        '-crf', '22',
+        '-preset', 'ultrafast',
+        '-crf', '23',
         '-c:a', 'aac',
-        '-b:a', '192k',
+        '-b:a', '128k',
+        '-movflags', '+faststart',
         outputName
       ]);
       
       const data = await ffmpeg.readFile(outputName);
       const mp4Blob = new Blob([data.buffer], { type: 'video/mp4' });
       
+      // Cleanup
       await ffmpeg.deleteFile(inputName);
       await ffmpeg.deleteFile(outputName);
       
       setIsConverting(false);
+      console.log('Conversion successful, MP4 size:', mp4Blob.size);
       return mp4Blob;
     } catch (error) {
       console.error('Error converting to MP4:', error);
       setIsConverting(false);
+      // Return original blob if conversion fails
       return blob;
     }
   };
