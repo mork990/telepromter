@@ -105,26 +105,34 @@ export default function CameraView({
         audioBitsPerSecond: 192000
       };
       
-      // Try different mimeTypes - prefer high quality formats
+      // Prioritize MP4 format (works on Safari/iOS)
+      // Then H264 WebM (more compatible than VP9)
       const mimeTypes = [
-        'video/webm;codecs=vp9,opus',
-        'video/webm;codecs=h264,opus',
+        'video/mp4;codecs=avc1,mp4a.40.2',
         'video/mp4;codecs=h264,aac',
+        'video/mp4',
+        'video/webm;codecs=h264,opus',
+        'video/webm;codecs=vp9,opus',
         'video/webm;codecs=vp8,opus',
         'video/webm',
-        'video/mp4',
         ''
       ];
       
+      let selectedMime = '';
       for (const mimeType of mimeTypes) {
         if (mimeType === '' || MediaRecorder.isTypeSupported(mimeType)) {
           if (mimeType) options.mimeType = mimeType;
+          selectedMime = mimeType;
           console.log('Using mimeType:', mimeType || 'default');
           break;
         }
       }
       
+      // Store the mime type for later use
+      options.selectedMime = selectedMime;
+      
       mediaRecorderRef.current = new MediaRecorder(streamRef.current, options);
+      mediaRecorderRef.current.selectedMime = selectedMime;
       
       mediaRecorderRef.current.ondataavailable = (event) => {
         if (event.data && event.data.size > 0) {
