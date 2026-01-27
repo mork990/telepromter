@@ -270,9 +270,14 @@ export default function CameraView({
   };
 
   const shareToWhatsApp = async (blob) => {
-    const filename = `video-${new Date().getTime()}.mp4`;
-    const mp4Blob = new Blob([blob], { type: 'video/mp4' });
-    const file = new File([mp4Blob], filename, { type: 'video/mp4', lastModified: Date.now() });
+    // First convert to MP4 if not already
+    let finalBlob = blob;
+    if (!blob.type.includes('mp4')) {
+      finalBlob = await convertToMP4(blob);
+    }
+    
+    const filename = `video_${Date.now()}.mp4`;
+    const file = new File([finalBlob], filename, { type: 'video/mp4', lastModified: Date.now() });
     
     if (navigator.share) {
       try {
@@ -281,13 +286,12 @@ export default function CameraView({
         });
       } catch (err) {
         if (err.name !== 'AbortError') {
-          // Fallback - download and let user share manually
-          downloadVideo(blob);
+          downloadVideo(finalBlob);
           alert('הסרטון הורד. שתף אותו ידנית מהגלריה.');
         }
       }
     } else {
-      downloadVideo(blob);
+      downloadVideo(finalBlob);
       alert('הסרטון הורד. שתף אותו ידנית מהגלריה.');
     }
   };
@@ -296,7 +300,9 @@ export default function CameraView({
     if (isRecording) {
       const blob = await stopRecording();
       if (blob) {
+        // Always convert to MP4
         const mp4Blob = await convertToMP4(blob);
+        console.log('Final video type:', mp4Blob.type, 'size:', mp4Blob.size);
         setRecordedVideo(mp4Blob);
       }
     } else {
