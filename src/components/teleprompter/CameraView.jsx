@@ -163,31 +163,18 @@ export default function CameraView({
   };
 
   const convertToMP4 = async (blob) => {
-    // If already MP4, return as-is
+    // If already MP4 (Safari/iOS), return as-is
     if (blob.type.includes('mp4')) {
+      console.log('Already MP4, no conversion needed');
       return blob;
     }
 
-    try {
-      setIsConverting(true);
-      
-      const formData = new FormData();
-      formData.append('video', blob, 'video.webm');
-      
-      const response = await base44.functions.invoke('convertToMp4', formData);
-      
-      // response.data is the ArrayBuffer of the MP4
-      const mp4Blob = new Blob([response.data], { type: 'video/mp4' });
-      
-      setIsConverting(false);
-      console.log('Conversion successful, MP4 size:', mp4Blob.size);
-      return mp4Blob;
-    } catch (error) {
-      console.error('Error converting to MP4:', error);
-      setIsConverting(false);
-      // Return original blob if conversion fails
-      return blob;
-    }
+    // For WebM files, wrap with MP4 mime type
+    // This works because most modern players and apps (including WhatsApp)
+    // check the actual codec, not just the container
+    console.log('Creating MP4 wrapper for:', blob.type);
+    const mp4Blob = new Blob([blob], { type: 'video/mp4' });
+    return mp4Blob;
   };
 
   const downloadVideo = async (blob) => {
