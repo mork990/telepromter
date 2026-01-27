@@ -28,46 +28,11 @@ export default function CameraView({
   const [recordedVideo, setRecordedVideo] = useState(null);
   const [isRecordingPaused, setIsRecordingPaused] = useState(false);
   const [isConverting, setIsConverting] = useState(false);
-  const ffmpegRef = useRef(null);
 
   useEffect(() => {
-    loadFFmpeg();
     startCamera();
     return () => stopCamera();
   }, [cameraFacing]);
-
-  const loadFFmpeg = async () => {
-    if (ffmpegRef.current) return;
-    
-    try {
-      const ffmpeg = new FFmpeg();
-      
-      const baseURL = 'https://unpkg.com/@ffmpeg/core-mt@0.12.6/dist/esm';
-      await ffmpeg.load({
-        coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
-        wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
-        workerURL: await toBlobURL(`${baseURL}/ffmpeg-core.worker.js`, 'text/javascript'),
-      });
-      
-      ffmpegRef.current = ffmpeg;
-      console.log('FFmpeg loaded successfully');
-    } catch (error) {
-      console.error('Error loading FFmpeg:', error);
-      // Try single-threaded version as fallback
-      try {
-        const ffmpeg = new FFmpeg();
-        const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd';
-        await ffmpeg.load({
-          coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
-          wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
-        });
-        ffmpegRef.current = ffmpeg;
-        console.log('FFmpeg loaded (single-threaded fallback)');
-      } catch (fallbackError) {
-        console.error('FFmpeg fallback also failed:', fallbackError);
-      }
-    }
-  };
 
   useEffect(() => {
     if (!isPaused && isRecording) {
