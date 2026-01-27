@@ -252,29 +252,9 @@ export default function CameraView({
 
   const downloadVideo = async (blob) => {
     const filename = `teleprompter-${new Date().getTime()}.mp4`;
-    
-    // Create a proper MP4 file
     const mp4Blob = new Blob([blob], { type: 'video/mp4' });
-    const file = new File([mp4Blob], filename, { type: 'video/mp4' });
     
-    // For iOS/Safari - try using share API first for better gallery integration
-    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-      try {
-        await navigator.share({
-          files: [file],
-          title: 'סרטון טלפרומפטר'
-        });
-        return;
-      } catch (err) {
-        if (err.name !== 'AbortError') {
-          console.log('Share failed, falling back to download');
-        } else {
-          return; // User cancelled share
-        }
-      }
-    }
-    
-    // Fallback to regular download
+    // Direct download
     const url = URL.createObjectURL(mp4Blob);
     const a = document.createElement('a');
     a.style.display = 'none';
@@ -290,24 +270,25 @@ export default function CameraView({
   };
 
   const shareToWhatsApp = async (blob) => {
-    const filename = `teleprompter-${new Date().getTime()}.mp4`;
+    const filename = `video-${new Date().getTime()}.mp4`;
     const mp4Blob = new Blob([blob], { type: 'video/mp4' });
-    const file = new File([mp4Blob], filename, { type: 'video/mp4' });
+    const file = new File([mp4Blob], filename, { type: 'video/mp4', lastModified: Date.now() });
     
-    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+    if (navigator.share) {
       try {
         await navigator.share({
-          files: [file],
-          title: 'סרטון טלפרומפטר',
-          text: 'צפה בסרטון שלי'
+          files: [file]
         });
       } catch (err) {
         if (err.name !== 'AbortError') {
-          alert('לא ניתן לשתף. נסה להוריד את הסרטון ולשתף ידנית.');
+          // Fallback - download and let user share manually
+          downloadVideo(blob);
+          alert('הסרטון הורד. שתף אותו ידנית מהגלריה.');
         }
       }
     } else {
-      alert('השיתוף אינו נתמך בדפדפן זה. הורד את הסרטון ושתף ידנית בוואטסאפ.');
+      downloadVideo(blob);
+      alert('הסרטון הורד. שתף אותו ידנית מהגלריה.');
     }
   };
 
