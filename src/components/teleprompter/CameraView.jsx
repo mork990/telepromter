@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { Circle, Square, Pause, Play, FastForward, Rewind, Download, Scissors } from "lucide-react";
+import { Circle, Square, Pause, Play, FastForward, Rewind, Download, Scissors, Share2 } from "lucide-react";
 import { FFmpeg } from '@ffmpeg/ffmpeg';
 import { fetchFile, toBlobURL } from '@ffmpeg/util';
 
@@ -250,12 +250,36 @@ export default function CameraView({
     }
   };
 
-  const downloadVideo = (blob) => {
-    const url = URL.createObjectURL(blob);
+  const downloadVideo = async (blob) => {
+    const filename = `teleprompter-${new Date().getTime()}.mp4`;
+    
+    // Create a proper MP4 file
+    const mp4Blob = new Blob([blob], { type: 'video/mp4' });
+    const file = new File([mp4Blob], filename, { type: 'video/mp4' });
+    
+    // For iOS/Safari - try using share API first for better gallery integration
+    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({
+          files: [file],
+          title: 'סרטון טלפרומפטר'
+        });
+        return;
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          console.log('Share failed, falling back to download');
+        } else {
+          return; // User cancelled share
+        }
+      }
+    }
+    
+    // Fallback to regular download
+    const url = URL.createObjectURL(mp4Blob);
     const a = document.createElement('a');
     a.style.display = 'none';
     a.href = url;
-    a.download = `טלפרומפטר-${new Date().getTime()}.mp4`;
+    a.download = filename;
     document.body.appendChild(a);
     a.click();
     
@@ -263,6 +287,28 @@ export default function CameraView({
       URL.revokeObjectURL(url);
       document.body.removeChild(a);
     }, 100);
+  };
+
+  const shareToWhatsApp = async (blob) => {
+    const filename = `teleprompter-${new Date().getTime()}.mp4`;
+    const mp4Blob = new Blob([blob], { type: 'video/mp4' });
+    const file = new File([mp4Blob], filename, { type: 'video/mp4' });
+    
+    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({
+          files: [file],
+          title: 'סרטון טלפרומפטר',
+          text: 'צפה בסרטון שלי'
+        });
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          alert('לא ניתן לשתף. נסה להוריד את הסרטון ולשתף ידנית.');
+        }
+      }
+    } else {
+      alert('השיתוף אינו נתמך בדפדפן זה. הורד את הסרטון ושתף ידנית בוואטסאפ.');
+    }
   };
 
   const handleRecordToggle = async () => {
@@ -383,30 +429,42 @@ export default function CameraView({
       <div className="absolute bottom-8 inset-x-0 pointer-events-auto z-10">
         <div className="flex items-center justify-center gap-4 px-6">
           {recordedVideo ? (
-            <>
-              <Button
-                variant="default"
-                className="rounded-full h-16 px-8 bg-green-600 hover:bg-green-700"
-                onClick={handleDownload}
-              >
-                <Download className="w-5 h-5 ml-2" />
-                הורד וידאו
-              </Button>
-              <Button
-                variant="outline"
-                className="rounded-full"
-                onClick={() => setRecordedVideo(null)}
-              >
-                צלם שוב
-              </Button>
-              <Button
-                variant="outline"
-                className="rounded-full"
-                onClick={onStop}
-              >
-                סיום
-              </Button>
-            </>
+            <div className="flex flex-col items-center gap-3">
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="default"
+                  className="rounded-full h-14 px-6 bg-green-600 hover:bg-green-700"
+                  onClick={handleDownload}
+                >
+                  <Download className="w-5 h-5 ml-2" />
+                  שמור לגלריה
+                </Button>
+                <Button
+                  variant="default"
+                  className="rounded-full h-14 px-6 bg-[#25D366] hover:bg-[#128C7E]"
+                  onClick={() => shareToWhatsApp(recordedVideo)}
+                >
+                  <Share2 className="w-5 h-5 ml-2" />
+                  שתף בוואטסאפ
+                </Button>
+              </div>
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="outline"
+                  className="rounded-full bg-white/90"
+                  onClick={() => setRecordedVideo(null)}
+                >
+                  צלם שוב
+                </Button>
+                <Button
+                  variant="outline"
+                  className="rounded-full bg-white/90"
+                  onClick={onStop}
+                >
+                  סיום
+                </Button>
+              </div>
+            </div>
           ) : (
             <>
               <Button
