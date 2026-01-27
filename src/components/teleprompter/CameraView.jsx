@@ -1,7 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Circle, Square, Pause, Play, FastForward, Rewind, Download, Scissors, Share2 } from "lucide-react";
-import { base44 } from '@/api/base44Client';
 
 export default function CameraView({ 
   text, 
