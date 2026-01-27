@@ -169,39 +169,16 @@ export default function CameraView({
       return blob;
     }
 
-    // If FFmpeg not loaded, return original blob
-    if (!ffmpegRef.current) {
-      console.log('FFmpeg not available, returning original blob');
-      return blob;
-    }
-
     try {
       setIsConverting(true);
-      const ffmpeg = ffmpegRef.current;
       
-      const inputName = 'input.webm';
-      const outputName = 'output.mp4';
+      const formData = new FormData();
+      formData.append('video', blob, 'video.webm');
       
-      const arrayBuffer = await blob.arrayBuffer();
-      await ffmpeg.writeFile(inputName, new Uint8Array(arrayBuffer));
+      const response = await base44.functions.invoke('convertToMp4', formData);
       
-      await ffmpeg.exec([
-        '-i', inputName,
-        '-c:v', 'libx264',
-        '-preset', 'ultrafast',
-        '-crf', '23',
-        '-c:a', 'aac',
-        '-b:a', '128k',
-        '-movflags', '+faststart',
-        outputName
-      ]);
-      
-      const data = await ffmpeg.readFile(outputName);
-      const mp4Blob = new Blob([data.buffer], { type: 'video/mp4' });
-      
-      // Cleanup
-      await ffmpeg.deleteFile(inputName);
-      await ffmpeg.deleteFile(outputName);
+      // response.data is the ArrayBuffer of the MP4
+      const mp4Blob = new Blob([response.data], { type: 'video/mp4' });
       
       setIsConverting(false);
       console.log('Conversion successful, MP4 size:', mp4Blob.size);
