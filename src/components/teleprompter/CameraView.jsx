@@ -205,30 +205,26 @@ export default function CameraView({
   };
 
   const shareToWhatsApp = async (blob) => {
-    // First convert to MP4 if not already
-    let finalBlob = blob;
-    if (!blob.type.includes('mp4')) {
-      finalBlob = await convertToMP4(blob);
-    }
-    
     const filename = `video_${Date.now()}.mp4`;
-    const file = new File([finalBlob], filename, { type: 'video/mp4', lastModified: Date.now() });
+    const file = new File([blob], filename, { type: 'video/mp4', lastModified: Date.now() });
     
-    if (navigator.share) {
+    // Check if we can share files
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
       try {
         await navigator.share({
-          files: [file]
+          files: [file],
+          title: 'סרטון מהפרומפטר'
         });
+        return;
       } catch (err) {
-        if (err.name !== 'AbortError') {
-          downloadVideo(finalBlob);
-          alert('הסרטון הורד. שתף אותו ידנית מהגלריה.');
-        }
+        if (err.name === 'AbortError') return;
+        console.log('Share failed:', err);
       }
-    } else {
-      downloadVideo(finalBlob);
-      alert('הסרטון הורד. שתף אותו ידנית מהגלריה.');
     }
+    
+    // Fallback: download
+    downloadVideo(blob);
+    alert('הסרטון הורד למכשיר. פתח את הגלריה ושתף משם.');
   };
 
   const handleRecordToggle = async () => {
