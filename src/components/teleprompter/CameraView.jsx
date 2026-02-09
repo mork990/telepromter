@@ -344,7 +344,10 @@ export default function CameraView({
       </div>
 
       {/* Controls */}
-      <div className="absolute bottom-8 inset-x-0 pointer-events-auto z-10">
+      <div 
+        className="absolute inset-x-0 pointer-events-auto z-10"
+        style={{ bottom: 'calc(2rem + env(safe-area-inset-bottom))' }}
+      >
         <div className="flex items-center justify-center gap-4 px-6">
           {recordedVideo ? (
             <div className="flex flex-col items-center gap-3">
