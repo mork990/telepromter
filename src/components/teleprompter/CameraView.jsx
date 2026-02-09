@@ -354,7 +354,7 @@ export default function CameraView({
               <div className="flex items-center gap-3">
                 <Button
                   variant="default"
-                  className="rounded-full h-14 px-6 bg-green-600 hover:bg-green-700"
+                  className="rounded-full h-14 px-6 bg-green-600 hover:bg-green-700 select-none"
                   onClick={handleDownload}
                 >
                   <Download className="w-5 h-5 ml-2" />
@@ -362,7 +362,7 @@ export default function CameraView({
                 </Button>
                 <Button
                   variant="default"
-                  className="rounded-full h-14 px-6 bg-[#25D366] hover:bg-[#128C7E]"
+                  className="rounded-full h-14 px-6 bg-[#25D366] hover:bg-[#128C7E] select-none"
                   onClick={() => shareToWhatsApp(recordedVideo)}
                 >
                   <Share2 className="w-5 h-5 ml-2" />
@@ -372,14 +372,14 @@ export default function CameraView({
               <div className="flex items-center gap-3">
                 <Button
                   variant="outline"
-                  className="rounded-full bg-white/90"
+                  className="rounded-full bg-white/90 select-none"
                   onClick={() => setRecordedVideo(null)}
                 >
                   צלם שוב
                 </Button>
                 <Button
                   variant="outline"
-                  className="rounded-full bg-white/90"
+                  className="rounded-full bg-white/90 select-none"
                   onClick={onStop}
                 >
                   סיום
