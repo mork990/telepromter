@@ -69,17 +69,18 @@ export default function Settings() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50" dir="rtl">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900" dir="rtl">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b sticky top-0 z-10">
+      <div 
+        className="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700 sticky z-10"
+        style={{ top: 'env(safe-area-inset-top)' }}
+      >
         <div className="max-w-md mx-auto px-4 py-4">
           <div className="flex items-center gap-3">
-            <Link to={createPageUrl('Home')}>
-              <Button variant="ghost" size="icon">
-                <ArrowRight className="w-5 h-5" />
-              </Button>
-            </Link>
-            <h1 className="text-xl font-bold text-gray-800">הגדרות עיצוב</h1>
+            <Button variant="ghost" size="icon" onClick={() => navigate(createPageUrl('Home'))} className="select-none">
+              <ArrowRight className="w-5 h-5" />
+            </Button>
+            <h1 className="text-xl font-bold text-gray-800 dark:text-white">הגדרות עיצוב</h1>
           </div>
         </div>
       </div>
@@ -104,16 +105,44 @@ export default function Settings() {
         <div className="mt-6 space-y-3">
           <Button
             onClick={handleSave}
-            className="w-full h-12 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
+            className="w-full h-12 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 select-none"
           >
             שמור הגדרות
           </Button>
           
-          <Link to={createPageUrl('Home')} className="block">
-            <Button variant="outline" className="w-full h-12">
-              ביטול
-            </Button>
-          </Link>
+          <Button variant="outline" className="w-full h-12 dark:border-gray-600 dark:text-gray-200 select-none" onClick={() => navigate(createPageUrl('Home'))}>
+            ביטול
+          </Button>
+        </div>
+
+        {/* Delete Account Section */}
+        <div className="mt-12 pt-6 border-t dark:border-gray-700">
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="ghost" className="w-full h-12 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 select-none">
+                <Trash2 className="w-4 h-4 ml-2" />
+                מחיקת חשבון
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent dir="rtl">
+              <AlertDialogHeader>
+                <AlertDialogTitle>האם אתה בטוח?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  פעולה זו תמחק את כל הנתונים שלך ותתנתק מהמערכת. לא ניתן לבטל פעולה זו.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter className="flex-row-reverse gap-2">
+                <AlertDialogCancel className="select-none">ביטול</AlertDialogCancel>
+                <AlertDialogAction 
+                  onClick={handleDeleteAccount}
+                  disabled={isDeleting}
+                  className="bg-red-600 hover:bg-red-700 select-none"
+                >
+                  {isDeleting ? 'מוחק...' : 'מחק חשבון'}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </div>
     </div>
