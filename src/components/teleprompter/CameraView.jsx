@@ -391,7 +391,7 @@ export default function CameraView({
               <Button
                 variant="secondary"
                 size="icon"
-                className="rounded-full h-14 w-14"
+                className="rounded-full h-14 w-14 select-none"
                 onClick={() => handleSpeedAdjust(-100)}
                 disabled={isRecording && isRecordingPaused}
               >
@@ -401,7 +401,7 @@ export default function CameraView({
               <Button
                 variant="secondary"
                 size="icon"
-                className="rounded-full h-14 w-14"
+                className="rounded-full h-14 w-14 select-none"
                 onClick={() => setIsPaused(!isPaused)}
                 disabled={!isRecording || isRecordingPaused}
               >
@@ -412,7 +412,7 @@ export default function CameraView({
                 <Button
                   variant="outline"
                   size="icon"
-                  className="rounded-full h-14 w-14 bg-yellow-500 hover:bg-yellow-600 text-white border-0"
+                  className="rounded-full h-14 w-14 bg-yellow-500 hover:bg-yellow-600 text-white border-0 select-none"
                   onClick={handlePauseRecording}
                 >
                   <Scissors className="w-6 h-6" />
@@ -423,7 +423,7 @@ export default function CameraView({
                 <Button
                   variant="outline"
                   size="icon"
-                  className="rounded-full h-14 w-14 bg-green-500 hover:bg-green-600 text-white border-0"
+                  className="rounded-full h-14 w-14 bg-green-500 hover:bg-green-600 text-white border-0 select-none"
                   onClick={handleResumeRecording}
                 >
                   <Play className="w-6 h-6" />
@@ -433,7 +433,7 @@ export default function CameraView({
               <Button
                 variant={isRecording ? "destructive" : "default"}
                 size="icon"
-                className="rounded-full h-20 w-20"
+                className="rounded-full h-20 w-20 select-none"
                 onClick={handleRecordToggle}
               >
                 {isRecording ? <Square className="w-8 h-8" /> : <Circle className="w-8 h-8" />}
@@ -442,7 +442,7 @@ export default function CameraView({
               <Button
                 variant="secondary"
                 size="icon"
-                className="rounded-full h-14 w-14"
+                className="rounded-full h-14 w-14 select-none"
                 onClick={() => handleSpeedAdjust(100)}
                 disabled={isRecording && isRecordingPaused}
               >
@@ -451,7 +451,7 @@ export default function CameraView({
 
               <Button
                 variant="outline"
-                className="rounded-full"
+                className="rounded-full select-none"
                 onClick={onStop}
               >
                 סיום
