@@ -178,20 +178,27 @@ export default function CameraView({
       return blob;
     }
 
-    // For WebM files, wrap with MP4 mime type
-    // This works because most modern players and apps (including WhatsApp)
-    // check the actual codec, not just the container
-    console.log('Creating MP4 wrapper for:', blob.type);
-    const mp4Blob = new Blob([blob], { type: 'video/mp4' });
+    // Send WebM to server for real FFmpeg conversion to MP4
+    console.log('Converting WebM to MP4 on server...', blob.type, blob.size);
+    setIsConverting(true);
+    
+    const formData = new FormData();
+    formData.append('video', blob, 'video.webm');
+    
+    const response = await base44.functions.invoke('convertToMp4', formData);
+    setIsConverting(false);
+    
+    // response.data is an ArrayBuffer for binary responses
+    const mp4Blob = new Blob([response.data], { type: 'video/mp4' });
+    console.log('Server conversion complete, MP4 size:', mp4Blob.size);
     return mp4Blob;
   };
 
   const downloadVideo = async (blob) => {
     const filename = `teleprompter-${new Date().getTime()}.mp4`;
-    const mp4Blob = new Blob([blob], { type: 'video/mp4' });
     
     // Direct download
-    const url = URL.createObjectURL(mp4Blob);
+    const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.style.display = 'none';
     a.href = url;
