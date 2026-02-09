@@ -239,10 +239,17 @@ export default function CameraView({
     if (isRecording) {
       const blob = await stopRecording();
       if (blob) {
-        // Always convert to MP4
-        const mp4Blob = await convertToMP4(blob);
-        console.log('Final video type:', mp4Blob.type, 'size:', mp4Blob.size);
-        setRecordedVideo(mp4Blob);
+        try {
+          const mp4Blob = await convertToMP4(blob);
+          console.log('Final video type:', mp4Blob.type, 'size:', mp4Blob.size);
+          setRecordedVideo(mp4Blob);
+        } catch (err) {
+          console.error('Conversion failed, using original:', err);
+          setIsConverting(false);
+          // Fallback: use original blob if conversion fails
+          setRecordedVideo(blob);
+          alert('ההמרה ל-MP4 נכשלה. הסרטון נשמר בפורמט המקורי.');
+        }
       }
     } else {
       await startRecording();
