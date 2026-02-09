@@ -184,7 +184,7 @@ export default function Home() {
       {/* Main Content */}
       <div className="max-w-md mx-auto px-4 py-6 space-y-6">
         {/* Text Input */}
-        <Card className="shadow-lg">
+        <Card className="shadow-lg dark:bg-gray-800 dark:border-gray-700">
           <CardContent className="p-6">
             <TextInput text={text} onTextChange={setText} />
           </CardContent>
@@ -192,7 +192,7 @@ export default function Home() {
 
         {/* Preview */}
         {text && (
-          <Card className="shadow-lg">
+          <Card className="shadow-lg dark:bg-gray-800 dark:border-gray-700">
             <CardContent className="p-6">
               <PrompterPreview
                 text={text}
@@ -208,22 +208,22 @@ export default function Home() {
         <div className="space-y-3">
           <Button
             onClick={startRecording}
-            className="w-full h-14 text-lg bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-lg"
+            className="w-full h-14 text-lg bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-lg select-none"
             disabled={!text.trim()}
           >
             <Video className="w-5 h-5 ml-2" />
             התחל צילום
           </Button>
 
-          <Button variant="outline" className="w-full h-12" onClick={goToSettings}>
+          <Button variant="outline" className="w-full h-12 dark:border-gray-600 dark:text-gray-200 select-none" onClick={goToSettings}>
             <Settings className="w-4 h-4 ml-2" />
             הגדרות
           </Button>
         </div>
 
         {/* Info Card */}
-        <Card className="bg-gradient-to-br from-indigo-50 to-purple-50 border-indigo-200">
-          <CardContent className="p-4 text-sm text-gray-700 text-right">
+        <Card className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-gray-800 dark:to-gray-700 border-indigo-200 dark:border-gray-600">
+          <CardContent className="p-4 text-sm text-gray-700 dark:text-gray-300 text-right">
             <p className="font-medium mb-2">💡 טיפים לשימוש:</p>
             <ul className="space-y-1 text-xs">
               <li>• הזן את הטקסט או העלה קובץ טקסט</li>
