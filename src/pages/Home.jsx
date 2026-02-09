@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { createPageUrl } from '@/utils';
-import { Video, Settings } from "lucide-react";
+import { useNavigate } from 'react-router-dom';
+import { Video, Settings, RefreshCw } from "lucide-react";
 import TextInput from '../components/teleprompter/TextInput';
 import PrompterPreview from '../components/teleprompter/PrompterPreview';
 
