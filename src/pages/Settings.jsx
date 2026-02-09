@@ -18,12 +18,14 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export default function Settings() {
+  const navigate = useNavigate();
   const [fontSize, setFontSize] = useState(32);
   const [textColor, setTextColor] = useState('#FFFFFF');
   const [backgroundColor, setBackgroundColor] = useState('#000000');
   const [cameraFacing, setCameraFacing] = useState('user');
   const [scrollSpeed, setScrollSpeed] = useState(50);
   const [backgroundOpacity, setBackgroundOpacity] = useState(80);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     // Load saved settings from localStorage
@@ -50,7 +52,20 @@ export default function Settings() {
     };
     localStorage.setItem('teleprompterSettings', JSON.stringify(settings));
     alert('ההגדרות נשמרו בהצלחה!');
-    window.location.href = createPageUrl('Home');
+    navigate(createPageUrl('Home'));
+  };
+
+  const handleDeleteAccount = async () => {
+    setIsDeleting(true);
+    try {
+      // Clear all local data
+      localStorage.clear();
+      // Logout and redirect
+      await base44.auth.logout();
+    } catch (error) {
+      console.error('Error deleting account:', error);
+      setIsDeleting(false);
+    }
   };
 
   return (
