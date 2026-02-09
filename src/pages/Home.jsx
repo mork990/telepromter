@@ -143,9 +143,30 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50" dir="rtl">
+    <div 
+      ref={containerRef}
+      className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900" 
+      dir="rtl"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
+      {/* Pull to Refresh Indicator */}
+      <div 
+        className="flex justify-center items-center overflow-hidden transition-all duration-200"
+        style={{ height: pullDistance }}
+      >
+        <RefreshCw 
+          className={`w-6 h-6 text-indigo-600 dark:text-indigo-400 transition-transform ${isRefreshing ? 'animate-spin' : ''}`}
+          style={{ transform: `rotate(${pullDistance * 2}deg)` }}
+        />
+      </div>
+
       {/* Header */}
-      <div className="bg-white shadow-sm border-b sticky top-0 z-10">
+      <div 
+        className="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700 sticky z-10"
+        style={{ top: 'env(safe-area-inset-top)' }}
+      >
         <div className="max-w-md mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
