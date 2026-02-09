@@ -1,4 +1,17 @@
 import React, { useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+
+const pageVariants = {
+  initial: { opacity: 0, x: 20 },
+  animate: { opacity: 1, x: 0 },
+  exit: { opacity: 0, x: -20 }
+};
+
+const pageTransition = {
+  type: 'tween',
+  ease: 'easeInOut',
+  duration: 0.2
+};
 
 export default function Layout({ children, currentPageName }) {
   useEffect(() => {
@@ -18,8 +31,30 @@ export default function Layout({ children, currentPageName }) {
   }, []);
 
   return (
-    <div className="app-container" dir="rtl">
-      {children}
+    <div 
+      className="app-container min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900" 
+      dir="rtl"
+      style={{
+        paddingTop: 'env(safe-area-inset-top)',
+        paddingBottom: 'env(safe-area-inset-bottom)',
+        paddingLeft: 'env(safe-area-inset-left)',
+        paddingRight: 'env(safe-area-inset-right)',
+        overscrollBehavior: 'none'
+      }}
+    >
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={currentPageName}
+          initial="initial"
+          animate="animate"
+          exit="exit"
+          variants={pageVariants}
+          transition={pageTransition}
+          className="min-h-screen"
+        >
+          {children}
+        </motion.div>
+      </AnimatePresence>
     </div>
   );
 }
