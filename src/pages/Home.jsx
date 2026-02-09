@@ -9,6 +9,7 @@ import PrompterPreview from '../components/teleprompter/PrompterPreview';
 
 
 export default function Home() {
+  const navigate = useNavigate();
   const [text, setText] = useState('');
   const [fontSize, setFontSize] = useState(32);
   const [textColor, setTextColor] = useState('#FFFFFF');
@@ -16,6 +17,44 @@ export default function Home() {
   const [scrollSpeed, setScrollSpeed] = useState(50);
   const [cameraFacing, setCameraFacing] = useState('user');
   const [backgroundOpacity, setBackgroundOpacity] = useState(80);
+  
+  // Pull to refresh state
+  const [isPulling, setIsPulling] = useState(false);
+  const [pullDistance, setPullDistance] = useState(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const containerRef = useRef(null);
+  const startY = useRef(0);
+  const PULL_THRESHOLD = 80;
+
+  const handleTouchStart = useCallback((e) => {
+    if (window.scrollY === 0) {
+      startY.current = e.touches[0].clientY;
+      setIsPulling(true);
+    }
+  }, []);
+
+  const handleTouchMove = useCallback((e) => {
+    if (!isPulling) return;
+    const currentY = e.touches[0].clientY;
+    const diff = currentY - startY.current;
+    if (diff > 0 && window.scrollY === 0) {
+      setPullDistance(Math.min(diff * 0.5, PULL_THRESHOLD * 1.5));
+    }
+  }, [isPulling]);
+
+  const handleTouchEnd = useCallback(() => {
+    if (pullDistance >= PULL_THRESHOLD) {
+      setIsRefreshing(true);
+      // Simulate refresh
+      setTimeout(() => {
+        setIsRefreshing(false);
+        setPullDistance(0);
+      }, 1000);
+    } else {
+      setPullDistance(0);
+    }
+    setIsPulling(false);
+  }, [pullDistance]);
 
   // Load settings and text on mount
   React.useEffect(() => {
