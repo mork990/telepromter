@@ -125,7 +125,7 @@ export default function Home() {
       backgroundOpacity
     });
     
-    window.location.href = createPageUrl('Recording') + '?' + params.toString();
+    navigate(createPageUrl('Recording') + '?' + params.toString());
   };
 
   const goToSettings = () => {
@@ -139,7 +139,7 @@ export default function Home() {
       backgroundOpacity
     };
     localStorage.setItem('teleprompterSettings', JSON.stringify(settings));
-    window.location.href = createPageUrl('Settings');
+    navigate(createPageUrl('Settings'));
   };
 
   return (
