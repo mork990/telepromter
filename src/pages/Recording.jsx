@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import CameraView from '../components/teleprompter/CameraView';
 import { createPageUrl } from '@/utils';
 
 export default function Recording() {
+  const navigate = useNavigate();
   const [settings, setSettings] = useState(null);
 
   useEffect(() => {
@@ -19,7 +21,7 @@ export default function Recording() {
   }, []);
 
   const handleStop = () => {
-    window.location.href = createPageUrl('Home');
+    navigate(createPageUrl('Home'));
   };
 
   if (!settings) {
