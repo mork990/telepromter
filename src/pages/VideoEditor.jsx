@@ -112,9 +112,14 @@ export default function VideoEditor() {
     });
   }, []);
 
-  const handleAddCut = useCallback((start, end) => {
+  const handleSplitAt = useCallback((time) => {
+    // Actually cut: remove a 0.1s sliver at the split point by creating a cut segment
+    // The user can then drag the edges to widen the cut
+    const cutDuration = 0.5;
+    const start = Math.max(0, time - cutDuration / 2);
+    const end = Math.min(duration, time + cutDuration / 2);
     setCuts(prev => [...prev, { start, end }]);
-  }, []);
+  }, [duration]);
 
   const handleAddSubtitle = useCallback((start, end) => {
     setSubtitles(prev => [...prev, { start, end, text: '' }]);
@@ -256,7 +261,7 @@ export default function VideoEditor() {
           onSeek={handleSeek}
           onSubtitleDrag={handleSubtitleDrag}
           onCutDrag={handleCutDrag}
-          onAddCut={handleAddCut}
+          onSplitAt={handleSplitAt}
           onAddSubtitle={handleAddSubtitle}
           onDeleteCut={handleDeleteCut}
           onDeleteSubtitle={handleDeleteSubtitle}

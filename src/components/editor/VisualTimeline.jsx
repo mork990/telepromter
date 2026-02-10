@@ -18,7 +18,7 @@ export default function VisualTimeline({
   onSeek, 
   onSubtitleDrag, 
   onCutDrag,
-  onAddCut,
+  onSplitAt,
   onAddSubtitle,
   onDeleteCut,
   onDeleteSubtitle,
@@ -27,12 +27,13 @@ export default function VisualTimeline({
   const containerRef = useRef(null);
   const [dragging, setDragging] = useState(null);
   const dragStartRef = useRef({ x: 0, startVal: 0, endVal: 0 });
+  const didDragRef = useRef(false);
   
-  // Tool mode: 'select' | 'cut' | 'subtitle'
-  const [toolMode, setToolMode] = useState('select');
+  // Tool mode: null | 'cut' | 'subtitle'
+  const [toolMode, setToolMode] = useState(null);
   
-  // Range selection for cut/subtitle creation
-  const [rangeSelection, setRangeSelection] = useState(null); // { start, end }
+  // Range selection for subtitle creation
+  const [rangeSelection, setRangeSelection] = useState(null);
   const [isSelectingRange, setIsSelectingRange] = useState(false);
   const rangeStartRef = useRef(0);
 
@@ -52,13 +53,13 @@ export default function VisualTimeline({
     return Math.max(0, Math.min(duration, (x / rect.width) * duration));
   };
 
-  // --- Drag existing items ---
+  // --- Drag existing items (always works, no tool mode needed) ---
   const handleItemPointerDown = (e, type, index, edge) => {
-    if (toolMode !== 'select') return;
     e.stopPropagation();
     e.preventDefault();
     const items = type === 'sub' ? subtitles : cuts;
     setDragging({ type, index, edge });
+    didDragRef.current = false;
     dragStartRef.current = {
       x: e.clientX,
       startVal: items[index].start,
@@ -68,7 +69,7 @@ export default function VisualTimeline({
   };
 
   const handlePointerMove = (e) => {
-    // Range selection drawing
+    // Range selection for subtitle tool
     if (isSelectingRange && containerRef.current) {
       const time = pxToTime(e.clientX);
       setRangeSelection({
@@ -79,9 +80,12 @@ export default function VisualTimeline({
     }
 
     if (!dragging || !containerRef.current) return;
+    const dx = Math.abs(e.clientX - dragStartRef.current.x);
+    if (dx > 3) didDragRef.current = true;
+
     const rect = containerRef.current.getBoundingClientRect();
-    const dx = e.clientX - dragStartRef.current.x;
-    const dt = (dx / rect.width) * duration;
+    const dxFull = e.clientX - dragStartRef.current.x;
+    const dt = (dxFull / rect.width) * duration;
     const { type, index, edge } = dragging;
     const items = type === 'sub' ? subtitles : cuts;
     const item = { ...items[index] };
@@ -103,47 +107,56 @@ export default function VisualTimeline({
   };
 
   const handlePointerUp = () => {
-    // Finish range selection
+    // Finish range selection for subtitle tool
     if (isSelectingRange && rangeSelection) {
       const { start, end } = rangeSelection;
       if (end - start > 0.3) {
-        if (toolMode === 'cut') {
-          onAddCut(start, end);
-        } else if (toolMode === 'subtitle') {
-          onAddSubtitle(start, end);
-        }
+        onAddSubtitle(start, end);
       }
       setRangeSelection(null);
       setIsSelectingRange(false);
+      setToolMode(null);
       return;
     }
     setDragging(null);
   };
 
-  // --- Timeline background click ---
-  const handleTimelinePointerDown = (e) => {
-    if (toolMode === 'cut' || toolMode === 'subtitle') {
-      // Start range selection
-      const time = pxToTime(e.clientX);
-      rangeStartRef.current = time;
-      setIsSelectingRange(true);
-      setRangeSelection({ start: time, end: time });
-      e.preventDefault();
-    } else {
-      // Seek
-      const time = pxToTime(e.clientX);
-      onSeek(time);
-    }
+  // --- Subtitle click to open bubble (only when not dragging) ---
+  const handleSubtitleBodyPointerDown = (e, index) => {
+    handleItemPointerDown(e, 'sub', index, 'move');
   };
 
-  // --- Subtitle click to edit ---
-  const handleSubtitleClick = (e, index) => {
-    if (toolMode !== 'select') return;
+  const handleSubtitleBodyClick = (e, index) => {
+    if (didDragRef.current) return;
     e.stopPropagation();
     const rect = containerRef.current.getBoundingClientRect();
     const xPct = ((e.clientX - rect.left) / rect.width) * 100;
     setBubblePosition({ x: xPct });
     setEditingSubIndex(index);
+  };
+
+  // --- Timeline background click ---
+  const handleTimelinePointerDown = (e) => {
+    if (toolMode === 'cut') {
+      // Cut at click position - split the timeline
+      const time = pxToTime(e.clientX);
+      onSplitAt(time);
+      setToolMode(null);
+      e.preventDefault();
+      return;
+    }
+    if (toolMode === 'subtitle') {
+      // Start range selection for new subtitle
+      const time = pxToTime(e.clientX);
+      rangeStartRef.current = time;
+      setIsSelectingRange(true);
+      setRangeSelection({ start: time, end: time });
+      e.preventDefault();
+      return;
+    }
+    // Default: seek
+    const time = pxToTime(e.clientX);
+    onSeek(time);
   };
 
   const handleUpdateSubtitle = useCallback((index, data) => {
@@ -160,7 +173,6 @@ export default function VisualTimeline({
   }
 
   const toolButtons = [
-    { mode: 'select', icon: MousePointer, label: 'בחירה', color: 'text-gray-600' },
     { mode: 'cut', icon: Scissors, label: 'חתוך', color: 'text-red-500' },
     { mode: 'subtitle', icon: Type, label: 'כתובית', color: 'text-amber-500' },
   ];
@@ -175,18 +187,33 @@ export default function VisualTimeline({
             size="sm"
             variant={toolMode === mode ? 'default' : 'ghost'}
             className={`gap-1.5 text-xs ${toolMode === mode ? '' : color}`}
-            onClick={() => { setToolMode(mode); setRangeSelection(null); setIsSelectingRange(false); }}
+            onClick={() => {
+              setToolMode(prev => prev === mode ? null : mode);
+              setRangeSelection(null);
+              setIsSelectingRange(false);
+            }}
           >
             <Icon className="w-3.5 h-3.5" />
             {label}
           </Button>
         ))}
         
-        {/* Hint */}
+        {/* Cancel / hint */}
+        {toolMode && (
+          <Button
+            size="sm"
+            variant="ghost"
+            className="text-xs text-gray-500 mr-1"
+            onClick={() => { setToolMode(null); setRangeSelection(null); setIsSelectingRange(false); }}
+          >
+            ביטול
+          </Button>
+        )}
+        
         <span className="text-[10px] text-gray-400 mr-auto">
-          {toolMode === 'cut' && 'גרור על הטיימליין לסמן קטע לחיתוך'}
+          {toolMode === 'cut' && 'לחץ על הטיימליין במקום שרוצים לחתוך'}
           {toolMode === 'subtitle' && 'גרור על הטיימליין להוספת כתובית'}
-          {toolMode === 'select' && 'לחץ על כתובית לעריכה, גרור לשינוי מיקום'}
+          {!toolMode && 'לחץ על כתובית לעריכה • גרור לשינוי מיקום'}
         </span>
       </div>
 
@@ -220,19 +247,29 @@ export default function VisualTimeline({
         <div 
           ref={containerRef}
           className={`relative bg-gray-100 dark:bg-gray-800 rounded-lg overflow-visible select-none touch-none ${
-            toolMode === 'select' ? 'cursor-pointer' : 'cursor-crosshair'
+            toolMode === 'cut' ? 'cursor-crosshair' : toolMode === 'subtitle' ? 'cursor-crosshair' : 'cursor-pointer'
           }`}
           style={{ height: '88px' }}
           onPointerDown={handleTimelinePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
         >
-          {/* Range selection preview */}
+          {/* Cut line preview (follows playhead in cut mode) */}
+          {toolMode === 'cut' && (
+            <div
+              className="absolute top-0 bottom-0 w-0.5 bg-red-500 z-30 pointer-events-none"
+              style={{ left: `${timeToPct(currentTime)}%` }}
+            >
+              <div className="absolute -top-2 left-1/2 -translate-x-1/2">
+                <Scissors className="w-3 h-3 text-red-500" />
+              </div>
+            </div>
+          )}
+
+          {/* Range selection preview (subtitle tool) */}
           {rangeSelection && (
             <div
-              className={`absolute top-0 h-full ${
-                toolMode === 'cut' ? 'bg-red-400/30 border-x-2 border-red-500' : 'bg-amber-400/30 border-x-2 border-amber-500'
-              } pointer-events-none z-30`}
+              className="absolute top-0 h-full bg-amber-400/30 border-x-2 border-amber-500 pointer-events-none z-30"
               style={{
                 left: `${timeToPct(rangeSelection.start)}%`,
                 width: `${timeToPct(rangeSelection.end - rangeSelection.start)}%`,
@@ -260,18 +297,14 @@ export default function VisualTimeline({
                   <Scissors className="w-3 h-3 text-red-500" />
                   <span className="text-[8px] text-red-600 font-semibold">חיתוך</span>
                 </div>
-                {/* Delete button */}
-                {toolMode === 'select' && (
-                  <button
-                    className="absolute -top-1.5 -left-1.5 w-4 h-4 bg-red-500 text-white rounded-full hidden group-hover:flex items-center justify-center z-20"
-                    onClick={(e) => { e.stopPropagation(); onDeleteCut(i); }}
-                    onPointerDown={(e) => e.stopPropagation()}
-                  >
-                    <Trash2 className="w-2.5 h-2.5" />
-                  </button>
-                )}
+                <button
+                  className="absolute -top-1.5 -left-1.5 w-4 h-4 bg-red-500 text-white rounded-full hidden group-hover:flex items-center justify-center z-20"
+                  onClick={(e) => { e.stopPropagation(); onDeleteCut(i); }}
+                  onPointerDown={(e) => e.stopPropagation()}
+                >
+                  <Trash2 className="w-2.5 h-2.5" />
+                </button>
               </div>
-              {/* Handles */}
               <div
                 className="absolute top-0 bottom-0 w-2 bg-red-500 cursor-ew-resize rounded-l-sm -left-1 z-10 opacity-60 hover:opacity-100"
                 onPointerDown={(e) => handleItemPointerDown(e, 'cut', i, 'start')}
@@ -301,24 +334,20 @@ export default function VisualTimeline({
                     ? 'bg-amber-500/70 border-amber-600 ring-2 ring-amber-400' 
                     : 'bg-amber-400/50 dark:bg-amber-500/30 border-amber-500 hover:bg-amber-400/70'
                 }`}
-                onPointerDown={(e) => handleItemPointerDown(e, 'sub', i, 'move')}
-                onClick={(e) => handleSubtitleClick(e, i)}
+                onPointerDown={(e) => handleSubtitleBodyPointerDown(e, i)}
+                onClick={(e) => handleSubtitleBodyClick(e, i)}
               >
                 <span className="text-[9px] text-amber-900 dark:text-amber-100 px-1 font-medium truncate block leading-[36px]">
                   {sub.text || 'כתובית ריקה'}
                 </span>
-                {/* Delete button */}
-                {toolMode === 'select' && (
-                  <button
-                    className="absolute -top-1.5 -left-1.5 w-4 h-4 bg-red-500 text-white rounded-full hidden group-hover:flex items-center justify-center z-20"
-                    onClick={(e) => { e.stopPropagation(); onDeleteSubtitle(i); setEditingSubIndex(null); }}
-                    onPointerDown={(e) => e.stopPropagation()}
-                  >
-                    <Trash2 className="w-2.5 h-2.5" />
-                  </button>
-                )}
+                <button
+                  className="absolute -top-1.5 -left-1.5 w-4 h-4 bg-red-500 text-white rounded-full hidden group-hover:flex items-center justify-center z-20"
+                  onClick={(e) => { e.stopPropagation(); onDeleteSubtitle(i); setEditingSubIndex(null); }}
+                  onPointerDown={(e) => e.stopPropagation()}
+                >
+                  <Trash2 className="w-2.5 h-2.5" />
+                </button>
               </div>
-              {/* Handles */}
               <div
                 className="absolute top-0 bottom-0 w-1.5 bg-amber-600 cursor-ew-resize rounded-l-sm -left-0.5 z-10 opacity-60 hover:opacity-100"
                 onPointerDown={(e) => handleItemPointerDown(e, 'sub', i, 'start')}
@@ -334,7 +363,7 @@ export default function VisualTimeline({
           <div className="absolute top-1 right-1 text-[9px] text-red-400 font-medium pointer-events-none">חיתוך</div>
           <div className="absolute bottom-1 right-1 text-[9px] text-amber-500 font-medium pointer-events-none">כתוביות</div>
 
-          {/* Divider between tracks */}
+          {/* Divider */}
           <div className="absolute left-0 right-0 top-[44px] h-px bg-gray-200 dark:bg-gray-700 pointer-events-none" />
 
           {/* Playhead */}
