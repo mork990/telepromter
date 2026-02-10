@@ -61,11 +61,11 @@ export default function ImageTrackItem({
 
       {/* Type selection menu */}
       {showMenu && (
-        <div className="absolute -top-20 left-0 bg-white dark:bg-gray-800 rounded-lg shadow-lg border dark:border-gray-600 p-1 z-30 min-w-[80px]"
+        <div className="absolute -top-20 left-0 bg-[#1a1a2e] rounded-lg shadow-lg border border-white/10 p-1 z-30 min-w-[80px]"
           onPointerDown={(e) => e.stopPropagation()}>
           {['overlay', 'replace', 'background'].map(type => (
             <button key={type}
-              className={`block w-full text-right text-[10px] px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 ${img.type === type ? 'bg-pink-100 dark:bg-pink-900/30 font-bold' : ''}`}
+              className={`block w-full text-right text-[10px] px-2 py-1 rounded text-white hover:bg-white/10 ${img.type === type ? 'bg-pink-500/20 font-bold' : ''}`}
               onClick={(e) => { e.stopPropagation(); onUpdateType(type); setShowMenu(false); }}
             >
               {typeLabels[type]}

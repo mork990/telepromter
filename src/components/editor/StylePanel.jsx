@@ -13,13 +13,12 @@ export default function StylePanel({ style, onChange }) {
   const update = (field, value) => onChange({ ...style, [field]: value });
 
   return (
-    <Card className="dark:bg-gray-800 dark:border-gray-700">
-      <CardContent className="p-4 space-y-4" dir="rtl">
+    <div className="bg-[#1a1a2e] rounded-2xl border border-white/5 p-4 space-y-4" dir="rtl">
         {/* Font Size */}
         <div>
           <div className="flex items-center gap-2 mb-2">
-            <Type className="w-4 h-4 text-gray-500" />
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">גודל גופן: {fontSize}px</span>
+            <Type className="w-4 h-4 text-white/40" />
+            <span className="text-sm font-medium text-white/70">גודל גופן: {fontSize}px</span>
           </div>
           <Slider
             value={[fontSize]}
@@ -33,14 +32,14 @@ export default function StylePanel({ style, onChange }) {
         {/* Font Color */}
         <div>
           <div className="flex items-center gap-2 mb-2">
-            <Palette className="w-4 h-4 text-gray-500" />
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">צבע טקסט</span>
+            <Palette className="w-4 h-4 text-white/40" />
+            <span className="text-sm font-medium text-white/70">צבע טקסט</span>
           </div>
           <div className="flex gap-2 flex-wrap">
             {colorPresets.map(c => (
               <button
                 key={c}
-                className={`w-7 h-7 rounded-full border-2 ${fontColor === c ? 'border-indigo-500 scale-110' : 'border-gray-300 dark:border-gray-600'}`}
+                className={`w-7 h-7 rounded-full border-2 ${fontColor === c ? 'border-[#00d4aa] scale-110' : 'border-white/20'}`}
                 style={{ backgroundColor: c }}
                 onClick={() => update('fontColor', c)}
               />
@@ -57,14 +56,14 @@ export default function StylePanel({ style, onChange }) {
         {/* Background Color */}
         <div>
           <div className="flex items-center gap-2 mb-2">
-            <Palette className="w-4 h-4 text-gray-500" />
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">צבע רקע</span>
+            <Palette className="w-4 h-4 text-white/40" />
+            <span className="text-sm font-medium text-white/70">צבע רקע</span>
           </div>
           <div className="flex gap-2 flex-wrap">
             {bgPresets.map(c => (
               <button
                 key={c}
-                className={`w-7 h-7 rounded-full border-2 ${bgColor === c ? 'border-indigo-500 scale-110' : 'border-gray-300 dark:border-gray-600'}`}
+                className={`w-7 h-7 rounded-full border-2 ${bgColor === c ? 'border-[#00d4aa] scale-110' : 'border-white/20'}`}
                 style={{ backgroundColor: c }}
                 onClick={() => update('bgColor', c)}
               />
@@ -80,7 +79,7 @@ export default function StylePanel({ style, onChange }) {
 
         {/* Background Opacity */}
         <div>
-          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">שקיפות רקע: {bgOpacity}%</span>
+          <span className="text-sm font-medium text-white/70">שקיפות רקע: {bgOpacity}%</span>
           <Slider
             value={[bgOpacity]}
             onValueChange={([v]) => update('bgOpacity', v)}
@@ -90,11 +89,10 @@ export default function StylePanel({ style, onChange }) {
           />
         </div>
 
-        <div className="flex items-center gap-2 text-xs text-gray-400">
+        <div className="flex items-center gap-2 text-xs text-white/30">
           <Move className="w-3 h-3" />
           <span>גרור את הכתובית על הווידאו למיקום הרצוי</span>
         </div>
-      </CardContent>
-    </Card>
+    </div>
   );
 }

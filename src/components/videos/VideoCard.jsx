@@ -43,7 +43,7 @@ export default function VideoCard({ recording, onDelete, onUpdate }) {
   };
 
   return (
-    <Card className="shadow-md dark:bg-gray-800 dark:border-gray-700 overflow-hidden">
+    <div className="bg-[#1a1a2e] rounded-2xl border border-white/5 overflow-hidden">
       <div className="relative bg-black aspect-video">
         {recording.thumbnail_url ? (
           <img src={recording.thumbnail_url} alt="" className="w-full h-full object-cover" />
@@ -61,17 +61,17 @@ export default function VideoCard({ recording, onDelete, onUpdate }) {
           </div>
         )}
       </div>
-      <CardContent className="p-4">
-        <div className="flex items-start justify-between mb-2">
+      <div className="p-4">
+        <div className="flex items-start justify-between mb-3">
           <div>
-            <h3 className="font-semibold text-gray-900 dark:text-white text-sm">
+            <h3 className="font-semibold text-white text-sm">
               {recording.title || 'סרטון ללא שם'}
             </h3>
-            <p className="text-xs text-gray-400 mt-0.5">
+            <p className="text-xs text-white/30 mt-0.5">
               {moment(recording.created_date).format('DD/MM/YYYY HH:mm')}
             </p>
           </div>
-          <div className="flex items-center gap-2 text-xs text-gray-400">
+          <div className="flex items-center gap-2 text-xs text-white/30">
             {recording.duration_seconds > 0 && (
               <span className="flex items-center gap-1">
                 <Clock className="w-3 h-3" />
@@ -86,39 +86,35 @@ export default function VideoCard({ recording, onDelete, onUpdate }) {
             )}
           </div>
         </div>
-        {/* Actions */}
-        <div className="mb-3">
-          <Button
-            size="sm"
-            variant="outline"
-            className="w-full text-purple-600 border-purple-200 hover:bg-purple-50"
-            onClick={() => navigate(createPageUrl('VideoEditor') + '?id=' + recording.id)}
-          >
-            <Film className="w-4 h-4 ml-1" />
-            עריכת סרטון
-          </Button>
-        </div>
+
+        <button
+          className="w-full h-9 rounded-lg bg-[#00d4aa]/10 text-[#00d4aa] text-sm font-medium flex items-center justify-center gap-1.5 mb-3 select-none hover:bg-[#00d4aa]/20 transition-colors"
+          onClick={() => navigate(createPageUrl('VideoEditor') + '?id=' + recording.id)}
+        >
+          <Film className="w-4 h-4" />
+          עריכת סרטון
+        </button>
 
         <div className="flex items-center gap-2">
-          <Button size="sm" variant="outline" className="flex-1" onClick={handleDownload}>
-            <Download className="w-4 h-4 ml-1" />
+          <button className="flex-1 h-9 rounded-lg bg-white/5 text-white/70 text-sm font-medium flex items-center justify-center gap-1.5 select-none hover:bg-white/10 transition-colors" onClick={handleDownload}>
+            <Download className="w-4 h-4" />
             הורד
-          </Button>
-          <Button size="sm" variant="outline" className="flex-1" onClick={handleShare}>
-            <Share2 className="w-4 h-4 ml-1" />
+          </button>
+          <button className="flex-1 h-9 rounded-lg bg-white/5 text-white/70 text-sm font-medium flex items-center justify-center gap-1.5 select-none hover:bg-white/10 transition-colors" onClick={handleShare}>
+            <Share2 className="w-4 h-4" />
             שתף
-          </Button>
+          </button>
           {showConfirm ? (
-            <Button size="sm" variant="destructive" onClick={() => { onDelete(); setShowConfirm(false); }}>
+            <button className="h-9 px-3 rounded-lg bg-red-600 text-white text-sm font-medium select-none" onClick={() => { onDelete(); setShowConfirm(false); }}>
               בטוח?
-            </Button>
+            </button>
           ) : (
-            <Button size="sm" variant="ghost" className="text-red-500" onClick={() => setShowConfirm(true)}>
+            <button className="h-9 w-9 rounded-lg bg-white/5 text-red-400/60 flex items-center justify-center select-none hover:bg-red-500/10 transition-colors" onClick={() => setShowConfirm(true)}>
               <Trash2 className="w-4 h-4" />
-            </Button>
+            </button>
           )}
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

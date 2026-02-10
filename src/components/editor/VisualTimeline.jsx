@@ -296,7 +296,6 @@ export default function VisualTimeline({
     <div className="space-y-2" dir="rtl">
       <input type="file" ref={fileInputRef} accept="image/*" className="hidden" onChange={handleFileSelected} />
 
-      {/* Subtitle edit bubble - rendered as fixed overlay */}
       {editingSubIndex !== null && subtitles[editingSubIndex] && (
         <SubtitleBubble
           subtitle={subtitles[editingSubIndex]}
@@ -309,7 +308,7 @@ export default function VisualTimeline({
       )}
 
       {/* Toolbar */}
-      <div className="flex items-center gap-1 bg-white dark:bg-gray-800 rounded-lg p-1.5 border dark:border-gray-700 shadow-sm flex-wrap">
+      <div className="flex items-center gap-1 bg-[#1a1a2e] rounded-xl p-1.5 border border-white/5 flex-wrap">
         {toolButtons.map(({ mode, icon: Icon, label, color }) => (
           <Button
             key={mode}
@@ -326,7 +325,7 @@ export default function VisualTimeline({
           </Button>
         ))}
         
-        <div className="h-5 w-px bg-gray-200 dark:bg-gray-600 mx-0.5" />
+        <div className="h-5 w-px bg-white/10 mx-0.5" />
 
         {onAutoTranscribe && (
           <Button
@@ -341,7 +340,7 @@ export default function VisualTimeline({
           </Button>
         )}
 
-        <div className="h-5 w-px bg-gray-200 dark:bg-gray-600 mx-0.5" />
+        <div className="h-5 w-px bg-white/10 mx-0.5" />
         
         <Button size="sm" variant="ghost" className="text-xs gap-1 px-2" onClick={handleZoomIn}>
           <ZoomIn className="w-3.5 h-3.5" />
@@ -358,7 +357,7 @@ export default function VisualTimeline({
           </Button>
         )}
         
-        <span className="text-[10px] text-gray-400 mr-auto truncate">
+        <span className="text-[10px] text-white/30 mr-auto truncate">
           {toolMode ? toolHints[toolMode] : 'גרור קצוות לקיצור/הארכה • לחץ על כתובית לעריכה'}
         </span>
       </div>
@@ -368,11 +367,11 @@ export default function VisualTimeline({
         style={{ scrollbarWidth: 'thin', WebkitOverflowScrolling: 'touch', overflowX: 'auto' }}>
         <div style={{ width: `${timelineWidth}px`, minWidth: '100%' }}>
           {/* Ruler */}
-          <div className="relative h-5 text-[9px] text-gray-400 border-b dark:border-gray-700 bg-white dark:bg-gray-800" dir="ltr">
+          <div className="relative h-5 text-[9px] text-white/30 border-b border-white/5 bg-[#1a1a2e]" dir="ltr">
             {markers.map(t => (
               <div key={t} className="absolute flex flex-col items-center" style={{ left: `${timeToPx(t)}px` }}>
                 <span className="transform -translate-x-1/2">{formatTime(t)}</span>
-                <div className="w-px h-1.5 bg-gray-300 dark:bg-gray-600 mt-0.5" />
+                <div className="w-px h-1.5 bg-white/20 mt-0.5" />
               </div>
             ))}
           </div>
@@ -529,8 +528,8 @@ export default function VisualTimeline({
 
               {/* Playhead */}
               <div className="absolute top-0 bottom-0 z-20 pointer-events-none" style={{ left: `${timeToPx(currentTime)}px` }}>
-                <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-3 h-3 bg-white rounded-full shadow-md border-2 border-indigo-600" />
-                <div className="w-0.5 h-full bg-indigo-600 shadow-sm shadow-indigo-600/50 -translate-x-[0.5px]" />
+                <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-3 h-3 bg-[#00d4aa] rounded-full shadow-md shadow-[#00d4aa]/30" />
+                  <div className="w-0.5 h-full bg-[#00d4aa] shadow-sm shadow-[#00d4aa]/50 -translate-x-[0.5px]" />
               </div>
             </div>
           </div>

@@ -45,9 +45,9 @@ export default function TrackSegment({
       }}
     >
       {seg.deleted ? (
-        <div className="absolute inset-0 bg-gray-300/30 dark:bg-gray-600/30 border border-dashed border-gray-400 dark:border-gray-500 rounded-md flex items-center justify-center">
+        <div className="absolute inset-0 bg-white/5 border border-dashed border-white/20 rounded-md flex items-center justify-center">
           <button
-            className="opacity-0 group-hover:opacity-100 transition-opacity bg-white dark:bg-gray-700 rounded-full p-1 shadow-md"
+            className="opacity-0 group-hover:opacity-100 transition-opacity bg-[#1a1a2e] rounded-full p-1 shadow-md"
             onClick={(e) => { e.stopPropagation(); onRestore(); }}
             onPointerDown={(e) => e.stopPropagation()}
           >

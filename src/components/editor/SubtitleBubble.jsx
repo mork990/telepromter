@@ -55,7 +55,7 @@ export default function SubtitleBubble({ subtitle, index, position, onUpdate, on
   return (
     <div
       ref={ref}
-      className="fixed z-[100] bg-white dark:bg-gray-800 rounded-xl shadow-2xl border dark:border-gray-600 p-3 w-56"
+      className="fixed z-[100] bg-[#1a1a2e] rounded-xl shadow-2xl border border-white/10 p-3 w-56"
       style={{
         left: `${Math.min(Math.max(position.x, 20), 80)}%`,
         top: `${position.y || 50}%`,
@@ -69,7 +69,7 @@ export default function SubtitleBubble({ subtitle, index, position, onUpdate, on
         <textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
-          className="w-full text-sm border rounded-lg p-2 h-16 resize-none dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+          className="w-full text-sm border border-white/10 bg-white/5 rounded-lg p-2 h-16 resize-none text-white placeholder-white/30"
           dir="rtl"
           placeholder="טקסט כתובית..."
           autoFocus
@@ -102,7 +102,7 @@ export default function SubtitleBubble({ subtitle, index, position, onUpdate, on
             <Button size="icon" variant="ghost" className="h-7 w-7" onClick={onClose}>
               <X className="w-3.5 h-3.5" />
             </Button>
-            <Button size="icon" className="h-7 w-7 bg-indigo-600 hover:bg-indigo-700 text-white" onClick={handleSave}>
+            <Button size="icon" className="h-7 w-7 bg-[#00d4aa] hover:bg-[#00a89d] text-black" onClick={handleSave}>
               <Check className="w-3.5 h-3.5" />
             </Button>
           </div>

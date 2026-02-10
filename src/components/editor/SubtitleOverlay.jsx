@@ -72,7 +72,7 @@ export default function SubtitleOverlay({
         {currentSubtitle.text}
       </div>
       {isDragging && (
-        <div className="absolute -inset-1 border-2 border-dashed border-indigo-400 rounded-lg pointer-events-none" />
+        <div className="absolute -inset-1 border-2 border-dashed border-[#00d4aa] rounded-lg pointer-events-none" />
       )}
     </div>
   );

@@ -365,35 +365,37 @@ export default function VideoEditor() {
 
   if (isLoading || !recording) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-        <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+      <div className="min-h-screen flex items-center justify-center bg-[#0e0e1a]">
+        <Loader2 className="w-8 h-8 animate-spin text-[#00d4aa]" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900" dir="rtl">
+    <div className="min-h-screen bg-[#0e0e1a] text-white" dir="rtl">
       {/* Header */}
-      <div className="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700 sticky z-10" style={{ top: 'env(safe-area-inset-top)' }}>
-        <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-between">
+      <div className="sticky z-10 bg-[#1a1a2e]/80 backdrop-blur-xl border-b border-white/5" style={{ top: 'env(safe-area-inset-top)' }}>
+        <div className="max-w-lg mx-auto px-4 h-12 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() => navigate(createPageUrl('MyVideos'))}>
-              <ArrowRight className="w-5 h-5" />
-            </Button>
-            <h1 className="text-lg font-bold text-gray-800 dark:text-white">עורך וידאו</h1>
+            <button className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 select-none" onClick={() => navigate(createPageUrl('MyVideos'))}>
+              <ArrowRight className="w-5 h-5 text-white" />
+            </button>
+            <h1 className="text-base font-bold">עורך וידאו</h1>
           </div>
-          <div className="flex items-center gap-2">
-            <Button size="sm" variant="outline" onClick={handleSave} disabled={isSaving}>
-              {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4 ml-1" />}
-              שמור
-            </Button>
-          </div>
+          <button 
+            className="h-8 px-4 rounded-full bg-white/10 text-white text-sm font-medium flex items-center gap-1.5 select-none hover:bg-white/15 transition-colors disabled:opacity-50"
+            onClick={handleSave} 
+            disabled={isSaving}
+          >
+            {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+            שמור
+          </button>
         </div>
       </div>
 
-      <div className="max-w-lg mx-auto px-4 py-4 space-y-4">
+      <div className="max-w-lg mx-auto px-4 py-3 space-y-3">
         {/* Video Player */}
-        <div ref={containerRef} className="relative bg-black rounded-xl overflow-hidden aspect-video">
+        <div ref={containerRef} className="relative bg-black rounded-2xl overflow-hidden aspect-video ring-1 ring-white/10">
           {/* Background image - absolutely positioned behind video */}
           {currentImage && currentImage.type === 'background' && (
             <img src={currentImage.file_url} className="absolute inset-0 w-full h-full object-cover pointer-events-none" style={{ zIndex: 0 }} alt="" />
@@ -433,20 +435,20 @@ export default function VideoEditor() {
           />
           {!isPlaying && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="bg-black/40 rounded-full p-4">
-                <Play className="w-10 h-10 text-white fill-white" />
+              <div className="bg-black/50 backdrop-blur-sm rounded-full p-3.5">
+                <Play className="w-8 h-8 text-white fill-white" />
               </div>
             </div>
           )}
         </div>
 
         {/* Playback controls */}
-        <div className="flex items-center justify-between" dir="ltr">
-          <span className="text-xs text-gray-400">{formatTimestamp(currentTime)}</span>
-          <Button size="sm" variant="ghost" onClick={togglePlay} className="text-indigo-600">
-            {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-          </Button>
-          <span className="text-xs text-gray-400">{formatTimestamp(duration)}</span>
+        <div className="flex items-center justify-between bg-[#1a1a2e] rounded-xl px-4 py-2" dir="ltr">
+          <span className="text-xs text-white/40 font-mono">{formatTimestamp(currentTime)}</span>
+          <button onClick={togglePlay} className="w-9 h-9 rounded-full bg-[#00d4aa] flex items-center justify-center select-none active:scale-95 transition-transform">
+            {isPlaying ? <Pause className="w-4 h-4 text-black" /> : <Play className="w-4 h-4 text-black" />}
+          </button>
+          <span className="text-xs text-white/40 font-mono">{formatTimestamp(duration)}</span>
         </div>
 
         {/* Visual Timeline */}
@@ -485,23 +487,23 @@ export default function VideoEditor() {
         <StylePanel style={style} onChange={setStyle} />
 
         {/* Export Button */}
-        <Button
-          className="w-full h-12 text-lg bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
+        <button
+          className="w-full h-12 rounded-full bg-gradient-to-r from-[#00d4aa] to-[#00a89d] text-black font-bold text-sm flex items-center justify-center gap-2 select-none active:scale-[0.98] transition-transform disabled:opacity-50"
           onClick={handleExport}
           disabled={isExporting}
         >
           {isExporting ? (
             <>
-              <Loader2 className="w-5 h-5 ml-2 animate-spin" />
+              <Loader2 className="w-5 h-5 animate-spin" />
               מייצא סרטון...
             </>
           ) : (
             <>
-              <Download className="w-5 h-5 ml-2" />
+              <Download className="w-5 h-5" />
               ייצא סרטון
             </>
           )}
-        </Button>
+        </button>
       </div>
     </div>
   );
