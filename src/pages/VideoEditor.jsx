@@ -239,7 +239,7 @@ export default function VideoEditor() {
     });
   }, []);
 
-  const handleMoveImage = useCallback((index, start, end) => {
+  const handleMoveImage = useCallback((index, start) => {
     setImageOverlays(prev => {
       const updated = [...prev];
       const dur = updated[index].end - updated[index].start;
