@@ -36,7 +36,9 @@ export default function VisualTimeline({
   onAddImage,
   onDeleteImage,
   onTrimImage,
+  onMoveImage,
   onUpdateImageType,
+  onUpdateImagePosition,
   onAddSubtitle,
   onDeleteSubtitle,
   onUpdateSubtitle,
@@ -165,8 +167,16 @@ export default function VisualTimeline({
       const newTime = edge === 'start' ? dragStartRef.current.startVal + dt : dragStartRef.current.endVal + dt;
       onTrimAudioSegment(index, edge, newTime);
     } else if (type === 'image') {
-      const newTime = edge === 'start' ? dragStartRef.current.startVal + dt : dragStartRef.current.endVal + dt;
-      onTrimImage(index, edge, newTime);
+      if (edge === 'move') {
+        // Move entire image overlay
+        const dur = dragStartRef.current.endVal - dragStartRef.current.startVal;
+        let ns = Math.max(0, Math.min(duration - dur, dragStartRef.current.startVal + dt));
+        onTrimImage(index, 'start', ns);
+        onTrimImage(index, 'end', ns + dur);
+      } else {
+        const newTime = edge === 'start' ? dragStartRef.current.startVal + dt : dragStartRef.current.endVal + dt;
+        onTrimImage(index, edge, newTime);
+      }
     }
   };
 
@@ -321,8 +331,9 @@ export default function VisualTimeline({
         </span>
       </div>
 
-      {/* Scrollable timeline */}
-      <div ref={scrollRef} className="overflow-x-auto rounded-lg border dark:border-gray-700 bg-gray-50 dark:bg-gray-900" style={{ scrollbarWidth: 'thin' }}>
+      {/* Scrollable timeline - swipe to scroll when zoomed */}
+      <div ref={scrollRef} className="overflow-x-auto rounded-lg border dark:border-gray-700 bg-gray-50 dark:bg-gray-900" 
+        style={{ scrollbarWidth: 'thin', WebkitOverflowScrolling: 'touch', overflowX: 'auto' }}>
         <div style={{ width: `${timelineWidth}px`, minWidth: '100%' }}>
           {/* Ruler */}
           <div className="relative h-5 text-[9px] text-gray-400 border-b dark:border-gray-700 bg-white dark:bg-gray-800" dir="ltr">
@@ -427,6 +438,7 @@ export default function VisualTimeline({
                     onDelete={() => onDeleteImage(i)}
                     onTrimStart={(e) => handleItemPointerDown(e, 'image', i, 'start')}
                     onTrimEnd={(e) => handleItemPointerDown(e, 'image', i, 'end')}
+                    onMove={(e) => handleItemPointerDown(e, 'image', i, 'move')}
                     onUpdateType={(type) => onUpdateImageType(i, type)}
                   />
                 ))}

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Trash2 } from "lucide-react";
+import { Trash2, Move } from "lucide-react";
 
 const typeLabels = {
   overlay: 'שכבה',
@@ -9,7 +9,7 @@ const typeLabels = {
 
 export default function ImageTrackItem({
   img, index, timeToPx, trackTop, trackHeight,
-  toolMode, onDelete, onTrimStart, onTrimEnd, onUpdateType,
+  toolMode, onDelete, onTrimStart, onTrimEnd, onMove, onUpdateType,
 }) {
   const [showMenu, setShowMenu] = useState(false);
   const itemWidth = Math.max(timeToPx(img.end - img.start), 4);
@@ -25,17 +25,21 @@ export default function ImageTrackItem({
       }}
     >
       <div
-        className={`absolute inset-0 border rounded-md overflow-hidden cursor-pointer transition-colors ${
+        className={`absolute inset-0 border rounded-md overflow-hidden cursor-grab active:cursor-grabbing transition-colors ${
           toolMode === 'delete'
             ? 'bg-pink-400/40 border-pink-500 hover:bg-red-500/20 hover:border-red-400'
             : 'bg-pink-400/30 dark:bg-pink-500/20 border-pink-400/80 dark:border-pink-500/80 hover:bg-pink-400/50'
         }`}
+        onPointerDown={(e) => {
+          if (toolMode === 'delete') { e.stopPropagation(); return; }
+          // Move the image in the timeline
+          onMove(e);
+        }}
         onClick={(e) => {
           e.stopPropagation();
           if (toolMode === 'delete') { onDelete(); return; }
           setShowMenu(!showMenu);
         }}
-        onPointerDown={(e) => { if (toolMode === 'delete' || toolMode === 'image') e.stopPropagation(); }}
       >
         {/* Thumbnail */}
         <img src={img.file_url} className="absolute inset-0 w-full h-full object-cover opacity-60 pointer-events-none" alt="" />
