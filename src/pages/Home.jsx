@@ -86,7 +86,7 @@ export default function Home() {
         className="sticky z-10 bg-[#1a1a2e]/80 backdrop-blur-xl border-b border-white/5"
         style={{ top: 'env(safe-area-inset-top)' }}
       >
-        <div className="max-w-md mx-auto px-4 h-12 flex items-center justify-between">
+        <div className="px-4 h-12 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#00d4aa] to-[#00a89d] flex items-center justify-center">
               <Type className="w-4 h-4 text-white" />
@@ -117,7 +117,7 @@ export default function Home() {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-md mx-auto px-4 pt-4 pb-24 space-y-4">
+      <div className="px-4 pt-4 pb-24 space-y-4">
         {/* Text Input Area */}
         <div className="bg-[#1a1a2e] rounded-2xl border border-white/5 overflow-hidden">
           <div className="px-4 py-3 border-b border-white/5 flex items-center justify-between">
