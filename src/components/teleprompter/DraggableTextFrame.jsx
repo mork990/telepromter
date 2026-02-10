@@ -126,22 +126,26 @@ export default function DraggableTextFrame({
 
       {/* Drag handle - top center */}
       <div
-        className="absolute -top-4 left-1/2 -translate-x-1/2 w-12 h-8 bg-white/30 backdrop-blur-sm rounded-full flex items-center justify-center cursor-grab active:cursor-grabbing z-20 touch-none"
+        className="absolute -top-6 left-1/2 -translate-x-1/2 w-16 h-12 flex items-center justify-center cursor-grab active:cursor-grabbing z-20 touch-none"
         onPointerDown={handleDragStart}
         onTouchStart={handleDragStart}
       >
-        <Move className="w-4 h-4 text-white" />
+        <div className="w-12 h-7 bg-white/30 backdrop-blur-sm rounded-full flex items-center justify-center">
+          <Move className="w-4 h-4 text-white" />
+        </div>
       </div>
 
       {/* Resize handle - bottom left (RTL friendly) */}
       <div
-        className="absolute -bottom-3 -left-3 w-9 h-9 bg-white/30 backdrop-blur-sm rounded-full flex items-center justify-center cursor-nwse-resize z-20 touch-none"
+        className="absolute -bottom-5 -left-5 w-14 h-14 flex items-center justify-center cursor-nwse-resize z-20 touch-none"
         onPointerDown={handleResizeStart}
         onTouchStart={handleResizeStart}
       >
-        <svg width="14" height="14" viewBox="0 0 12 12" className="text-white">
-          <path d="M11 1L1 11M11 5L5 11M11 9L9 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-        </svg>
+        <div className="w-9 h-9 bg-white/30 backdrop-blur-sm rounded-full flex items-center justify-center">
+          <svg width="14" height="14" viewBox="0 0 12 12" className="text-white">
+            <path d="M11 1L1 11M11 5L5 11M11 9L9 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+          </svg>
+        </div>
       </div>
     </div>
   );
