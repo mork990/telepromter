@@ -21,19 +21,14 @@ export default function TextInput({ text, onTextChange }) {
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2">
-          <Type className="w-5 h-5 text-indigo-600" />
-          <h3 className="text-lg font-semibold text-gray-800">הזן טקסט</h3>
-        </div>
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <span className="text-sm font-medium text-white/50">{text.length} תווים</span>
         <label htmlFor="file-upload" className="cursor-pointer">
-          <Button variant="outline" size="sm" asChild>
-            <span>
-              <Upload className="w-4 h-4 ml-2" />
-              העלה קובץ
-            </span>
-          </Button>
+          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-[#00d4aa] bg-[#00d4aa]/10 px-3 py-1.5 rounded-full select-none">
+            <Upload className="w-3.5 h-3.5" />
+            העלה קובץ
+          </span>
           <input
             id="file-upload"
             type="file"
@@ -48,13 +43,9 @@ export default function TextInput({ text, onTextChange }) {
         value={text}
         onChange={(e) => onTextChange(e.target.value)}
         placeholder="הקלד כאן את הטקסט שיוצג בפרומפטר..."
-        className="min-h-[300px] text-lg font-medium text-right resize-none focus:ring-2 focus:ring-indigo-500"
+        className="min-h-[250px] text-base font-medium text-right resize-none bg-white/5 border-white/10 text-white placeholder:text-white/20 focus:ring-1 focus:ring-[#00d4aa]/50 focus:border-[#00d4aa]/50 rounded-xl"
         dir="rtl"
       />
-      
-      <div className="text-sm text-gray-500 text-right">
-        {text.length} תווים
-      </div>
     </div>
   );
 }
