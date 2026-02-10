@@ -1,0 +1,163 @@
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+
+Deno.serve(async (req) => {
+  try {
+    const base44 = createClientFromRequest(req);
+    const user = await base44.auth.me();
+    if (!user) {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { recording_id, subtitles, style } = await req.json();
+
+    if (!recording_id || !subtitles || subtitles.length === 0) {
+      return Response.json({ error: 'Missing recording_id or subtitles' }, { status: 400 });
+    }
+
+    // Get recording
+    const recordings = await base44.entities.Recording.filter({ id: recording_id });
+    const recording = recordings[0];
+    if (!recording) {
+      return Response.json({ error: 'Recording not found' }, { status: 404 });
+    }
+
+    // Download video
+    const videoResponse = await fetch(recording.file_url);
+    const videoBytes = new Uint8Array(await videoResponse.arrayBuffer());
+
+    // Write video to tmp
+    const inputPath = `/tmp/input_${recording_id}.mp4`;
+    const outputPath = `/tmp/output_${recording_id}.mp4`;
+    await Deno.writeFile(inputPath, videoBytes);
+
+    // Build ASS subtitle file for FFmpeg
+    const {
+      fontSize = 24,
+      fontColor = '#FFFFFF',
+      bgColor = '#000000',
+      bgOpacity = 70,
+      positionX = 50,
+      positionY = 85,
+    } = style || {};
+
+    // Convert hex color to ASS format (BGR with alpha)
+    const hexToAss = (hex) => {
+      const r = hex.slice(1, 3);
+      const g = hex.slice(3, 5);
+      const b = hex.slice(5, 7);
+      return `${b}${g}${r}`.toUpperCase();
+    };
+
+    const bgAlpha = Math.round((1 - bgOpacity / 100) * 255).toString(16).padStart(2, '0').toUpperCase();
+    const primaryColor = `&H00${hexToAss(fontColor)}`;
+    const backColor = `&H${bgAlpha}${hexToAss(bgColor)}`;
+    
+    // Map position to ASS alignment and margins
+    // ASS alignment: 1-3 bottom, 4-6 middle, 7-9 top (left/center/right)
+    let alignment = 2; // default bottom center
+    let marginV = 30;
+    
+    if (positionY < 33) {
+      alignment = 8; // top center
+      marginV = Math.round((positionY / 33) * 60);
+    } else if (positionY < 66) {
+      alignment = 5; // middle center
+      marginV = Math.round(Math.abs(positionY - 50) * 2);
+    } else {
+      alignment = 2; // bottom center
+      marginV = Math.round((1 - positionY / 100) * 120);
+    }
+    
+    // Horizontal margin
+    let marginL = 0;
+    let marginR = 0;
+    if (positionX < 40) {
+      alignment = alignment - 1 + 3; // shift to right (RTL)
+      marginR = Math.round((1 - positionX / 50) * 100);
+    } else if (positionX > 60) {
+      alignment = alignment - 1 + 1; // shift to left (RTL)
+      marginL = Math.round((positionX / 50 - 1) * 100);
+    }
+
+    const assHeader = `[Script Info]
+ScriptType: v4.00+
+PlayResX: 1920
+PlayResY: 1080
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Default,Arial,${Math.round(fontSize * 2.5)},${primaryColor},${primaryColor},&H00000000,${backColor},1,0,0,0,100,100,0,0,3,2,0,${alignment},${marginL},${marginR},${marginV},1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+`;
+
+    const formatAssTime = (seconds) => {
+      const h = Math.floor(seconds / 3600);
+      const m = Math.floor((seconds % 3600) / 60);
+      const s = Math.floor(seconds % 60);
+      const cs = Math.round((seconds % 1) * 100);
+      return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}.${cs.toString().padStart(2, '0')}`;
+    };
+
+    let assEvents = '';
+    for (const sub of subtitles) {
+      const start = formatAssTime(sub.start);
+      const end = formatAssTime(sub.end);
+      const text = sub.text.replace(/\n/g, '\\N');
+      assEvents += `Dialogue: 0,${start},${end},Default,,0,0,0,,${text}\n`;
+    }
+
+    const assContent = assHeader + assEvents;
+    const assPath = `/tmp/subs_${recording_id}.ass`;
+    await Deno.writeTextFile(assPath, assContent);
+
+    // Run FFmpeg
+    const ffmpegCmd = new Deno.Command('ffmpeg', {
+      args: [
+        '-y',
+        '-i', inputPath,
+        '-vf', `ass=${assPath}`,
+        '-c:v', 'libx264',
+        '-preset', 'fast',
+        '-crf', '23',
+        '-c:a', 'copy',
+        outputPath,
+      ],
+      stdout: 'piped',
+      stderr: 'piped',
+    });
+
+    const process = await ffmpegCmd.output();
+
+    if (!process.success) {
+      const errText = new TextDecoder().decode(process.stderr);
+      console.error('FFmpeg error:', errText);
+      
+      // Cleanup
+      try { await Deno.remove(inputPath); } catch {}
+      try { await Deno.remove(assPath); } catch {}
+      
+      return Response.json({ error: 'FFmpeg burn failed', details: errText.slice(-500) }, { status: 500 });
+    }
+
+    // Read output
+    const outputBytes = await Deno.readFile(outputPath);
+
+    // Cleanup tmp files
+    try { await Deno.remove(inputPath); } catch {}
+    try { await Deno.remove(assPath); } catch {}
+    try { await Deno.remove(outputPath); } catch {}
+
+    return new Response(outputBytes, {
+      status: 200,
+      headers: {
+        'Content-Type': 'video/mp4',
+        'Content-Disposition': `attachment; filename="video_subtitled.mp4"`,
+      },
+    });
+  } catch (error) {
+    console.error('Error:', error);
+    return Response.json({ error: error.message }, { status: 500 });
+  }
+});
