@@ -382,34 +382,37 @@ export default function VideoEditor() {
       <div className="max-w-lg mx-auto px-4 py-4 space-y-4">
         {/* Video Player */}
         <div ref={containerRef} className="relative bg-black rounded-xl overflow-hidden aspect-video">
+          {/* Background image - behind video */}
+          {currentImage && currentImage.type === 'background' && (
+            <div className="absolute inset-0 pointer-events-none z-0">
+              <img src={currentImage.file_url} className="w-full h-full object-cover" alt="" />
+            </div>
+          )}
+
           <video
             ref={videoRef}
             src={recording.file_url}
-            className={`w-full h-full object-contain transition-opacity duration-150 ${videoHidden ? 'opacity-0' : 'opacity-100'}`}
+            className={`w-full h-full object-contain relative z-[1] transition-opacity duration-150 ${videoHidden ? 'opacity-0' : 'opacity-100'}`}
             playsInline
             preload="metadata"
             onClick={togglePlay}
           />
+
           {/* Image overlay preview */}
-          {currentImage && (
-            currentImage.type === 'replace' ? (
-              <div className="absolute inset-0 pointer-events-none">
-                <img src={currentImage.file_url} className="w-full h-full object-cover" alt="" />
-              </div>
-            ) : currentImage.type === 'background' ? (
-              <div className="absolute inset-0 pointer-events-none" style={{ zIndex: -1 }}>
-                <img src={currentImage.file_url} className="w-full h-full object-cover" alt="" />
-              </div>
-            ) : (
-              <DraggableImage
-                img={currentImage}
-                index={imageOverlays.indexOf(currentImage)}
-                containerRef={containerRef}
-                onUpdatePosition={handleUpdateImagePosition}
-                isSelected={selectedImageIndex === imageOverlays.indexOf(currentImage)}
-                onSelect={() => setSelectedImageIndex(imageOverlays.indexOf(currentImage))}
-              />
-            )
+          {currentImage && currentImage.type === 'replace' && (
+            <div className="absolute inset-0 pointer-events-none z-[2]">
+              <img src={currentImage.file_url} className="w-full h-full object-cover" alt="" />
+            </div>
+          )}
+          {currentImage && currentImage.type === 'overlay' && (
+            <DraggableImage
+              img={currentImage}
+              index={imageOverlays.indexOf(currentImage)}
+              containerRef={containerRef}
+              onUpdatePosition={handleUpdateImagePosition}
+              isSelected={selectedImageIndex === imageOverlays.indexOf(currentImage)}
+              onSelect={() => setSelectedImageIndex(imageOverlays.indexOf(currentImage))}
+            />
           )}
           <SubtitleOverlay
             currentSubtitle={currentSubtitle}
