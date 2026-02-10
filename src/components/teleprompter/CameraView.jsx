@@ -40,6 +40,7 @@ export default function CameraView({
   const [isConverting, setIsConverting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const recordingStartTime = useRef(null);
+  const [countdown, setCountdown] = useState(null);
 
   useEffect(() => {
     startCamera();
@@ -270,15 +271,28 @@ export default function CameraView({
     await downloadVideo(blob);
   };
 
+  const startCountdownThenRecord = () => {
+    setCountdown(3);
+    let count = 3;
+    const interval = setInterval(() => {
+      count--;
+      if (count > 0) {
+        setCountdown(count);
+      } else {
+        setCountdown(null);
+        clearInterval(interval);
+        startRecording();
+      }
+    }, 1000);
+  };
+
   const handleRecordToggle = async () => {
     if (isRecording) {
       const blob = await stopRecording();
       if (blob) {
         try {
               const mp4Blob = await convertToMP4(blob);
-              console.log('Final video type:', mp4Blob.type, 'size:', mp4Blob.size);
               setRecordedVideo(mp4Blob);
-              // Auto-save to cloud
               await saveRecordingToCloud(mp4Blob);
             } catch (err) {
               console.error('Conversion failed, using original:', err);
@@ -288,8 +302,13 @@ export default function CameraView({
             }
       }
     } else {
-      await startRecording();
+      startCountdownThenRecord();
     }
+  };
+
+  const handleRetake = () => {
+    setRecordedVideo(null);
+    setScrollPosition(0);
   };
 
   const handleDownload = () => {
@@ -427,9 +446,9 @@ export default function CameraView({
                 <Button
                   variant="outline"
                   className="rounded-full bg-white/90 select-none"
-                  onClick={() => setRecordedVideo(null)}
+                  onClick={handleRetake}
                 >
-                  צלם שוב
+                  צלם מחדש
                 </Button>
                 <Button
                   variant="outline"
@@ -484,14 +503,21 @@ export default function CameraView({
                 </Button>
               )}
 
-              <Button
-                variant={isRecording ? "destructive" : "default"}
-                size="icon"
-                className="rounded-full h-20 w-20 select-none"
+              <button
+                className={`rounded-full h-24 w-24 select-none flex items-center justify-center transition-all shadow-lg ${
+                  isRecording 
+                    ? 'bg-red-600 hover:bg-red-700 ring-4 ring-red-400/50' 
+                    : 'bg-red-500 hover:bg-red-600 ring-4 ring-white/30'
+                }`}
                 onClick={handleRecordToggle}
+                disabled={countdown !== null}
               >
-                {isRecording ? <Square className="w-8 h-8" /> : <Circle className="w-8 h-8" />}
-              </Button>
+                {isRecording ? (
+                  <Square className="w-10 h-10 text-white fill-white" />
+                ) : (
+                  <div className="w-16 h-16 rounded-full bg-red-400 border-4 border-white" />
+                )}
+              </button>
 
               <Button
                 variant="secondary"
@@ -538,6 +564,15 @@ export default function CameraView({
         <div className="absolute top-6 right-6 flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-full pointer-events-none">
           <div className="w-3 h-3 bg-white rounded-full animate-spin border-2 border-transparent border-t-white" />
           <span className="text-sm font-medium">שומר לענן...</span>
+        </div>
+      )}
+
+      {/* Countdown overlay */}
+      {countdown !== null && (
+        <div className="absolute inset-0 flex items-center justify-center z-50 pointer-events-none">
+          <div className="text-white text-[120px] font-bold animate-pulse drop-shadow-2xl" style={{ textShadow: '0 0 40px rgba(0,0,0,0.8)' }}>
+            {countdown}
+          </div>
         </div>
       )}
     </div>

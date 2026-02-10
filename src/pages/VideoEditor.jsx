@@ -73,20 +73,6 @@ export default function VideoEditor() {
     const onTimeUpdate = () => {
       const ct = video.currentTime;
 
-      // Skip deleted video segments
-      const deletedVidSeg = videoSegments.find(s => s.deleted && ct >= s.originalStart && ct < s.originalEnd);
-      if (deletedVidSeg && isPlaying) {
-        const nextActive = videoSegments
-          .filter(s => !s.deleted && s.originalStart >= deletedVidSeg.originalEnd)
-          .sort((a, b) => a.originalStart - b.originalStart)[0];
-        if (nextActive) {
-          video.currentTime = nextActive.originalStart;
-        } else {
-          video.pause();
-          setIsPlaying(false);
-        }
-      }
-
       // Mute/unmute based on audio segments
       const inDeletedAudio = audioSegments.some(s => s.deleted && ct >= s.originalStart && ct < s.originalEnd);
       video.muted = inDeletedAudio;
