@@ -1,15 +1,13 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { createPageUrl } from '@/utils';
 import { useNavigate } from 'react-router-dom';
-import { Video, Settings, RefreshCw, Crown, Film, LogIn, User } from "lucide-react";
+import { Video, LogIn, User, Type, ChevronLeft } from "lucide-react";
 import { base44 } from '@/api/base44Client';
 import TextInput from '../components/teleprompter/TextInput';
 import PrompterPreview from '../components/teleprompter/PrompterPreview';
 import { useSubscription } from '../components/subscription/useSubscription';
-import PremiumBadge from '../components/subscription/PremiumBadge';
-
+import BottomNav from '../components/navigation/BottomNav';
 
 export default function Home() {
   const navigate = useNavigate();
@@ -24,6 +22,7 @@ export default function Home() {
   const { isPremium } = useSubscription();
   const [currentUser, setCurrentUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [showPreview, setShowPreview] = useState(false);
 
   useEffect(() => {
     base44.auth.isAuthenticated().then(async (isAuth) => {
@@ -34,48 +33,8 @@ export default function Home() {
       setAuthLoading(false);
     });
   }, []);
-  
-  // Pull to refresh state
-  const [isPulling, setIsPulling] = useState(false);
-  const [pullDistance, setPullDistance] = useState(0);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const containerRef = useRef(null);
-  const startY = useRef(0);
-  const PULL_THRESHOLD = 80;
 
-  const handleTouchStart = useCallback((e) => {
-    if (window.scrollY === 0) {
-      startY.current = e.touches[0].clientY;
-      setIsPulling(true);
-    }
-  }, []);
-
-  const handleTouchMove = useCallback((e) => {
-    if (!isPulling) return;
-    const currentY = e.touches[0].clientY;
-    const diff = currentY - startY.current;
-    if (diff > 0 && window.scrollY === 0) {
-      setPullDistance(Math.min(diff * 0.5, PULL_THRESHOLD * 1.5));
-    }
-  }, [isPulling]);
-
-  const handleTouchEnd = useCallback(() => {
-    if (pullDistance >= PULL_THRESHOLD) {
-      setIsRefreshing(true);
-      // Simulate refresh
-      setTimeout(() => {
-        setIsRefreshing(false);
-        setPullDistance(0);
-      }, 1000);
-    } else {
-      setPullDistance(0);
-    }
-    setIsPulling(false);
-  }, [pullDistance]);
-
-  // Load settings and text on mount
-  React.useEffect(() => {
-    // Load settings
+  useEffect(() => {
     const savedSettings = localStorage.getItem('teleprompterSettings');
     if (savedSettings) {
       const settings = JSON.parse(savedSettings);
@@ -86,15 +45,10 @@ export default function Home() {
       setScrollSpeed(settings.scrollSpeed || 50);
       setBackgroundOpacity(settings.backgroundOpacity || 80);
       setVideoQuality(settings.videoQuality || '1080');
-      }
-
-    // Load current text
-    const savedText = localStorage.getItem('currentText');
-    if (savedText) {
-      setText(savedText);
     }
+    const savedText = localStorage.getItem('currentText');
+    if (savedText) setText(savedText);
 
-    // Load from URL params if coming from templates
     const params = new URLSearchParams(window.location.search);
     const urlText = params.get('text');
     if (urlText) {
@@ -107,193 +61,125 @@ export default function Home() {
     }
   }, []);
 
-  // Save text whenever it changes
-  React.useEffect(() => {
-    if (text) {
-      localStorage.setItem('currentText', text);
-    }
+  useEffect(() => {
+    if (text) localStorage.setItem('currentText', text);
   }, [text]);
-
-
 
   const startRecording = () => {
     if (!text.trim()) {
       alert('אנא הזן טקסט לפני תחילת הצילום');
       return;
     }
-
-    // Save current settings before navigating
-    const settings = {
-      fontSize,
-      textColor,
-      backgroundColor,
-      cameraFacing,
-      scrollSpeed,
-      backgroundOpacity,
-      videoQuality
-    };
+    const settings = { fontSize, textColor, backgroundColor, cameraFacing, scrollSpeed, backgroundOpacity, videoQuality };
     localStorage.setItem('teleprompterSettings', JSON.stringify(settings));
-
     const params = new URLSearchParams({
-      text,
-      fontSize,
-      textColor,
-      backgroundColor,
-      scrollSpeed,
-      cameraFacing,
-      backgroundOpacity,
-      videoQuality,
+      text, fontSize, textColor, backgroundColor, scrollSpeed, cameraFacing, backgroundOpacity, videoQuality,
       isPremium: isPremium ? '1' : '0'
     });
-    
     navigate(createPageUrl('Recording') + '?' + params.toString());
   };
 
-  const goToSettings = () => {
-    // Save current state before navigating
-    const settings = {
-      fontSize,
-      textColor,
-      backgroundColor,
-      cameraFacing,
-      scrollSpeed,
-      backgroundOpacity,
-      videoQuality
-    };
-    localStorage.setItem('teleprompterSettings', JSON.stringify(settings));
-    navigate(createPageUrl('Settings'));
-  };
-
   return (
-    <div 
-      ref={containerRef}
-      className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900" 
-      dir="rtl"
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
-    >
-      {/* Pull to Refresh Indicator */}
-      <div 
-        className="flex justify-center items-center overflow-hidden transition-all duration-200"
-        style={{ height: pullDistance }}
-      >
-        <RefreshCw 
-          className={`w-6 h-6 text-indigo-600 dark:text-indigo-400 transition-transform ${isRefreshing ? 'animate-spin' : ''}`}
-          style={{ transform: `rotate(${pullDistance * 2}deg)` }}
-        />
-      </div>
-
+    <div className="min-h-screen bg-[#0e0e1a] text-white" dir="rtl">
       {/* Header */}
       <div 
-        className="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700 sticky z-10"
+        className="sticky z-10 bg-[#1a1a2e]/80 backdrop-blur-xl border-b border-white/5"
         style={{ top: 'env(safe-area-inset-top)' }}
       >
-        <div className="max-w-md mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="bg-gradient-to-br from-indigo-600 to-purple-600 p-2 rounded-xl">
-                <Video className="w-6 h-6 text-white" />
-              </div>
-              <h1 className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                פרומפטר
-              </h1>
-              {isPremium && <PremiumBadge small />}
-                </div>
-                <div className="flex items-center gap-1">
-                  {!authLoading && !currentUser && (
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      className="text-indigo-600"
-                      onClick={() => base44.auth.redirectToLogin()}
-                    >
-                      <LogIn className="w-4 h-4 ml-1" />
-                      התחבר
-                    </Button>
-                  )}
-                  {!authLoading && currentUser && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-gray-500 text-xs"
-                      onClick={() => base44.auth.logout()}
-                    >
-                      <User className="w-4 h-4 ml-1" />
-                      {currentUser.full_name?.split(' ')[0] || 'חשבון'}
-                    </Button>
-                  )}
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    className="text-amber-600"
-                    onClick={() => navigate(createPageUrl('Pricing'))}
-                  >
-                    <Crown className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
+        <div className="max-w-md mx-auto px-4 h-12 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#00d4aa] to-[#00a89d] flex items-center justify-center">
+              <Type className="w-4 h-4 text-white" />
+            </div>
+            <span className="text-base font-bold tracking-tight">פרומפטר</span>
+          </div>
+          <div className="flex items-center gap-1">
+            {!authLoading && !currentUser && (
+              <button 
+                className="text-xs text-[#00d4aa] font-medium px-3 py-1.5 rounded-full bg-[#00d4aa]/10 select-none"
+                onClick={() => base44.auth.redirectToLogin()}
+              >
+                <LogIn className="w-3.5 h-3.5 inline ml-1" />
+                התחבר
+              </button>
+            )}
+            {!authLoading && currentUser && (
+              <button
+                className="text-xs text-white/50 font-medium px-3 py-1.5 rounded-full bg-white/5 select-none"
+                onClick={() => base44.auth.logout()}
+              >
+                <User className="w-3.5 h-3.5 inline ml-1" />
+                {currentUser.full_name?.split(' ')[0] || 'חשבון'}
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="max-w-md mx-auto px-4 py-6 space-y-6">
-        {/* Text Input */}
-        <Card className="shadow-lg dark:bg-gray-800 dark:border-gray-700">
-          <CardContent className="p-6">
-            <TextInput text={text} onTextChange={setText} />
-          </CardContent>
-        </Card>
-
-        {/* Preview */}
-        {text && (
-          <Card className="shadow-lg dark:bg-gray-800 dark:border-gray-700">
-            <CardContent className="p-6">
-              <PrompterPreview
-                text={text}
-                fontSize={fontSize}
-                textColor={textColor}
-                backgroundColor={backgroundColor}
-              />
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Action Buttons */}
-        <div className="space-y-3">
-          <Button
-            onClick={startRecording}
-            className="w-full h-14 text-lg bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-lg select-none"
-            disabled={!text.trim()}
-          >
-            <Video className="w-5 h-5 ml-2" />
-            התחל צילום
-          </Button>
-
-          <Button variant="outline" className="w-full h-12 dark:border-gray-600 dark:text-gray-200 select-none" onClick={() => navigate(createPageUrl('MyVideos'))}>
-                <Film className="w-4 h-4 ml-2" />
-                הסרטונים שלי
-              </Button>
-
-              <Button variant="outline" className="w-full h-12 dark:border-gray-600 dark:text-gray-200 select-none" onClick={goToSettings}>
-                <Settings className="w-4 h-4 ml-2" />
-                הגדרות
-              </Button>
+      <div className="max-w-md mx-auto px-4 pt-4 pb-24 space-y-4">
+        {/* Text Input Area */}
+        <div className="bg-[#1a1a2e] rounded-2xl border border-white/5 overflow-hidden">
+          <div className="px-4 py-3 border-b border-white/5 flex items-center justify-between">
+            <span className="text-sm font-medium text-white/70">הטקסט שלך</span>
+            {text.trim() && (
+              <button 
+                onClick={() => setShowPreview(!showPreview)}
+                className="text-xs text-[#00d4aa] font-medium"
+              >
+                {showPreview ? 'עריכה' : 'תצוגה מקדימה'}
+              </button>
+            )}
+          </div>
+          <div className="p-4">
+            {showPreview && text ? (
+              <div className="rounded-xl overflow-hidden" style={{ height: 200 }}>
+                <PrompterPreview
+                  text={text}
+                  fontSize={fontSize}
+                  textColor={textColor}
+                  backgroundColor={backgroundColor}
+                />
+              </div>
+            ) : (
+              <TextInput text={text} onTextChange={setText} />
+            )}
+          </div>
         </div>
 
-        {/* Info Card */}
-        <Card className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-gray-800 dark:to-gray-700 border-indigo-200 dark:border-gray-600">
-          <CardContent className="p-4 text-sm text-gray-700 dark:text-gray-300 text-right">
-            <p className="font-medium mb-2">💡 טיפים לשימוש:</p>
-            <ul className="space-y-1 text-xs">
-              <li>• הזן את הטקסט או העלה קובץ טקסט</li>
-              <li>• התאם את הגדרות הגופן והצבעים בעמוד ההגדרות</li>
-              <li>• לחץ על "התחל צילום" כדי להתחיל</li>
-              <li>• שלוט במהירות הגלילה במהלך הצילום</li>
-            </ul>
-          </CardContent>
-        </Card>
+        {/* Quick Tips */}
+        <div className="bg-[#1a1a2e] rounded-2xl border border-white/5 p-4">
+          <p className="text-xs text-white/40 mb-2 font-medium">💡 טיפים מהירים</p>
+          <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1" style={{ scrollbarWidth: 'none' }}>
+            {['הזן טקסט או העלה קובץ', 'התאם הגדרות בעמוד הגדרות', 'גלול ידנית בזמן צילום'].map((tip, i) => (
+              <div key={i} className="flex-shrink-0 bg-white/5 rounded-lg px-3 py-2 text-[11px] text-white/50">
+                {tip}
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
+
+      {/* Floating Record Button */}
+      <div 
+        className="fixed left-0 right-0 z-40 flex justify-center"
+        style={{ bottom: 'calc(4rem + env(safe-area-inset-bottom))' }}
+      >
+        <button
+          onClick={startRecording}
+          disabled={!text.trim()}
+          className={`h-14 px-8 rounded-full font-bold text-base flex items-center gap-2 shadow-lg shadow-[#00d4aa]/20 select-none transition-all active:scale-95 ${
+            text.trim() 
+              ? 'bg-gradient-to-r from-[#00d4aa] to-[#00a89d] text-black' 
+              : 'bg-white/10 text-white/30'
+          }`}
+        >
+          <Video className="w-5 h-5" />
+          התחל צילום
+        </button>
+      </div>
+
+      <BottomNav activePage="Home" />
     </div>
   );
 }

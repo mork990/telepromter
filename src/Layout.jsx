@@ -32,7 +32,7 @@ export default function Layout({ children, currentPageName }) {
 
   return (
     <div 
-      className="app-container min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900" 
+      className="app-container min-h-screen bg-[#0e0e1a]" 
       dir="rtl"
       style={{
         paddingTop: 'env(safe-area-inset-top)',
