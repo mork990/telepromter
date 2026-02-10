@@ -50,6 +50,7 @@
 import Home from './pages/Home';
 import Recording from './pages/Recording';
 import Settings from './pages/Settings';
+import Pricing from './pages/Pricing';
 import __Layout from './Layout.jsx';
 
 
@@ -57,6 +58,7 @@ export const PAGES = {
     "Home": Home,
     "Recording": Recording,
     "Settings": Settings,
+    "Pricing": Pricing,
 }
 
 export const pagesConfig = {
