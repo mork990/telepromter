@@ -2,14 +2,12 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Play, Pause, Download, Loader2, Save, Scissors } from "lucide-react";
+import { ArrowRight, Play, Pause, Download, Loader2, Save } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import SubtitleOverlay from '../components/editor/SubtitleOverlay';
 import StylePanel from '../components/editor/StylePanel';
-import TimelineEditor from '../components/editor/TimelineEditor';
 import VisualTimeline from '../components/editor/VisualTimeline';
-import CutPanel from '../components/editor/CutPanel';
 
 export default function VideoEditor() {
   const navigate = useNavigate();
@@ -110,6 +108,30 @@ export default function VideoEditor() {
     setCuts(prev => {
       const updated = [...prev];
       updated[index] = { ...updated[index], start, end };
+      return updated;
+    });
+  }, []);
+
+  const handleAddCut = useCallback((start, end) => {
+    setCuts(prev => [...prev, { start, end }]);
+  }, []);
+
+  const handleAddSubtitle = useCallback((start, end) => {
+    setSubtitles(prev => [...prev, { start, end, text: '' }]);
+  }, []);
+
+  const handleDeleteCut = useCallback((index) => {
+    setCuts(prev => prev.filter((_, i) => i !== index));
+  }, []);
+
+  const handleDeleteSubtitle = useCallback((index) => {
+    setSubtitles(prev => prev.filter((_, i) => i !== index));
+  }, []);
+
+  const handleUpdateSubtitle = useCallback((index, data) => {
+    setSubtitles(prev => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], ...data };
       return updated;
     });
   }, []);
@@ -234,26 +256,15 @@ export default function VideoEditor() {
           onSeek={handleSeek}
           onSubtitleDrag={handleSubtitleDrag}
           onCutDrag={handleCutDrag}
+          onAddCut={handleAddCut}
+          onAddSubtitle={handleAddSubtitle}
+          onDeleteCut={handleDeleteCut}
+          onDeleteSubtitle={handleDeleteSubtitle}
+          onUpdateSubtitle={handleUpdateSubtitle}
         />
 
         {/* Style Panel */}
         <StylePanel style={style} onChange={setStyle} />
-
-        {/* Timeline Editor */}
-        <TimelineEditor
-          subtitles={subtitles}
-          onChange={setSubtitles}
-          currentTime={currentTime}
-          onSeek={handleSeek}
-        />
-
-        {/* Cut Panel */}
-        <CutPanel
-          cuts={cuts}
-          onChange={setCuts}
-          currentTime={currentTime}
-          duration={duration}
-        />
 
         {/* Export Button */}
         <Button
