@@ -28,7 +28,9 @@ export default function VideoEditor() {
     positionX: 50,
     positionY: 85,
   });
-  const [cuts, setCuts] = useState([]);
+  // Segments: represent the video split into parts, each can be deleted
+  // Each segment: { originalStart, originalEnd, deleted }
+  const [segments, setSegments] = useState([]);
   const [isSaving, setIsSaving] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
 
