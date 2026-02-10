@@ -363,7 +363,7 @@ export default function VisualTimeline({
       </div>
 
       {/* Scrollable timeline - swipe to scroll when zoomed */}
-      <div ref={scrollRef} className="overflow-x-auto rounded-lg border dark:border-gray-700 bg-gray-50 dark:bg-gray-900" 
+      <div ref={scrollRef} className="overflow-x-auto rounded-xl border border-white/5 bg-[#12122a]" 
         style={{ scrollbarWidth: 'thin', WebkitOverflowScrolling: 'touch', overflowX: 'auto' }}>
         <div style={{ width: `${timelineWidth}px`, minWidth: '100%' }}>
           {/* Ruler */}
@@ -416,7 +416,7 @@ export default function VisualTimeline({
               </div>
 
               {/* Divider */}
-              <div className="absolute left-0 right-0 pointer-events-none bg-gray-200 dark:bg-gray-700" 
+              <div className="absolute left-0 right-0 pointer-events-none bg-white/5" 
                 style={{ top: `${audioTrackTop - TRACK_GAP / 2}px`, height: '1px' }} />
 
               {/* === AUDIO TRACK === */}
@@ -441,7 +441,7 @@ export default function VisualTimeline({
               </div>
 
               {/* Divider */}
-              <div className="absolute left-0 right-0 pointer-events-none bg-gray-200 dark:bg-gray-700" 
+              <div className="absolute left-0 right-0 pointer-events-none bg-white/5" 
                 style={{ top: `${imageTrackTop - TRACK_GAP / 2}px`, height: '1px' }} />
 
               {/* === IMAGE TRACK === */}
@@ -466,7 +466,7 @@ export default function VisualTimeline({
               </div>
 
               {/* Divider */}
-              <div className="absolute left-0 right-0 pointer-events-none bg-gray-200 dark:bg-gray-700" 
+              <div className="absolute left-0 right-0 pointer-events-none bg-white/5" 
                 style={{ top: `${subtitleTrackTop - TRACK_GAP / 2}px`, height: '1px' }} />
 
               {/* === SUBTITLE TRACK === */}
