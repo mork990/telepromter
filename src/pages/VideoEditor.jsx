@@ -38,6 +38,7 @@ export default function VideoEditor() {
 
   const [isSaving, setIsSaving] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [videoHidden, setVideoHidden] = useState(false);
 
   const { data: recording, isLoading } = useQuery({
     queryKey: ['recording', recordingId],
@@ -76,6 +77,10 @@ export default function VideoEditor() {
       // Mute/unmute based on audio segments
       const inDeletedAudio = audioSegments.some(s => s.deleted && ct >= s.originalStart && ct < s.originalEnd);
       video.muted = inDeletedAudio;
+
+      // Hide video (black) when in a deleted video segment
+      const inDeletedVideo = videoSegments.some(s => s.deleted && ct >= s.originalStart && ct < s.originalEnd);
+      setVideoHidden(inDeletedVideo);
 
       setCurrentTime(video.currentTime);
     };
@@ -358,7 +363,7 @@ export default function VideoEditor() {
           <video
             ref={videoRef}
             src={recording.file_url}
-            className="w-full h-full object-contain"
+            className={`w-full h-full object-contain transition-opacity duration-150 ${videoHidden ? 'opacity-0' : 'opacity-100'}`}
             playsInline
             preload="metadata"
             onClick={togglePlay}
