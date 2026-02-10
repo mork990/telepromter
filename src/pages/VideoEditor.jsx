@@ -204,8 +204,10 @@ export default function VideoEditor() {
       .filter(s => s.text && s.text.trim())
       .sort((a, b) => a.start - b.start);
     
-    const cleanedCuts = cuts
-      .filter(c => c.end > c.start)
+    // Convert deleted segments to cuts for the export function
+    const cleanedCuts = segments
+      .filter(s => s.deleted)
+      .map(s => ({ start: s.originalStart, end: s.originalEnd }))
       .sort((a, b) => a.start - b.start);
     
     const response = await base44.functions.invoke('burnSubtitles', {
@@ -301,13 +303,13 @@ export default function VideoEditor() {
           duration={duration}
           currentTime={currentTime}
           subtitles={subtitles}
-          cuts={cuts}
+          segments={segments}
           onSeek={handleSeek}
           onSubtitleDrag={handleSubtitleDrag}
-          onCutDrag={handleCutDrag}
-          onSplitAt={handleSplitAt}
+          onSplitSegment={handleSplitSegment}
+          onDeleteSegment={handleDeleteSegment}
+          onRestoreSegment={handleRestoreSegment}
           onAddSubtitle={handleAddSubtitle}
-          onDeleteCut={handleDeleteCut}
           onDeleteSubtitle={handleDeleteSubtitle}
           onUpdateSubtitle={handleUpdateSubtitle}
         />
@@ -319,7 +321,7 @@ export default function VideoEditor() {
         <Button
           className="w-full h-12 text-lg bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
           onClick={handleExport}
-          disabled={isExporting || (subtitles.length === 0 && cuts.length === 0)}
+          disabled={isExporting || (subtitles.length === 0 && !segments.some(s => s.deleted))}
         >
           {isExporting ? (
             <>
@@ -329,8 +331,8 @@ export default function VideoEditor() {
           ) : (
             <>
               <Download className="w-5 h-5 ml-2" />
-              {cuts.length > 0 && subtitles.length > 0 ? 'ייצא עם כתוביות + חיתוך' : 
-               cuts.length > 0 ? 'ייצא עם חיתוך' : 'ייצא עם כתוביות'}
+              {segments.some(s => s.deleted) && subtitles.length > 0 ? 'ייצא עם כתוביות + חיתוך' : 
+               segments.some(s => s.deleted) ? 'ייצא עם חיתוך' : 'ייצא עם כתוביות'}
             </>
           )}
         </Button>
