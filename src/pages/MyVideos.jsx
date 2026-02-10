@@ -28,12 +28,12 @@ export default function MyVideos() {
         className="sticky z-10 bg-[#1a1a2e]/80 backdrop-blur-xl border-b border-white/5"
         style={{ top: 'env(safe-area-inset-top)' }}
       >
-        <div className="max-w-md mx-auto px-4 h-12 flex items-center">
+        <div className="px-4 h-12 flex items-center">
           <h1 className="text-base font-bold">הסרטונים שלי</h1>
         </div>
       </div>
 
-      <div className="max-w-md mx-auto px-4 py-4 pb-24">
+      <div className="px-4 py-4 pb-24">
         {isLoading ? (
           <div className="flex justify-center py-20">
             <Loader2 className="w-8 h-8 animate-spin text-[#00d4aa]" />

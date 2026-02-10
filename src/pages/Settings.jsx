@@ -71,12 +71,12 @@ export default function Settings() {
         className="sticky z-10 bg-[#1a1a2e]/80 backdrop-blur-xl border-b border-white/5"
         style={{ top: 'env(safe-area-inset-top)' }}
       >
-        <div className="max-w-md mx-auto px-4 h-12 flex items-center">
+        <div className="px-4 h-12 flex items-center">
           <h1 className="text-base font-bold">הגדרות</h1>
         </div>
       </div>
 
-      <div className="max-w-md mx-auto px-4 py-4 pb-24 space-y-4">
+      <div className="px-4 py-4 pb-24 space-y-4">
         {/* Settings Panel */}
         <div className="bg-[#1a1a2e] rounded-2xl border border-white/5 p-4">
           <SettingsPanel
