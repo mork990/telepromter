@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Play, Download, Share2, Trash2, Clock, HardDrive, Subtitles, Pencil, Loader2, Film } from "lucide-react";
-import { base44 } from '@/api/base44Client';
+import { Play, Download, Share2, Trash2, Clock, HardDrive, Film } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import moment from 'moment';
@@ -23,7 +22,6 @@ function formatSize(bytes) {
 export default function VideoCard({ recording, onDelete, onUpdate }) {
   const navigate = useNavigate();
   const [showConfirm, setShowConfirm] = useState(false);
-  const [isTranscribing, setIsTranscribing] = useState(false);
 
   const handleDownload = () => {
     const a = document.createElement('a');
@@ -43,16 +41,6 @@ export default function VideoCard({ recording, onDelete, onUpdate }) {
       handleDownload();
     }
   };
-
-  const handleTranscribe = async () => {
-    setIsTranscribing(true);
-    await base44.functions.invoke('transcribeVideo', { recording_id: recording.id });
-    if (onUpdate) onUpdate();
-    setIsTranscribing(false);
-  };
-
-  const hasSubtitles = recording.subtitles && recording.subtitles.length > 0;
-  const isProcessing = recording.subtitles_status === 'processing' || isTranscribing;
 
   return (
     <Card className="shadow-md dark:bg-gray-800 dark:border-gray-700 overflow-hidden">
