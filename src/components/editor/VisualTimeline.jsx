@@ -39,6 +39,7 @@ export default function VisualTimeline({
   onMoveImage,
   onUpdateImageType,
   onUpdateImagePosition,
+  onSelectImage,
   onAddSubtitle,
   onDeleteSubtitle,
   onUpdateSubtitle,

@@ -459,6 +459,7 @@ export default function VideoEditor() {
           onMoveImage={handleMoveImage}
           onUpdateImageType={handleUpdateImageType}
           onUpdateImagePosition={handleUpdateImagePosition}
+          onSelectImage={setSelectedImageIndex}
           onAddSubtitle={handleAddSubtitle}
           onDeleteSubtitle={handleDeleteSubtitle}
           onUpdateSubtitle={handleUpdateSubtitle}
