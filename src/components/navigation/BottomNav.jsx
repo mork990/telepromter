@@ -18,7 +18,7 @@ export default function BottomNav({ activePage }) {
       className="fixed bottom-0 left-0 right-0 z-50 bg-[#1a1a2e]/95 backdrop-blur-xl border-t border-white/10"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
-      <div className="flex items-center justify-around h-[72px] max-w-md mx-auto">
+      <div className="flex items-center justify-around h-[72px]">
         {tabs.map(({ id, icon: Icon, label }) => {
           const isActive = activePage === id;
           return (
