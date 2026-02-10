@@ -416,12 +416,12 @@ export default function CameraView({
 
       {/* Teleprompter Overlay */}
       <div 
-        className="absolute inset-0"
+        className="absolute inset-0 pointer-events-none"
         style={{ backgroundColor: hexToRgba(backgroundColor, backgroundOpacity) }}
       >
         <DraggableTextFrame frameStyle={textFrame} onFrameChange={setTextFrame}>
           <div
-            className="absolute inset-0 overflow-hidden"
+            className="absolute inset-0 overflow-hidden touch-pan-y"
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}

@@ -106,7 +106,7 @@ export default function DraggableTextFrame({
   return (
     <div
       ref={frameRef}
-      className="absolute z-10"
+      className="absolute z-10 pointer-events-auto"
       style={{
         left: `${left}%`,
         top: `${top}%`,
