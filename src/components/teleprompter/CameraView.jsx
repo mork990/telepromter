@@ -310,20 +310,29 @@ export default function CameraView({
     if (isRecording) {
       const blob = await stopRecording();
       if (blob) {
-        try {
-              const mp4Blob = await convertToMP4(blob);
-              setRecordedVideo(mp4Blob);
-              await saveRecordingToCloud(mp4Blob);
-            } catch (err) {
-              console.error('Conversion failed, using original:', err);
-              setIsConverting(false);
-              setRecordedVideo(blob);
-              await saveRecordingToCloud(blob);
-            }
+        // Save original blob immediately for preview/download
+        setRecordedVideo(blob);
+        // Fire-and-forget: convert + upload in background
+        // This way user can leave the page and it continues
+        convertAndSave(blob);
       }
     } else {
       startCountdownThenRecord();
     }
+  };
+
+  const convertAndSave = (blob) => {
+    // Don't await - let it run in background
+    convertToMP4(blob)
+      .then(mp4Blob => {
+        setRecordedVideo(mp4Blob);
+        return saveRecordingToCloud(mp4Blob);
+      })
+      .catch(err => {
+        console.error('Conversion failed, saving original:', err);
+        setIsConverting(false);
+        return saveRecordingToCloud(blob);
+      });
   };
 
   const handleRetake = () => {
