@@ -8,6 +8,7 @@ import { createPageUrl } from '@/utils';
 import SubtitleOverlay from '../components/editor/SubtitleOverlay';
 import StylePanel from '../components/editor/StylePanel';
 import VisualTimeline from '../components/editor/VisualTimeline';
+import DraggableImage from '../components/editor/DraggableImage';
 
 export default function VideoEditor() {
   const navigate = useNavigate();
@@ -209,7 +210,7 @@ export default function VideoEditor() {
   // --- Image overlay handlers ---
   const handleAddImage = useCallback(async (file, start, end) => {
     const { file_url } = await base44.integrations.Core.UploadFile({ file });
-    setImageOverlays(prev => [...prev, { file_url, start, end, type: 'overlay' }]);
+    setImageOverlays(prev => [...prev, { file_url, start, end, type: 'overlay', x: 5, y: 5, width: 30, height: 30 }]);
   }, []);
 
   const handleDeleteImage = useCallback((index) => {
@@ -237,6 +238,27 @@ export default function VideoEditor() {
       return updated;
     });
   }, []);
+
+  const handleMoveImage = useCallback((index, start, end) => {
+    setImageOverlays(prev => {
+      const updated = [...prev];
+      const dur = updated[index].end - updated[index].start;
+      const newStart = Math.max(0, Math.min(duration - dur, start));
+      updated[index] = { ...updated[index], start: newStart, end: newStart + dur };
+      return updated;
+    });
+  }, [duration]);
+
+  const handleUpdateImagePosition = useCallback((index, pos) => {
+    setImageOverlays(prev => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], ...pos };
+      return updated;
+    });
+  }, []);
+
+  // Selected image for editing position/size
+  const [selectedImageIndex, setSelectedImageIndex] = useState(null);
 
   // --- Subtitle handlers ---
   const currentSubtitle = subtitles.find(s => currentTime >= s.start && currentTime <= s.end);
@@ -370,17 +392,24 @@ export default function VideoEditor() {
           />
           {/* Image overlay preview */}
           {currentImage && (
-            <div className={`absolute pointer-events-none ${
-              currentImage.type === 'replace' ? 'inset-0' : 
-              currentImage.type === 'background' ? 'inset-0 -z-10' :
-              'top-2 left-2 w-1/3 h-1/3'
-            }`}>
-              <img 
-                src={currentImage.file_url} 
-                className={`${currentImage.type === 'overlay' ? 'w-full h-full object-contain rounded-lg shadow-lg border border-white/30' : 'w-full h-full object-cover'}`}
-                alt=""
+            currentImage.type === 'replace' ? (
+              <div className="absolute inset-0 pointer-events-none">
+                <img src={currentImage.file_url} className="w-full h-full object-cover" alt="" />
+              </div>
+            ) : currentImage.type === 'background' ? (
+              <div className="absolute inset-0 pointer-events-none" style={{ zIndex: -1 }}>
+                <img src={currentImage.file_url} className="w-full h-full object-cover" alt="" />
+              </div>
+            ) : (
+              <DraggableImage
+                img={currentImage}
+                index={imageOverlays.indexOf(currentImage)}
+                containerRef={containerRef}
+                onUpdatePosition={handleUpdateImagePosition}
+                isSelected={selectedImageIndex === imageOverlays.indexOf(currentImage)}
+                onSelect={() => setSelectedImageIndex(imageOverlays.indexOf(currentImage))}
               />
-            </div>
+            )
           )}
           <SubtitleOverlay
             currentSubtitle={currentSubtitle}
@@ -427,7 +456,9 @@ export default function VideoEditor() {
           onAddImage={handleAddImage}
           onDeleteImage={handleDeleteImage}
           onTrimImage={handleTrimImage}
+          onMoveImage={handleMoveImage}
           onUpdateImageType={handleUpdateImageType}
+          onUpdateImagePosition={handleUpdateImagePosition}
           onAddSubtitle={handleAddSubtitle}
           onDeleteSubtitle={handleDeleteSubtitle}
           onUpdateSubtitle={handleUpdateSubtitle}
