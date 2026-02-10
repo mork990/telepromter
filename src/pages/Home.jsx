@@ -1,9 +1,10 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { createPageUrl } from '@/utils';
 import { useNavigate } from 'react-router-dom';
-import { Video, Settings, RefreshCw, Crown, Film } from "lucide-react";
+import { Video, Settings, RefreshCw, Crown, Film, LogIn, User } from "lucide-react";
+import { base44 } from '@/api/base44Client';
 import TextInput from '../components/teleprompter/TextInput';
 import PrompterPreview from '../components/teleprompter/PrompterPreview';
 import { useSubscription } from '../components/subscription/useSubscription';
@@ -21,6 +22,18 @@ export default function Home() {
   const [backgroundOpacity, setBackgroundOpacity] = useState(80);
   const [videoQuality, setVideoQuality] = useState('1080');
   const { isPremium } = useSubscription();
+  const [currentUser, setCurrentUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
+
+  useEffect(() => {
+    base44.auth.isAuthenticated().then(async (isAuth) => {
+      if (isAuth) {
+        const user = await base44.auth.me();
+        setCurrentUser(user);
+      }
+      setAuthLoading(false);
+    });
+  }, []);
   
   // Pull to refresh state
   const [isPulling, setIsPulling] = useState(false);
@@ -185,14 +198,38 @@ export default function Home() {
               </h1>
               {isPremium && <PremiumBadge small />}
                 </div>
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  className="text-amber-600"
-                  onClick={() => navigate(createPageUrl('Pricing'))}
-                >
-                  <Crown className="w-4 h-4" />
-                </Button>
+                <div className="flex items-center gap-1">
+                  {!authLoading && !currentUser && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      className="text-indigo-600"
+                      onClick={() => base44.auth.redirectToLogin()}
+                    >
+                      <LogIn className="w-4 h-4 ml-1" />
+                      התחבר
+                    </Button>
+                  )}
+                  {!authLoading && currentUser && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-gray-500 text-xs"
+                      onClick={() => base44.auth.logout()}
+                    >
+                      <User className="w-4 h-4 ml-1" />
+                      {currentUser.full_name?.split(' ')[0] || 'חשבון'}
+                    </Button>
+                  )}
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    className="text-amber-600"
+                    onClick={() => navigate(createPageUrl('Pricing'))}
+                  >
+                    <Crown className="w-4 h-4" />
+                  </Button>
+                </div>
               </div>
         </div>
       </div>

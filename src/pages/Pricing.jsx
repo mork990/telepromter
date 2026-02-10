@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Check, Crown, ArrowRight } from "lucide-react";
+import { Check, Crown, ArrowRight, LogIn } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
+import { base44 } from '@/api/base44Client';
 import { useSubscription } from '../components/subscription/useSubscription';
 
 const freeFeaturesArr = [
@@ -33,6 +34,11 @@ const premiumFeaturesArr = [
 export default function Pricing() {
   const navigate = useNavigate();
   const { isPremium, loading } = useSubscription();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    base44.auth.isAuthenticated().then(setIsLoggedIn);
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900" dir="rtl">
@@ -99,6 +105,14 @@ export default function Pricing() {
               <Button className="w-full mt-6 bg-green-600" disabled>
                 <Check className="w-4 h-4 ml-1" />
                 מנוי פעיל
+              </Button>
+            ) : !isLoggedIn ? (
+              <Button 
+                className="w-full mt-6 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white text-lg h-12"
+                onClick={() => base44.auth.redirectToLogin(window.location.href)}
+              >
+                <LogIn className="w-5 h-5 ml-2" />
+                התחבר כדי לרכוש מנוי
               </Button>
             ) : (
               <Button 
