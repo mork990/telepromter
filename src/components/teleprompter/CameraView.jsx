@@ -38,6 +38,8 @@ export default function CameraView({
   const [recordedVideo, setRecordedVideo] = useState(null);
   const [isRecordingPaused, setIsRecordingPaused] = useState(false);
   const [isConverting, setIsConverting] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const recordingStartTime = useRef(null);
 
   useEffect(() => {
     startCamera();
@@ -153,10 +155,11 @@ export default function CameraView({
       };
       
       mediaRecorderRef.current.start(500);
-      setIsRecording(true);
-      if (!isDragging) {
-        setIsPaused(false);
-      }
+          recordingStartTime.current = Date.now();
+          setIsRecording(true);
+          if (!isDragging) {
+            setIsPaused(false);
+          }
     } catch (error) {
       console.error('Error starting recording:', error);
       alert('שגיאה בהתחלת ההקלטה: ' + error.message);
@@ -205,10 +208,25 @@ export default function CameraView({
     return mp4Blob;
   };
 
+  const saveRecordingToCloud = async (blob) => {
+    setIsSaving(true);
+    const durationSeconds = recordingStartTime.current 
+      ? Math.round((Date.now() - recordingStartTime.current) / 1000) 
+      : 0;
+    const file = new File([blob], `teleprompter-${Date.now()}.mp4`, { type: 'video/mp4' });
+    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    await base44.entities.Recording.create({
+      title: `סרטון ${new Date().toLocaleDateString('he-IL')}`,
+      file_url,
+      duration_seconds: durationSeconds,
+      quality: videoQuality,
+      file_size_bytes: blob.size
+    });
+    setIsSaving(false);
+  };
+
   const downloadVideo = async (blob) => {
     const filename = `teleprompter-${new Date().getTime()}.mp4`;
-    
-    // Direct download
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.style.display = 'none';
@@ -216,7 +234,6 @@ export default function CameraView({
     a.download = filename;
     document.body.appendChild(a);
     a.click();
-    
     setTimeout(() => {
       URL.revokeObjectURL(url);
       document.body.removeChild(a);
@@ -251,16 +268,17 @@ export default function CameraView({
       const blob = await stopRecording();
       if (blob) {
         try {
-          const mp4Blob = await convertToMP4(blob);
-          console.log('Final video type:', mp4Blob.type, 'size:', mp4Blob.size);
-          setRecordedVideo(mp4Blob);
-        } catch (err) {
-          console.error('Conversion failed, using original:', err);
-          setIsConverting(false);
-          // Fallback: use original blob if conversion fails
-          setRecordedVideo(blob);
-          alert('ההמרה ל-MP4 נכשלה. הסרטון נשמר בפורמט המקורי.');
-        }
+              const mp4Blob = await convertToMP4(blob);
+              console.log('Final video type:', mp4Blob.type, 'size:', mp4Blob.size);
+              setRecordedVideo(mp4Blob);
+              // Auto-save to cloud
+              await saveRecordingToCloud(mp4Blob);
+            } catch (err) {
+              console.error('Conversion failed, using original:', err);
+              setIsConverting(false);
+              setRecordedVideo(blob);
+              await saveRecordingToCloud(blob);
+            }
       }
     } else {
       await startRecording();
