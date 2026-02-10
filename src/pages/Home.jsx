@@ -163,7 +163,7 @@ export default function Home() {
       {/* Floating Record Button */}
       <div 
         className="fixed left-0 right-0 z-40 flex justify-center"
-        style={{ bottom: 'calc(4rem + env(safe-area-inset-bottom))' }}
+        style={{ bottom: 'calc(72px + 12px + env(safe-area-inset-bottom))' }}
       >
         <button
           onClick={startRecording}
