@@ -106,7 +106,7 @@ export default function DraggableTextFrame({
   return (
     <div
       ref={frameRef}
-      className="absolute z-10 touch-none"
+      className="absolute z-10"
       style={{
         left: `${left}%`,
         top: `${top}%`,
@@ -119,27 +119,27 @@ export default function DraggableTextFrame({
         isDragging || isResizing ? 'border-white/60' : 'border-white/20'
       }`} />
 
-      {/* Content area - scrollable text goes here */}
+      {/* Content area - allows touch for text scrolling */}
       <div className="absolute inset-0 overflow-hidden">
         {children}
       </div>
 
       {/* Drag handle - top center */}
       <div
-        className="absolute -top-3 left-1/2 -translate-x-1/2 w-10 h-6 bg-white/30 backdrop-blur-sm rounded-full flex items-center justify-center cursor-grab active:cursor-grabbing z-20"
+        className="absolute -top-4 left-1/2 -translate-x-1/2 w-12 h-8 bg-white/30 backdrop-blur-sm rounded-full flex items-center justify-center cursor-grab active:cursor-grabbing z-20 touch-none"
         onPointerDown={handleDragStart}
         onTouchStart={handleDragStart}
       >
-        <Move className="w-3.5 h-3.5 text-white" />
+        <Move className="w-4 h-4 text-white" />
       </div>
 
       {/* Resize handle - bottom left (RTL friendly) */}
       <div
-        className="absolute -bottom-2 -left-2 w-7 h-7 bg-white/30 backdrop-blur-sm rounded-full flex items-center justify-center cursor-nwse-resize z-20"
+        className="absolute -bottom-3 -left-3 w-9 h-9 bg-white/30 backdrop-blur-sm rounded-full flex items-center justify-center cursor-nwse-resize z-20 touch-none"
         onPointerDown={handleResizeStart}
         onTouchStart={handleResizeStart}
       >
-        <svg width="12" height="12" viewBox="0 0 12 12" className="text-white">
+        <svg width="14" height="14" viewBox="0 0 12 12" className="text-white">
           <path d="M11 1L1 11M11 5L5 11M11 9L9 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
         </svg>
       </div>
