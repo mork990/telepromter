@@ -171,7 +171,7 @@ export default function VisualTimeline({
       if (edge === 'move') {
         const dur = dragStartRef.current.endVal - dragStartRef.current.startVal;
         const ns = Math.max(0, Math.min(duration - dur, dragStartRef.current.startVal + dt));
-        onMoveImage(index, ns, ns + dur);
+        onMoveImage(index, ns);
       } else {
         const newTime = edge === 'start' ? dragStartRef.current.startVal + dt : dragStartRef.current.endVal + dt;
         onTrimImage(index, edge, newTime);
