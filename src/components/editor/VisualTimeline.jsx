@@ -168,11 +168,9 @@ export default function VisualTimeline({
       onTrimAudioSegment(index, edge, newTime);
     } else if (type === 'image') {
       if (edge === 'move') {
-        // Move entire image overlay
         const dur = dragStartRef.current.endVal - dragStartRef.current.startVal;
-        let ns = Math.max(0, Math.min(duration - dur, dragStartRef.current.startVal + dt));
-        onTrimImage(index, 'start', ns);
-        onTrimImage(index, 'end', ns + dur);
+        const ns = Math.max(0, Math.min(duration - dur, dragStartRef.current.startVal + dt));
+        onMoveImage(index, ns, ns + dur);
       } else {
         const newTime = edge === 'start' ? dragStartRef.current.startVal + dt : dragStartRef.current.endVal + dt;
         onTrimImage(index, edge, newTime);
