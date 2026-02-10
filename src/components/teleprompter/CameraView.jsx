@@ -2,6 +2,14 @@ import React, { useRef, useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Button } from "@/components/ui/button";
 import { Circle, Square, Pause, Play, FastForward, Rewind, Download, Scissors, Share2, Loader2 } from "lucide-react";
+import Watermark from './Watermark';
+
+const qualityMap = {
+  '720': { width: 1280, height: 720 },
+  '1080': { width: 1920, height: 1080 },
+  '1440': { width: 2560, height: 1440 },
+  '2160': { width: 3840, height: 2160 },
+};
 
 export default function CameraView({ 
   text, 
@@ -11,6 +19,8 @@ export default function CameraView({
   cameraFacing,
   scrollSpeed,
   backgroundOpacity,
+  videoQuality = '1080',
+  isPremium = false,
   onStop 
 }) {
   const videoRef = useRef(null);
@@ -45,11 +55,12 @@ export default function CameraView({
 
   const startCamera = async () => {
     try {
+      const qSettings = qualityMap[videoQuality] || qualityMap['1080'];
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { 
           facingMode: cameraFacing,
-          width: { ideal: 1920 },
-          height: { ideal: 1080 },
+          width: { ideal: qSettings.width },
+          height: { ideal: qSettings.height },
           frameRate: { ideal: 30, max: 30 }
         },
         audio: {
@@ -326,6 +337,9 @@ export default function CameraView({
           style={{ transform: cameraFacing === 'user' ? 'scaleX(-1)' : 'none' }}
         />
       </div>
+
+      {/* Watermark for free users */}
+      <Watermark show={!isPremium && isRecording} />
 
       {/* Teleprompter Overlay */}
       <div 
