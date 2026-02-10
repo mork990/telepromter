@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Play, Pause, Download, Loader2, Save } from "lucide-react";
+import { ArrowRight, Play, Pause, Download, Loader2, Save, Subtitles } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import SubtitleOverlay from '../components/editor/SubtitleOverlay';
@@ -40,6 +40,7 @@ export default function VideoEditor() {
   const [isSaving, setIsSaving] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [videoHidden, setVideoHidden] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
 
   const { data: recording, isLoading } = useQuery({
     queryKey: ['recording', recordingId],
@@ -291,6 +292,17 @@ export default function VideoEditor() {
     });
   }, []);
 
+  // --- Auto transcribe ---
+  const handleAutoTranscribe = async () => {
+    setIsTranscribing(true);
+    await base44.functions.invoke('transcribeVideo', { recording_id: recordingId });
+    const list = await base44.entities.Recording.filter({ id: recordingId });
+    if (list[0]?.subtitles) {
+      setSubtitles(list[0].subtitles);
+    }
+    setIsTranscribing(false);
+  };
+
   // --- Save & Export ---
   const handleSave = async () => {
     setIsSaving(true);
@@ -382,28 +394,27 @@ export default function VideoEditor() {
       <div className="max-w-lg mx-auto px-4 py-4 space-y-4">
         {/* Video Player */}
         <div ref={containerRef} className="relative bg-black rounded-xl overflow-hidden aspect-video">
-          {/* Background image - behind video */}
+          {/* Background image - absolutely positioned behind video */}
           {currentImage && currentImage.type === 'background' && (
-            <div className="absolute inset-0 pointer-events-none z-0">
-              <img src={currentImage.file_url} className="w-full h-full object-cover" alt="" />
-            </div>
+            <img src={currentImage.file_url} className="absolute inset-0 w-full h-full object-cover pointer-events-none" style={{ zIndex: 0 }} alt="" />
           )}
 
           <video
             ref={videoRef}
             src={recording.file_url}
-            className={`w-full h-full object-contain relative z-[1] transition-opacity duration-150 ${videoHidden ? 'opacity-0' : 'opacity-100'}`}
+            className={`absolute inset-0 w-full h-full object-contain transition-opacity duration-150 ${videoHidden ? 'opacity-0' : 'opacity-100'}`}
+            style={{ zIndex: 1 }}
             playsInline
             preload="metadata"
             onClick={togglePlay}
           />
 
-          {/* Image overlay preview */}
+          {/* Replace image - covers video */}
           {currentImage && currentImage.type === 'replace' && (
-            <div className="absolute inset-0 pointer-events-none z-[2]">
-              <img src={currentImage.file_url} className="w-full h-full object-cover" alt="" />
-            </div>
+            <img src={currentImage.file_url} className="absolute inset-0 w-full h-full object-cover pointer-events-none" style={{ zIndex: 2 }} alt="" />
           )}
+
+          {/* Overlay image - draggable */}
           {currentImage && currentImage.type === 'overlay' && (
             <DraggableImage
               img={currentImage}
@@ -437,6 +448,29 @@ export default function VideoEditor() {
           </Button>
           <span className="text-xs text-gray-400">{formatTimestamp(duration)}</span>
         </div>
+
+        {/* Auto Transcribe Button */}
+        {subtitles.length === 0 && (
+          <Button
+            size="sm"
+            variant="outline"
+            className="w-full text-indigo-600 border-indigo-200 hover:bg-indigo-50"
+            onClick={handleAutoTranscribe}
+            disabled={isTranscribing}
+          >
+            {isTranscribing ? (
+              <>
+                <Loader2 className="w-4 h-4 ml-1 animate-spin" />
+                מתמלל...
+              </>
+            ) : (
+              <>
+                <Subtitles className="w-4 h-4 ml-1" />
+                צור כתוביות אוטומטית
+              </>
+            )}
+          </Button>
+        )}
 
         {/* Visual Timeline */}
         <VisualTimeline
