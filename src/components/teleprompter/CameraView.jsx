@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Button } from "@/components/ui/button";
-import { Circle, Square, Pause, Play, FastForward, Rewind, Download, Scissors, Share2, Loader2 } from "lucide-react";
+import { Circle, Square, Pause, Play, FastForward, Rewind, Download, Scissors, Share2, Loader2, Lock, Clock } from "lucide-react";
 import Watermark from './Watermark';
 
 const qualityMap = {
@@ -41,6 +41,9 @@ export default function CameraView({
   const [isSaving, setIsSaving] = useState(false);
   const recordingStartTime = useRef(null);
   const [countdown, setCountdown] = useState(null);
+  const [maxDuration, setMaxDuration] = useState(60); // 15, 60, 180
+  const [elapsedTime, setElapsedTime] = useState(0);
+  const elapsedIntervalRef = useRef(null);
 
   useEffect(() => {
     startCamera();
@@ -157,6 +160,10 @@ export default function CameraView({
       
       mediaRecorderRef.current.start(500);
           recordingStartTime.current = Date.now();
+          setElapsedTime(0);
+          elapsedIntervalRef.current = setInterval(() => {
+            setElapsedTime(Math.floor((Date.now() - recordingStartTime.current) / 1000));
+          }, 500);
           setIsRecording(true);
           if (!isDragging) {
             setIsPaused(false);
@@ -167,7 +174,18 @@ export default function CameraView({
     }
   };
 
+  // Auto-stop when maxDuration is reached
+  useEffect(() => {
+    if (isRecording && !isRecordingPaused && elapsedTime >= maxDuration) {
+      handleRecordToggle();
+    }
+  }, [elapsedTime, maxDuration, isRecording, isRecordingPaused]);
+
   const stopRecording = () => {
+    if (elapsedIntervalRef.current) {
+      clearInterval(elapsedIntervalRef.current);
+      elapsedIntervalRef.current = null;
+    }
     return new Promise((resolve) => {
       if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
         mediaRecorderRef.current.onstop = () => {
@@ -384,6 +402,44 @@ export default function CameraView({
 
       {/* Watermark for free users */}
       <Watermark show={!isPremium && isRecording} />
+
+      {/* Duration Selector - top left */}
+      {!isRecording && !recordedVideo && (
+        <div className="absolute top-6 left-4 z-20 flex gap-1.5">
+          {[
+            { label: '15s', value: 15, premium: false },
+            { label: '60s', value: 60, premium: false },
+            { label: '3 דק׳', value: 180, premium: true },
+          ].map(opt => {
+            const locked = opt.premium && !isPremium;
+            const active = maxDuration === opt.value;
+            return (
+              <button
+                key={opt.value}
+                className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium transition-all select-none ${
+                  active
+                    ? 'bg-white text-black shadow-lg'
+                    : locked
+                    ? 'bg-white/10 text-white/40 border border-white/10'
+                    : 'bg-white/20 text-white border border-white/20 hover:bg-white/30'
+                }`}
+                onClick={() => { if (!locked) setMaxDuration(opt.value); }}
+              >
+                {locked && <Lock className="w-3 h-3" />}
+                <Clock className="w-3 h-3" />
+                {opt.label}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Recording timer */}
+      {isRecording && (
+        <div className="absolute top-6 left-4 z-20 bg-black/50 text-white px-3 py-1.5 rounded-full text-sm font-mono select-none pointer-events-none">
+          {Math.floor(elapsedTime / 60)}:{(elapsedTime % 60).toString().padStart(2, '0')} / {Math.floor(maxDuration / 60)}:{(maxDuration % 60).toString().padStart(2, '0')}
+        </div>
+      )}
 
       {/* Teleprompter Overlay */}
       <div 
