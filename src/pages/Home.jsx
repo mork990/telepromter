@@ -3,9 +3,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { createPageUrl } from '@/utils';
 import { useNavigate } from 'react-router-dom';
-import { Video, Settings, RefreshCw } from "lucide-react";
+import { Video, Settings, RefreshCw, Crown } from "lucide-react";
 import TextInput from '../components/teleprompter/TextInput';
 import PrompterPreview from '../components/teleprompter/PrompterPreview';
+import { useSubscription } from '../components/subscription/useSubscription';
+import PremiumBadge from '../components/subscription/PremiumBadge';
 
 
 export default function Home() {
@@ -17,6 +19,8 @@ export default function Home() {
   const [scrollSpeed, setScrollSpeed] = useState(50);
   const [cameraFacing, setCameraFacing] = useState('user');
   const [backgroundOpacity, setBackgroundOpacity] = useState(80);
+  const [videoQuality, setVideoQuality] = useState('1080');
+  const { isPremium } = useSubscription();
   
   // Pull to refresh state
   const [isPulling, setIsPulling] = useState(false);
@@ -68,7 +72,8 @@ export default function Home() {
       setCameraFacing(settings.cameraFacing || 'user');
       setScrollSpeed(settings.scrollSpeed || 50);
       setBackgroundOpacity(settings.backgroundOpacity || 80);
-    }
+      setVideoQuality(settings.videoQuality || '1080');
+      }
 
     // Load current text
     const savedText = localStorage.getItem('currentText');
@@ -122,7 +127,9 @@ export default function Home() {
       backgroundColor,
       scrollSpeed,
       cameraFacing,
-      backgroundOpacity
+      backgroundOpacity,
+      videoQuality,
+      isPremium: isPremium ? '1' : '0'
     });
     
     navigate(createPageUrl('Recording') + '?' + params.toString());
@@ -176,8 +183,17 @@ export default function Home() {
               <h1 className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
                 פרומפטר
               </h1>
-            </div>
-          </div>
+              {isPremium && <PremiumBadge small />}
+                </div>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  className="text-amber-600"
+                  onClick={() => navigate(createPageUrl('Pricing'))}
+                >
+                  <Crown className="w-4 h-4" />
+                </Button>
+              </div>
         </div>
       </div>
 
