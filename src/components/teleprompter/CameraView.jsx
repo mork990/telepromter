@@ -227,6 +227,19 @@ export default function CameraView({
 
   const downloadVideo = async (blob) => {
     const filename = `teleprompter-${new Date().getTime()}.mp4`;
+    const file = new File([blob], filename, { type: 'video/mp4' });
+    
+    // On iOS Safari, use Web Share API for download (download attribute doesn't work)
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file], title: 'סרטון מהפרומפטר' });
+        return;
+      } catch (err) {
+        if (err.name === 'AbortError') return;
+      }
+    }
+    
+    // Fallback for desktop
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.style.display = 'none';
@@ -244,23 +257,17 @@ export default function CameraView({
     const filename = `video_${Date.now()}.mp4`;
     const file = new File([blob], filename, { type: 'video/mp4', lastModified: Date.now() });
     
-    // Check if we can share files
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
       try {
-        await navigator.share({
-          files: [file],
-          title: 'סרטון מהפרומפטר'
-        });
+        await navigator.share({ files: [file], title: 'סרטון מהפרומפטר' });
         return;
       } catch (err) {
         if (err.name === 'AbortError') return;
-        console.log('Share failed:', err);
       }
     }
     
-    // Fallback: download
-    downloadVideo(blob);
-    alert('הסרטון הורד למכשיר. פתח את הגלריה ושתף משם.');
+    // Fallback: download and let user share manually
+    await downloadVideo(blob);
   };
 
   const handleRecordToggle = async () => {
