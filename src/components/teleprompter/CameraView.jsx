@@ -421,10 +421,30 @@ export default function CameraView({
       >
         <DraggableTextFrame frameStyle={textFrame} onFrameChange={setTextFrame}>
           <div
-            className="absolute inset-0 overflow-hidden touch-pan-y"
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
+            className="absolute inset-0 overflow-hidden"
+            style={{ touchAction: 'none' }}
+            onPointerDown={(e) => {
+              // Only handle single finger touch for scrolling
+              if (e.pointerType === 'touch' || e.pointerType === 'mouse') {
+                e.stopPropagation();
+                setIsDragging(true);
+                if (isRecording) setIsPaused(true);
+                dragStartY.current = e.clientY;
+                dragStartScroll.current = scrollPosition;
+                e.target.setPointerCapture(e.pointerId);
+              }
+            }}
+            onPointerMove={(e) => {
+              if (!isDragging) return;
+              const deltaY = dragStartY.current - e.clientY;
+              setScrollPosition(Math.max(0, dragStartScroll.current + deltaY));
+            }}
+            onPointerUp={() => {
+              if (isDragging) {
+                setIsDragging(false);
+                if (isRecording) setIsPaused(false);
+              }
+            }}
           >
             <div
               ref={containerRef}
