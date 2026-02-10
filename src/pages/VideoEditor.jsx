@@ -449,29 +449,6 @@ export default function VideoEditor() {
           <span className="text-xs text-gray-400">{formatTimestamp(duration)}</span>
         </div>
 
-        {/* Auto Transcribe Button */}
-        {subtitles.length === 0 && (
-          <Button
-            size="sm"
-            variant="outline"
-            className="w-full text-indigo-600 border-indigo-200 hover:bg-indigo-50"
-            onClick={handleAutoTranscribe}
-            disabled={isTranscribing}
-          >
-            {isTranscribing ? (
-              <>
-                <Loader2 className="w-4 h-4 ml-1 animate-spin" />
-                מתמלל...
-              </>
-            ) : (
-              <>
-                <Subtitles className="w-4 h-4 ml-1" />
-                צור כתוביות אוטומטית
-              </>
-            )}
-          </Button>
-        )}
-
         {/* Visual Timeline */}
         <VisualTimeline
           duration={duration}
@@ -500,6 +477,8 @@ export default function VideoEditor() {
           onAddSubtitle={handleAddSubtitle}
           onDeleteSubtitle={handleDeleteSubtitle}
           onUpdateSubtitle={handleUpdateSubtitle}
+          onAutoTranscribe={handleAutoTranscribe}
+          isTranscribing={isTranscribing}
         />
 
         {/* Style Panel */}

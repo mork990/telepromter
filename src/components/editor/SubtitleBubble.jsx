@@ -55,18 +55,15 @@ export default function SubtitleBubble({ subtitle, index, position, onUpdate, on
   return (
     <div
       ref={ref}
-      className="absolute z-50 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border dark:border-gray-600 p-3 w-56"
+      className="fixed z-[100] bg-white dark:bg-gray-800 rounded-xl shadow-2xl border dark:border-gray-600 p-3 w-56"
       style={{
-        left: `${Math.min(Math.max(position.x, 10), 60)}%`,
-        bottom: '100%',
-        marginBottom: '8px',
-        transform: 'translateX(-50%)',
+        left: `${Math.min(Math.max(position.x, 20), 80)}%`,
+        top: `${position.y || 50}%`,
+        transform: 'translate(-50%, -50%)',
       }}
       onClick={(e) => e.stopPropagation()}
       onPointerDown={(e) => e.stopPropagation()}
     >
-      {/* Arrow */}
-      <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-white dark:bg-gray-800 border-b border-r dark:border-gray-600 rotate-45" />
 
       <div className="space-y-2 relative">
         <textarea

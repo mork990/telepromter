@@ -1,6 +1,6 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { Scissors, Type, Trash2, ZoomIn, ZoomOut, Undo2, Image, Volume2 } from "lucide-react";
+import { Scissors, Type, Trash2, ZoomIn, ZoomOut, Undo2, Image, Volume2, Subtitles, Loader2 } from "lucide-react";
 import SubtitleBubble from './SubtitleBubble';
 import TrackSegment from './TrackSegment';
 import ImageTrackItem from './ImageTrackItem';
@@ -43,6 +43,8 @@ export default function VisualTimeline({
   onAddSubtitle,
   onDeleteSubtitle,
   onUpdateSubtitle,
+  onAutoTranscribe,
+  isTranscribing,
 }) {
   const containerRef = useRef(null);
   const scrollRef = useRef(null);
@@ -235,9 +237,13 @@ export default function VisualTimeline({
     if (didDragRef.current) return;
     e.stopPropagation();
     if (toolMode === 'delete') { onDeleteSubtitle(index); return; }
-    if (!containerRef.current) return;
-    const rect = containerRef.current.getBoundingClientRect();
-    setBubblePosition({ x: ((e.clientX - rect.left) / rect.width) * 100 });
+    // Position bubble in viewport center area
+    const vpW = window.innerWidth;
+    const vpH = window.innerHeight;
+    setBubblePosition({ 
+      x: (e.clientX / vpW) * 100, 
+      y: Math.min(40, (e.clientY / vpH) * 100)
+    });
     setEditingSubIndex(index);
   };
 
@@ -290,6 +296,18 @@ export default function VisualTimeline({
     <div className="space-y-2" dir="rtl">
       <input type="file" ref={fileInputRef} accept="image/*" className="hidden" onChange={handleFileSelected} />
 
+      {/* Subtitle edit bubble - rendered as fixed overlay */}
+      {editingSubIndex !== null && subtitles[editingSubIndex] && (
+        <SubtitleBubble
+          subtitle={subtitles[editingSubIndex]}
+          index={editingSubIndex}
+          position={bubblePosition}
+          onUpdate={(i, d) => onUpdateSubtitle(i, d)}
+          onDelete={onDeleteSubtitle}
+          onClose={() => setEditingSubIndex(null)}
+        />
+      )}
+
       {/* Toolbar */}
       <div className="flex items-center gap-1 bg-white dark:bg-gray-800 rounded-lg p-1.5 border dark:border-gray-700 shadow-sm flex-wrap">
         {toolButtons.map(({ mode, icon: Icon, label, color }) => (
@@ -308,6 +326,21 @@ export default function VisualTimeline({
           </Button>
         ))}
         
+        <div className="h-5 w-px bg-gray-200 dark:bg-gray-600 mx-0.5" />
+
+        {onAutoTranscribe && (
+          <Button
+            size="sm"
+            variant="ghost"
+            className="gap-1 text-[11px] px-2 text-indigo-500"
+            onClick={onAutoTranscribe}
+            disabled={isTranscribing}
+          >
+            {isTranscribing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Subtitles className="w-3.5 h-3.5" />}
+            כתוביות אוטומטיות
+          </Button>
+        )}
+
         <div className="h-5 w-px bg-gray-200 dark:bg-gray-600 mx-0.5" />
         
         <Button size="sm" variant="ghost" className="text-xs gap-1 px-2" onClick={handleZoomIn}>
@@ -345,16 +378,6 @@ export default function VisualTimeline({
           </div>
 
           <div className="relative">
-            {editingSubIndex !== null && subtitles[editingSubIndex] && (
-              <SubtitleBubble
-                subtitle={subtitles[editingSubIndex]}
-                index={editingSubIndex}
-                position={bubblePosition}
-                onUpdate={(i, d) => onUpdateSubtitle(i, d)}
-                onDelete={onDeleteSubtitle}
-                onClose={() => setEditingSubIndex(null)}
-              />
-            )}
 
             <div 
               ref={containerRef}
