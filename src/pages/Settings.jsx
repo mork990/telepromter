@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Trash2 } from "lucide-react";
+import { ArrowRight, Trash2, Crown } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
 import SettingsPanel from '../components/teleprompter/SettingsPanel';
+import QualitySelector from '../components/teleprompter/QualitySelector';
+import { useSubscription } from '../components/subscription/useSubscription';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,7 +27,9 @@ export default function Settings() {
   const [cameraFacing, setCameraFacing] = useState('user');
   const [scrollSpeed, setScrollSpeed] = useState(50);
   const [backgroundOpacity, setBackgroundOpacity] = useState(80);
+  const [videoQuality, setVideoQuality] = useState('1080');
   const [isDeleting, setIsDeleting] = useState(false);
+  const { isPremium } = useSubscription();
 
   useEffect(() => {
     // Load saved settings from localStorage
@@ -38,6 +42,7 @@ export default function Settings() {
       setCameraFacing(settings.cameraFacing || 'user');
       setScrollSpeed(settings.scrollSpeed || 50);
       setBackgroundOpacity(settings.backgroundOpacity || 80);
+      setVideoQuality(settings.videoQuality || '1080');
     }
   }, []);
 
@@ -48,7 +53,8 @@ export default function Settings() {
       backgroundColor,
       cameraFacing,
       scrollSpeed,
-      backgroundOpacity
+      backgroundOpacity,
+      videoQuality
     };
     localStorage.setItem('teleprompterSettings', JSON.stringify(settings));
     alert('ההגדרות נשמרו בהצלחה!');
@@ -101,6 +107,30 @@ export default function Settings() {
           backgroundOpacity={backgroundOpacity}
           setBackgroundOpacity={setBackgroundOpacity}
         />
+
+        <div className="mt-4">
+          <QualitySelector 
+            value={videoQuality} 
+            onChange={(val) => {
+              // Only allow premium qualities for premium users
+              if (['1440', '2160'].includes(val) && !isPremium) return;
+              setVideoQuality(val);
+            }}
+            isPremium={isPremium}
+          />
+        </div>
+
+        {/* Premium Upsell */}
+        {!isPremium && (
+          <Button
+            variant="outline"
+            className="w-full mt-4 border-amber-400 text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20"
+            onClick={() => navigate(createPageUrl('Pricing'))}
+          >
+            <Crown className="w-4 h-4 ml-2" />
+            שדרג לפרימיום לפיצ׳רים נוספים
+          </Button>
+        )}
 
         <div className="mt-6 space-y-3">
           <Button
