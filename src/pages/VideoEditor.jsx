@@ -52,10 +52,36 @@ export default function VideoEditor() {
     }
   }, [recording]);
 
+  // Initialize segments when duration is known
+  useEffect(() => {
+    if (duration > 0 && segments.length === 0) {
+      setSegments([{ originalStart: 0, originalEnd: duration, deleted: false }]);
+    }
+  }, [duration]);
+
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
-    const onTimeUpdate = () => setCurrentTime(video.currentTime);
+
+    const onTimeUpdate = () => {
+      const ct = video.currentTime;
+      // Skip over deleted segments in real-time
+      const deletedSeg = segments.find(s => s.deleted && ct >= s.originalStart && ct < s.originalEnd);
+      if (deletedSeg && isPlaying) {
+        // Find the next active segment after this deleted one
+        const nextActive = segments
+          .filter(s => !s.deleted && s.originalStart >= deletedSeg.originalEnd)
+          .sort((a, b) => a.originalStart - b.originalStart)[0];
+        if (nextActive) {
+          video.currentTime = nextActive.originalStart;
+        } else {
+          video.pause();
+          setIsPlaying(false);
+        }
+      }
+      setCurrentTime(video.currentTime);
+    };
+
     const onLoaded = () => setDuration(video.duration);
     const onEnded = () => setIsPlaying(false);
     video.addEventListener('timeupdate', onTimeUpdate);
@@ -66,7 +92,7 @@ export default function VideoEditor() {
       video.removeEventListener('loadedmetadata', onLoaded);
       video.removeEventListener('ended', onEnded);
     };
-  }, [recording]);
+  }, [recording, segments, isPlaying]);
 
   const togglePlay = () => {
     if (!videoRef.current) return;
@@ -106,30 +132,46 @@ export default function VideoEditor() {
     });
   }, []);
 
-  const handleCutDrag = useCallback((index, start, end) => {
-    setCuts(prev => {
+  // Split a segment at a given time - creates two segments from one
+  const handleSplitSegment = useCallback((time) => {
+    setSegments(prev => {
+      const newSegs = [];
+      for (const seg of prev) {
+        if (!seg.deleted && time > seg.originalStart + 0.1 && time < seg.originalEnd - 0.1) {
+          // Split this segment into two
+          newSegs.push({ originalStart: seg.originalStart, originalEnd: time, deleted: false });
+          newSegs.push({ originalStart: time, originalEnd: seg.originalEnd, deleted: false });
+        } else {
+          newSegs.push(seg);
+        }
+      }
+      return newSegs;
+    });
+  }, []);
+
+  // Delete a segment (mark as deleted - player will skip it)
+  const handleDeleteSegment = useCallback((index) => {
+    setSegments(prev => {
       const updated = [...prev];
-      updated[index] = { ...updated[index], start, end };
+      updated[index] = { ...updated[index], deleted: true };
       return updated;
     });
   }, []);
 
-  const handleSplitAt = useCallback((time) => {
-    // Actually cut: remove a 0.1s sliver at the split point by creating a cut segment
-    // The user can then drag the edges to widen the cut
-    const cutDuration = 0.5;
-    const start = Math.max(0, time - cutDuration / 2);
-    const end = Math.min(duration, time + cutDuration / 2);
-    setCuts(prev => [...prev, { start, end }]);
-  }, [duration]);
+  // Restore a deleted segment
+  const handleRestoreSegment = useCallback((index) => {
+    setSegments(prev => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], deleted: false };
+      return updated;
+    });
+  }, []);
 
   const handleAddSubtitle = useCallback((start, end) => {
     setSubtitles(prev => [...prev, { start, end, text: '' }]);
   }, []);
 
-  const handleDeleteCut = useCallback((index) => {
-    setCuts(prev => prev.filter((_, i) => i !== index));
-  }, []);
+
 
   const handleDeleteSubtitle = useCallback((index) => {
     setSubtitles(prev => prev.filter((_, i) => i !== index));
