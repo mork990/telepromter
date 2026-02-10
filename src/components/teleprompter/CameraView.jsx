@@ -527,6 +527,12 @@ export default function CameraView({
           <span className="text-sm font-medium">ממיר ל-MP4...</span>
         </div>
       )}
+      {isSaving && (
+        <div className="absolute top-6 right-6 flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-full pointer-events-none">
+          <div className="w-3 h-3 bg-white rounded-full animate-spin border-2 border-transparent border-t-white" />
+          <span className="text-sm font-medium">שומר לענן...</span>
+        </div>
+      )}
     </div>
   );
 }

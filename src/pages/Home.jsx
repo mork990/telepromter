@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { createPageUrl } from '@/utils';
 import { useNavigate } from 'react-router-dom';
-import { Video, Settings, RefreshCw, Crown } from "lucide-react";
+import { Video, Settings, RefreshCw, Crown, Film } from "lucide-react";
 import TextInput from '../components/teleprompter/TextInput';
 import PrompterPreview from '../components/teleprompter/PrompterPreview';
 import { useSubscription } from '../components/subscription/useSubscription';
@@ -231,10 +231,15 @@ export default function Home() {
             התחל צילום
           </Button>
 
-          <Button variant="outline" className="w-full h-12 dark:border-gray-600 dark:text-gray-200 select-none" onClick={goToSettings}>
-            <Settings className="w-4 h-4 ml-2" />
-            הגדרות
-          </Button>
+          <Button variant="outline" className="w-full h-12 dark:border-gray-600 dark:text-gray-200 select-none" onClick={() => navigate(createPageUrl('MyVideos'))}>
+                <Film className="w-4 h-4 ml-2" />
+                הסרטונים שלי
+              </Button>
+
+              <Button variant="outline" className="w-full h-12 dark:border-gray-600 dark:text-gray-200 select-none" onClick={goToSettings}>
+                <Settings className="w-4 h-4 ml-2" />
+                הגדרות
+              </Button>
         </div>
 
         {/* Info Card */}
