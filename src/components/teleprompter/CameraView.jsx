@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Button } from "@/components/ui/button";
-import { Circle, Square, Pause, Play, FastForward, Rewind, Download, Scissors, Share2, Loader2, Lock, Clock } from "lucide-react";
+import { Square, Play, Download, Scissors, Share2, Loader2, Lock } from "lucide-react";
 import Watermark from './Watermark';
 import DraggableTextFrame from './DraggableTextFrame';
 
@@ -538,26 +538,6 @@ export default function CameraView({
             </div>
           ) : (
             <>
-              <Button
-                variant="secondary"
-                size="icon"
-                className="rounded-full h-14 w-14 select-none"
-                onClick={() => handleSpeedAdjust(-100)}
-                disabled={isRecording && isRecordingPaused}
-              >
-                <Rewind className="w-6 h-6" />
-              </Button>
-
-              <Button
-                variant="secondary"
-                size="icon"
-                className="rounded-full h-14 w-14 select-none"
-                onClick={() => setIsPaused(!isPaused)}
-                disabled={!isRecording || isRecordingPaused}
-              >
-                {isPaused ? <Play className="w-6 h-6" /> : <Pause className="w-6 h-6" />}
-              </Button>
-
               {isRecording && !isRecordingPaused && (
                 <Button
                   variant="outline"
@@ -595,16 +575,6 @@ export default function CameraView({
                   <div className="w-16 h-16 rounded-full bg-red-400 border-4 border-white" />
                 )}
               </button>
-
-              <Button
-                variant="secondary"
-                size="icon"
-                className="rounded-full h-14 w-14 select-none"
-                onClick={() => handleSpeedAdjust(100)}
-                disabled={isRecording && isRecordingPaused}
-              >
-                <FastForward className="w-6 h-6" />
-              </Button>
 
               <Button
                 variant="outline"
