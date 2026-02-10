@@ -28,9 +28,14 @@ export default function VideoEditor() {
     positionX: 50,
     positionY: 85,
   });
-  // Segments: represent the video split into parts, each can be deleted
-  // Each segment: { originalStart, originalEnd, deleted }
-  const [segments, setSegments] = useState([]);
+
+  // Video segments (visual track)
+  const [videoSegments, setVideoSegments] = useState([]);
+  // Audio segments (audio track) - independent from video
+  const [audioSegments, setAudioSegments] = useState([]);
+  // Image overlays: { file_url, start, end, type: 'overlay'|'replace'|'background' }
+  const [imageOverlays, setImageOverlays] = useState([]);
+
   const [isSaving, setIsSaving] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
 
@@ -54,23 +59,25 @@ export default function VideoEditor() {
 
   // Initialize segments when duration is known
   useEffect(() => {
-    if (duration > 0 && segments.length === 0) {
-      setSegments([{ originalStart: 0, originalEnd: duration, deleted: false }]);
+    if (duration > 0 && videoSegments.length === 0) {
+      setVideoSegments([{ originalStart: 0, originalEnd: duration, deleted: false }]);
+      setAudioSegments([{ originalStart: 0, originalEnd: duration, deleted: false }]);
     }
   }, [duration]);
 
+  // Playback: skip deleted video segments AND mute deleted audio segments
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
     const onTimeUpdate = () => {
       const ct = video.currentTime;
-      // Skip over deleted segments in real-time
-      const deletedSeg = segments.find(s => s.deleted && ct >= s.originalStart && ct < s.originalEnd);
-      if (deletedSeg && isPlaying) {
-        // Find the next active segment after this deleted one
-        const nextActive = segments
-          .filter(s => !s.deleted && s.originalStart >= deletedSeg.originalEnd)
+
+      // Skip deleted video segments
+      const deletedVidSeg = videoSegments.find(s => s.deleted && ct >= s.originalStart && ct < s.originalEnd);
+      if (deletedVidSeg && isPlaying) {
+        const nextActive = videoSegments
+          .filter(s => !s.deleted && s.originalStart >= deletedVidSeg.originalEnd)
           .sort((a, b) => a.originalStart - b.originalStart)[0];
         if (nextActive) {
           video.currentTime = nextActive.originalStart;
@@ -79,6 +86,11 @@ export default function VideoEditor() {
           setIsPlaying(false);
         }
       }
+
+      // Mute/unmute based on audio segments
+      const inDeletedAudio = audioSegments.some(s => s.deleted && ct >= s.originalStart && ct < s.originalEnd);
+      video.muted = inDeletedAudio;
+
       setCurrentTime(video.currentTime);
     };
 
@@ -92,7 +104,7 @@ export default function VideoEditor() {
       video.removeEventListener('loadedmetadata', onLoaded);
       video.removeEventListener('ended', onEnded);
     };
-  }, [recording, segments, isPlaying]);
+  }, [recording, videoSegments, audioSegments, isPlaying]);
 
   const togglePlay = () => {
     if (!videoRef.current) return;
@@ -111,9 +123,40 @@ export default function VideoEditor() {
     }
   };
 
-  // Trim a segment edge (resize from start or end)
-  const handleTrimSegment = useCallback((index, edge, newTime) => {
-    setSegments(prev => {
+  // --- Video segment handlers ---
+  const handleSplitVideoSegment = useCallback((time) => {
+    setVideoSegments(prev => {
+      const newSegs = [];
+      for (const seg of prev) {
+        if (!seg.deleted && time > seg.originalStart + 0.1 && time < seg.originalEnd - 0.1) {
+          newSegs.push({ originalStart: seg.originalStart, originalEnd: time, deleted: false });
+          newSegs.push({ originalStart: time, originalEnd: seg.originalEnd, deleted: false });
+        } else {
+          newSegs.push(seg);
+        }
+      }
+      return newSegs;
+    });
+  }, []);
+
+  const handleDeleteVideoSegment = useCallback((index) => {
+    setVideoSegments(prev => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], deleted: true };
+      return updated;
+    });
+  }, []);
+
+  const handleRestoreVideoSegment = useCallback((index) => {
+    setVideoSegments(prev => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], deleted: false };
+      return updated;
+    });
+  }, []);
+
+  const handleTrimVideoSegment = useCallback((index, edge, newTime) => {
+    setVideoSegments(prev => {
       const updated = [...prev];
       const seg = { ...updated[index] };
       if (edge === 'start') {
@@ -126,6 +169,85 @@ export default function VideoEditor() {
     });
   }, [duration]);
 
+  // --- Audio segment handlers ---
+  const handleSplitAudioSegment = useCallback((time) => {
+    setAudioSegments(prev => {
+      const newSegs = [];
+      for (const seg of prev) {
+        if (!seg.deleted && time > seg.originalStart + 0.1 && time < seg.originalEnd - 0.1) {
+          newSegs.push({ originalStart: seg.originalStart, originalEnd: time, deleted: false });
+          newSegs.push({ originalStart: time, originalEnd: seg.originalEnd, deleted: false });
+        } else {
+          newSegs.push(seg);
+        }
+      }
+      return newSegs;
+    });
+  }, []);
+
+  const handleDeleteAudioSegment = useCallback((index) => {
+    setAudioSegments(prev => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], deleted: true };
+      return updated;
+    });
+  }, []);
+
+  const handleRestoreAudioSegment = useCallback((index) => {
+    setAudioSegments(prev => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], deleted: false };
+      return updated;
+    });
+  }, []);
+
+  const handleTrimAudioSegment = useCallback((index, edge, newTime) => {
+    setAudioSegments(prev => {
+      const updated = [...prev];
+      const seg = { ...updated[index] };
+      if (edge === 'start') {
+        seg.originalStart = Math.max(0, Math.min(seg.originalEnd - 0.2, newTime));
+      } else {
+        seg.originalEnd = Math.min(duration, Math.max(seg.originalStart + 0.2, newTime));
+      }
+      updated[index] = seg;
+      return updated;
+    });
+  }, [duration]);
+
+  // --- Image overlay handlers ---
+  const handleAddImage = useCallback(async (file, start, end) => {
+    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    setImageOverlays(prev => [...prev, { file_url, start, end, type: 'overlay' }]);
+  }, []);
+
+  const handleDeleteImage = useCallback((index) => {
+    setImageOverlays(prev => prev.filter((_, i) => i !== index));
+  }, []);
+
+  const handleTrimImage = useCallback((index, edge, newTime) => {
+    setImageOverlays(prev => {
+      const updated = [...prev];
+      const img = { ...updated[index] };
+      if (edge === 'start') {
+        img.start = Math.max(0, Math.min(img.end - 0.2, newTime));
+      } else {
+        img.end = Math.min(duration, Math.max(img.start + 0.2, newTime));
+      }
+      updated[index] = img;
+      return updated;
+    });
+  }, [duration]);
+
+  const handleUpdateImageType = useCallback((index, type) => {
+    setImageOverlays(prev => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], type };
+      return updated;
+    });
+  }, []);
+
+  // --- Subtitle handlers ---
   const currentSubtitle = subtitles.find(s => currentTime >= s.start && currentTime <= s.end);
 
   const handlePositionChange = useCallback((x, y) => {
@@ -140,46 +262,9 @@ export default function VideoEditor() {
     });
   }, []);
 
-  // Split a segment at a given time - creates two segments from one
-  const handleSplitSegment = useCallback((time) => {
-    setSegments(prev => {
-      const newSegs = [];
-      for (const seg of prev) {
-        if (!seg.deleted && time > seg.originalStart + 0.1 && time < seg.originalEnd - 0.1) {
-          // Split this segment into two
-          newSegs.push({ originalStart: seg.originalStart, originalEnd: time, deleted: false });
-          newSegs.push({ originalStart: time, originalEnd: seg.originalEnd, deleted: false });
-        } else {
-          newSegs.push(seg);
-        }
-      }
-      return newSegs;
-    });
-  }, []);
-
-  // Delete a segment (mark as deleted - player will skip it)
-  const handleDeleteSegment = useCallback((index) => {
-    setSegments(prev => {
-      const updated = [...prev];
-      updated[index] = { ...updated[index], deleted: true };
-      return updated;
-    });
-  }, []);
-
-  // Restore a deleted segment
-  const handleRestoreSegment = useCallback((index) => {
-    setSegments(prev => {
-      const updated = [...prev];
-      updated[index] = { ...updated[index], deleted: false };
-      return updated;
-    });
-  }, []);
-
   const handleAddSubtitle = useCallback((start, end) => {
     setSubtitles(prev => [...prev, { start, end, text: '' }]);
   }, []);
-
-
 
   const handleDeleteSubtitle = useCallback((index) => {
     setSubtitles(prev => prev.filter((_, i) => i !== index));
@@ -193,6 +278,7 @@ export default function VideoEditor() {
     });
   }, []);
 
+  // --- Save & Export ---
   const handleSave = async () => {
     setIsSaving(true);
     const cleaned = subtitles
@@ -212,8 +298,12 @@ export default function VideoEditor() {
       .filter(s => s.text && s.text.trim())
       .sort((a, b) => a.start - b.start);
     
-    // Convert deleted segments to cuts for the export function
-    const cleanedCuts = segments
+    const videoCuts = videoSegments
+      .filter(s => s.deleted)
+      .map(s => ({ start: s.originalStart, end: s.originalEnd }))
+      .sort((a, b) => a.start - b.start);
+
+    const audioCuts = audioSegments
       .filter(s => s.deleted)
       .map(s => ({ start: s.originalStart, end: s.originalEnd }))
       .sort((a, b) => a.start - b.start);
@@ -222,14 +312,16 @@ export default function VideoEditor() {
       recording_id: recordingId,
       subtitles: cleaned,
       style,
-      cuts: cleanedCuts,
+      cuts: videoCuts,
+      audio_cuts: audioCuts,
+      image_overlays: imageOverlays,
     });
     
     const blob = new Blob([response.data], { type: 'video/mp4' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${recording?.title || 'video'}_subtitled.mp4`;
+    a.download = `${recording?.title || 'video'}_edited.mp4`;
     document.body.appendChild(a);
     a.click();
     URL.revokeObjectURL(url);
@@ -242,6 +334,9 @@ export default function VideoEditor() {
     const sec = Math.floor(s % 60);
     return `${m}:${sec.toString().padStart(2, '0')}`;
   };
+
+  // Current image overlay for preview
+  const currentImage = imageOverlays.find(img => currentTime >= img.start && currentTime <= img.end);
 
   if (isLoading || !recording) {
     return (
@@ -260,7 +355,7 @@ export default function VideoEditor() {
             <Button variant="ghost" size="icon" onClick={() => navigate(createPageUrl('MyVideos'))}>
               <ArrowRight className="w-5 h-5" />
             </Button>
-            <h1 className="text-lg font-bold text-gray-800 dark:text-white">עורך כתוביות</h1>
+            <h1 className="text-lg font-bold text-gray-800 dark:text-white">עורך וידאו</h1>
           </div>
           <div className="flex items-center gap-2">
             <Button size="sm" variant="outline" onClick={handleSave} disabled={isSaving}>
@@ -282,6 +377,20 @@ export default function VideoEditor() {
             preload="metadata"
             onClick={togglePlay}
           />
+          {/* Image overlay preview */}
+          {currentImage && (
+            <div className={`absolute pointer-events-none ${
+              currentImage.type === 'replace' ? 'inset-0' : 
+              currentImage.type === 'background' ? 'inset-0 -z-10' :
+              'top-2 left-2 w-1/3 h-1/3'
+            }`}>
+              <img 
+                src={currentImage.file_url} 
+                className={`${currentImage.type === 'overlay' ? 'w-full h-full object-contain rounded-lg shadow-lg border border-white/30' : 'w-full h-full object-cover'}`}
+                alt=""
+              />
+            </div>
+          )}
           <SubtitleOverlay
             currentSubtitle={currentSubtitle}
             style={style}
@@ -311,13 +420,23 @@ export default function VideoEditor() {
           duration={duration}
           currentTime={currentTime}
           subtitles={subtitles}
-          segments={segments}
+          videoSegments={videoSegments}
+          audioSegments={audioSegments}
+          imageOverlays={imageOverlays}
           onSeek={handleSeek}
           onSubtitleDrag={handleSubtitleDrag}
-          onSplitSegment={handleSplitSegment}
-          onDeleteSegment={handleDeleteSegment}
-          onRestoreSegment={handleRestoreSegment}
-          onTrimSegment={handleTrimSegment}
+          onSplitVideoSegment={handleSplitVideoSegment}
+          onDeleteVideoSegment={handleDeleteVideoSegment}
+          onRestoreVideoSegment={handleRestoreVideoSegment}
+          onTrimVideoSegment={handleTrimVideoSegment}
+          onSplitAudioSegment={handleSplitAudioSegment}
+          onDeleteAudioSegment={handleDeleteAudioSegment}
+          onRestoreAudioSegment={handleRestoreAudioSegment}
+          onTrimAudioSegment={handleTrimAudioSegment}
+          onAddImage={handleAddImage}
+          onDeleteImage={handleDeleteImage}
+          onTrimImage={handleTrimImage}
+          onUpdateImageType={handleUpdateImageType}
           onAddSubtitle={handleAddSubtitle}
           onDeleteSubtitle={handleDeleteSubtitle}
           onUpdateSubtitle={handleUpdateSubtitle}
@@ -330,7 +449,7 @@ export default function VideoEditor() {
         <Button
           className="w-full h-12 text-lg bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
           onClick={handleExport}
-          disabled={isExporting || (subtitles.length === 0 && !segments.some(s => s.deleted))}
+          disabled={isExporting}
         >
           {isExporting ? (
             <>
@@ -340,8 +459,7 @@ export default function VideoEditor() {
           ) : (
             <>
               <Download className="w-5 h-5 ml-2" />
-              {segments.some(s => s.deleted) && subtitles.length > 0 ? 'ייצא עם כתוביות + חיתוך' : 
-               segments.some(s => s.deleted) ? 'ייצא עם חיתוך' : 'ייצא עם כתוביות'}
+              ייצא סרטון
             </>
           )}
         </Button>
