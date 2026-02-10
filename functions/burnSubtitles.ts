@@ -8,10 +8,10 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { recording_id, subtitles, style } = await req.json();
+    const { recording_id, subtitles = [], style, cuts = [] } = await req.json();
 
-    if (!recording_id || !subtitles || subtitles.length === 0) {
-      return Response.json({ error: 'Missing recording_id or subtitles' }, { status: 400 });
+    if (!recording_id || (subtitles.length === 0 && cuts.length === 0)) {
+      return Response.json({ error: 'Missing recording_id or no operations' }, { status: 400 });
     }
 
     // Get recording
@@ -112,33 +112,144 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
     const assPath = `/tmp/subs_${recording_id}.ass`;
     await Deno.writeTextFile(assPath, assContent);
 
-    // Run FFmpeg
-    const ffmpegCmd = new Deno.Command('ffmpeg', {
-      args: [
-        '-y',
-        '-i', inputPath,
-        '-vf', `ass=${assPath}`,
-        '-c:v', 'libx264',
-        '-preset', 'fast',
-        '-crf', '23',
-        '-c:a', 'copy',
-        outputPath,
-      ],
-      stdout: 'piped',
-      stderr: 'piped',
-    });
+    // Build FFmpeg filter chain
+    const hasSubtitles = subtitles.length > 0;
+    const hasCuts = cuts.length > 0;
 
-    const process = await ffmpegCmd.output();
+    if (hasCuts) {
+      // Sort cuts and build select filter to EXCLUDE cut segments
+      const sortedCuts = [...cuts].sort((a, b) => a.start - b.start);
+      
+      // Build "keep" segments (inverse of cuts)
+      const keepSegments = [];
+      let cursor = 0;
+      for (const cut of sortedCuts) {
+        if (cut.start > cursor) {
+          keepSegments.push({ start: cursor, end: cut.start });
+        }
+        cursor = Math.max(cursor, cut.end);
+      }
+      // Add final segment (until end of video)
+      keepSegments.push({ start: cursor, end: 999999 });
 
-    if (!process.success) {
-      const errText = new TextDecoder().decode(process.stderr);
-      console.error('FFmpeg error:', errText);
+      // Build select expression
+      const selectParts = keepSegments.map(seg => 
+        `between(t,${seg.start.toFixed(3)},${seg.end.toFixed(3)})`
+      ).join('+');
+
+      const selectFilter = `select='${selectParts}',setpts=N/FRAME_RATE/TB`;
+      const aselectFilter = `aselect='${selectParts}',asetpts=N/SR/TB`;
+
+      // Step 1: Cut first to a temp file
+      const cutPath = `/tmp/cut_${recording_id}.mp4`;
       
-      // Cleanup
-      try { await Deno.remove(inputPath); } catch {}
-      try { await Deno.remove(assPath); } catch {}
-      
-      return Response.json({ error: 'FFmpeg burn failed', details: errText.slice(-500) }, { status: 500 });
+      const cutCmd = new Deno.Command('ffmpeg', {
+        args: [
+          '-y',
+          '-i', inputPath,
+          '-vf', selectFilter,
+          '-af', aselectFilter,
+          '-c:v', 'libx264',
+          '-preset', 'fast',
+          '-crf', '23',
+          cutPath,
+        ],
+        stdout: 'piped',
+        stderr: 'piped',
+      });
+
+      const cutProcess = await cutCmd.output();
+      if (!cutProcess.success) {
+        const errText = new TextDecoder().decode(cutProcess.stderr);
+        console.error('FFmpeg cut error:', errText);
+        try { await Deno.remove(inputPath); } catch {}
+        try { await Deno.remove(assPath); } catch {}
+        return Response.json({ error: 'FFmpeg cut failed', details: errText.slice(-500) }, { status: 500 });
+      }
+
+      if (hasSubtitles) {
+        // Step 2: Burn subtitles onto cut video
+        // Need to adjust subtitle times for cuts
+        // Recalculate subtitle times based on removed segments
+        const adjustTime = (t) => {
+          let offset = 0;
+          for (const cut of sortedCuts) {
+            if (t > cut.end) {
+              offset += (cut.end - cut.start);
+            } else if (t > cut.start) {
+              offset += (t - cut.start);
+            }
+          }
+          return Math.max(0, t - offset);
+        };
+
+        // Rebuild ASS with adjusted times
+        let adjustedEvents = '';
+        for (const sub of subtitles) {
+          const adjStart = formatAssTime(adjustTime(sub.start));
+          const adjEnd = formatAssTime(adjustTime(sub.end));
+          const text = sub.text.replace(/\n/g, '\\N');
+          adjustedEvents += `Dialogue: 0,${adjStart},${adjEnd},Default,,0,0,0,,${text}\n`;
+        }
+        const adjustedAssPath = `/tmp/adj_subs_${recording_id}.ass`;
+        await Deno.writeTextFile(adjustedAssPath, assHeader + adjustedEvents);
+
+        const burnCmd = new Deno.Command('ffmpeg', {
+          args: [
+            '-y',
+            '-i', cutPath,
+            '-vf', `ass=${adjustedAssPath}`,
+            '-c:v', 'libx264',
+            '-preset', 'fast',
+            '-crf', '23',
+            '-c:a', 'copy',
+            outputPath,
+          ],
+          stdout: 'piped',
+          stderr: 'piped',
+        });
+
+        const burnProcess = await burnCmd.output();
+        try { await Deno.remove(adjustedAssPath); } catch {}
+        try { await Deno.remove(cutPath); } catch {}
+
+        if (!burnProcess.success) {
+          const errText = new TextDecoder().decode(burnProcess.stderr);
+          console.error('FFmpeg burn error:', errText);
+          try { await Deno.remove(inputPath); } catch {}
+          try { await Deno.remove(assPath); } catch {}
+          return Response.json({ error: 'FFmpeg burn failed', details: errText.slice(-500) }, { status: 500 });
+        }
+      } else {
+        // Just rename cut file as output
+        await Deno.rename(cutPath, outputPath);
+      }
+    } else {
+      // No cuts, just burn subtitles
+      const ffmpegCmd = new Deno.Command('ffmpeg', {
+        args: [
+          '-y',
+          '-i', inputPath,
+          '-vf', `ass=${assPath}`,
+          '-c:v', 'libx264',
+          '-preset', 'fast',
+          '-crf', '23',
+          '-c:a', 'copy',
+          outputPath,
+        ],
+        stdout: 'piped',
+        stderr: 'piped',
+      });
+
+      const process = await ffmpegCmd.output();
+
+      if (!process.success) {
+        const errText = new TextDecoder().decode(process.stderr);
+        console.error('FFmpeg error:', errText);
+        try { await Deno.remove(inputPath); } catch {}
+        try { await Deno.remove(assPath); } catch {}
+        return Response.json({ error: 'FFmpeg burn failed', details: errText.slice(-500) }, { status: 500 });
+      }
     }
 
     // Read output
