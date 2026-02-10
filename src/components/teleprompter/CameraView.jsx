@@ -3,6 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { Button } from "@/components/ui/button";
 import { Circle, Square, Pause, Play, FastForward, Rewind, Download, Scissors, Share2, Loader2, Lock, Clock } from "lucide-react";
 import Watermark from './Watermark';
+import DraggableTextFrame from './DraggableTextFrame';
 
 const qualityMap = {
   '720': { width: 1280, height: 720 },
@@ -44,6 +45,7 @@ export default function CameraView({
   const [maxDuration, setMaxDuration] = useState(60); // 15, 60, 180
   const [elapsedTime, setElapsedTime] = useState(0);
   const elapsedIntervalRef = useRef(null);
+  const [textFrame, setTextFrame] = useState({ left: 5, top: 20, width: 90, height: 60 });
 
   useEffect(() => {
     startCamera();
@@ -405,33 +407,39 @@ export default function CameraView({
 
       {/* Teleprompter Overlay */}
       <div 
-        className="absolute inset-0 overflow-hidden"
+        className="absolute inset-0"
         style={{ backgroundColor: hexToRgba(backgroundColor, backgroundOpacity) }}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
       >
-        <div
-          ref={containerRef}
-          className="absolute inset-x-0 p-6 transition-transform duration-100"
-          style={{
-            transform: `translateY(-${scrollPosition}px)`,
-            top: '50%'
-          }}
-        >
+        <DraggableTextFrame frameStyle={textFrame} onFrameChange={setTextFrame}>
           <div
-            className="text-right leading-relaxed whitespace-pre-wrap select-none"
-            style={{
-              fontSize: `${fontSize}px`,
-              color: textColor,
-              fontWeight: 500,
-              textShadow: '2px 2px 4px rgba(0,0,0,0.8)'
-            }}
-            dir="rtl"
+            className="absolute inset-0 overflow-hidden"
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
           >
-            {text}
+            <div
+              ref={containerRef}
+              className="absolute inset-x-0 p-4 transition-transform duration-100"
+              style={{
+                transform: `translateY(-${scrollPosition}px)`,
+                top: '50%'
+              }}
+            >
+              <div
+                className="text-right leading-relaxed whitespace-pre-wrap select-none"
+                style={{
+                  fontSize: `${fontSize}px`,
+                  color: textColor,
+                  fontWeight: 500,
+                  textShadow: '2px 2px 4px rgba(0,0,0,0.8)'
+                }}
+                dir="rtl"
+              >
+                {text}
+              </div>
+            </div>
           </div>
-        </div>
+        </DraggableTextFrame>
       </div>
 
       {/* Controls */}
