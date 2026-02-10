@@ -111,12 +111,20 @@ export default function VideoEditor() {
     }
   };
 
-  const handleProgressClick = (e) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const pct = x / rect.width;
-    handleSeek(pct * duration);
-  };
+  // Trim a segment edge (resize from start or end)
+  const handleTrimSegment = useCallback((index, edge, newTime) => {
+    setSegments(prev => {
+      const updated = [...prev];
+      const seg = { ...updated[index] };
+      if (edge === 'start') {
+        seg.originalStart = Math.max(0, Math.min(seg.originalEnd - 0.2, newTime));
+      } else {
+        seg.originalEnd = Math.min(duration, Math.max(seg.originalStart + 0.2, newTime));
+      }
+      updated[index] = seg;
+      return updated;
+    });
+  }, [duration]);
 
   const currentSubtitle = subtitles.find(s => currentTime >= s.start && currentTime <= s.end);
 
@@ -309,6 +317,7 @@ export default function VideoEditor() {
           onSplitSegment={handleSplitSegment}
           onDeleteSegment={handleDeleteSegment}
           onRestoreSegment={handleRestoreSegment}
+          onTrimSegment={handleTrimSegment}
           onAddSubtitle={handleAddSubtitle}
           onDeleteSubtitle={handleDeleteSubtitle}
           onUpdateSubtitle={handleUpdateSubtitle}
