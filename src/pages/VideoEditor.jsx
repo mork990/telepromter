@@ -2,12 +2,14 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Play, Pause, Download, Loader2, Save } from "lucide-react";
+import { ArrowRight, Play, Pause, Download, Loader2, Save, Scissors } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import SubtitleOverlay from '../components/editor/SubtitleOverlay';
 import StylePanel from '../components/editor/StylePanel';
 import TimelineEditor from '../components/editor/TimelineEditor';
+import VisualTimeline from '../components/editor/VisualTimeline';
+import CutPanel from '../components/editor/CutPanel';
 
 export default function VideoEditor() {
   const navigate = useNavigate();
@@ -28,6 +30,7 @@ export default function VideoEditor() {
     positionX: 50,
     positionY: 85,
   });
+  const [cuts, setCuts] = useState([]);
   const [isSaving, setIsSaving] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
 
@@ -95,6 +98,22 @@ export default function VideoEditor() {
     setStyle(prev => ({ ...prev, positionX: x, positionY: y }));
   }, []);
 
+  const handleSubtitleDrag = useCallback((index, start, end) => {
+    setSubtitles(prev => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], start, end };
+      return updated;
+    });
+  }, []);
+
+  const handleCutDrag = useCallback((index, start, end) => {
+    setCuts(prev => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], start, end };
+      return updated;
+    });
+  }, []);
+
   const handleSave = async () => {
     setIsSaving(true);
     const cleaned = subtitles
@@ -114,10 +133,15 @@ export default function VideoEditor() {
       .filter(s => s.text && s.text.trim())
       .sort((a, b) => a.start - b.start);
     
+    const cleanedCuts = cuts
+      .filter(c => c.end > c.start)
+      .sort((a, b) => a.start - b.start);
+    
     const response = await base44.functions.invoke('burnSubtitles', {
       recording_id: recordingId,
       subtitles: cleaned,
       style,
+      cuts: cleanedCuts,
     });
     
     const blob = new Blob([response.data], { type: 'video/mp4' });
@@ -192,36 +216,25 @@ export default function VideoEditor() {
           )}
         </div>
 
-        {/* Progress Bar */}
-        <div className="space-y-1">
-          <div
-            className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full cursor-pointer relative"
-            onClick={handleProgressClick}
-          >
-            <div
-              className="h-full bg-indigo-600 rounded-full transition-all"
-              style={{ width: duration ? `${(currentTime / duration) * 100}%` : '0%' }}
-            />
-            {/* Subtitle markers */}
-            {subtitles.map((s, i) => (
-              <div
-                key={i}
-                className="absolute top-0 h-full bg-amber-400/50 rounded-sm"
-                style={{
-                  left: duration ? `${(s.start / duration) * 100}%` : '0%',
-                  width: duration ? `${((s.end - s.start) / duration) * 100}%` : '0%',
-                }}
-              />
-            ))}
-          </div>
-          <div className="flex justify-between text-xs text-gray-400" dir="ltr">
-            <span>{formatTimestamp(currentTime)}</span>
-            <button onClick={togglePlay} className="text-indigo-600 font-medium">
-              {isPlaying ? 'השהה' : 'נגן'}
-            </button>
-            <span>{formatTimestamp(duration)}</span>
-          </div>
+        {/* Playback controls */}
+        <div className="flex items-center justify-between" dir="ltr">
+          <span className="text-xs text-gray-400">{formatTimestamp(currentTime)}</span>
+          <Button size="sm" variant="ghost" onClick={togglePlay} className="text-indigo-600">
+            {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+          </Button>
+          <span className="text-xs text-gray-400">{formatTimestamp(duration)}</span>
         </div>
+
+        {/* Visual Timeline */}
+        <VisualTimeline
+          duration={duration}
+          currentTime={currentTime}
+          subtitles={subtitles}
+          cuts={cuts}
+          onSeek={handleSeek}
+          onSubtitleDrag={handleSubtitleDrag}
+          onCutDrag={handleCutDrag}
+        />
 
         {/* Style Panel */}
         <StylePanel style={style} onChange={setStyle} />
@@ -234,21 +247,30 @@ export default function VideoEditor() {
           onSeek={handleSeek}
         />
 
+        {/* Cut Panel */}
+        <CutPanel
+          cuts={cuts}
+          onChange={setCuts}
+          currentTime={currentTime}
+          duration={duration}
+        />
+
         {/* Export Button */}
         <Button
           className="w-full h-12 text-lg bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
           onClick={handleExport}
-          disabled={isExporting || subtitles.length === 0}
+          disabled={isExporting || (subtitles.length === 0 && cuts.length === 0)}
         >
           {isExporting ? (
             <>
               <Loader2 className="w-5 h-5 ml-2 animate-spin" />
-              מייצא סרטון עם כתוביות...
+              מייצא סרטון...
             </>
           ) : (
             <>
               <Download className="w-5 h-5 ml-2" />
-              ייצא סרטון עם כתוביות
+              {cuts.length > 0 && subtitles.length > 0 ? 'ייצא עם כתוביות + חיתוך' : 
+               cuts.length > 0 ? 'ייצא עם חיתוך' : 'ייצא עם כתוביות'}
             </>
           )}
         </Button>
