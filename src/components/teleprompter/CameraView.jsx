@@ -403,44 +403,6 @@ export default function CameraView({
       {/* Watermark for free users */}
       <Watermark show={!isPremium && isRecording} />
 
-      {/* Duration Selector - top left */}
-      {!isRecording && !recordedVideo && (
-        <div className="absolute top-6 left-4 z-20 flex gap-1.5">
-          {[
-            { label: '15s', value: 15, premium: false },
-            { label: '60s', value: 60, premium: false },
-            { label: '3 דק׳', value: 180, premium: true },
-          ].map(opt => {
-            const locked = opt.premium && !isPremium;
-            const active = maxDuration === opt.value;
-            return (
-              <button
-                key={opt.value}
-                className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium transition-all select-none ${
-                  active
-                    ? 'bg-white text-black shadow-lg'
-                    : locked
-                    ? 'bg-white/10 text-white/40 border border-white/10'
-                    : 'bg-white/20 text-white border border-white/20 hover:bg-white/30'
-                }`}
-                onClick={() => { if (!locked) setMaxDuration(opt.value); }}
-              >
-                {locked && <Lock className="w-3 h-3" />}
-                <Clock className="w-3 h-3" />
-                {opt.label}
-              </button>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Recording timer */}
-      {isRecording && (
-        <div className="absolute top-6 left-4 z-20 bg-black/50 text-white px-3 py-1.5 rounded-full text-sm font-mono select-none pointer-events-none">
-          {Math.floor(elapsedTime / 60)}:{(elapsedTime % 60).toString().padStart(2, '0')} / {Math.floor(maxDuration / 60)}:{(maxDuration % 60).toString().padStart(2, '0')}
-        </div>
-      )}
-
       {/* Teleprompter Overlay */}
       <div 
         className="absolute inset-0 overflow-hidden"
@@ -475,8 +437,50 @@ export default function CameraView({
       {/* Controls */}
       <div 
         className="absolute inset-x-0 pointer-events-auto z-10"
-        style={{ bottom: 'calc(2rem + env(safe-area-inset-bottom))' }}
+        style={{ bottom: 'calc(1.5rem + env(safe-area-inset-bottom))' }}
       >
+        {/* Duration selector - above controls */}
+        {!isRecording && !recordedVideo && countdown === null && (
+          <div className="flex items-center justify-center gap-2 mb-4 px-6">
+            {[
+              { label: '15 שנ׳', value: 15, premium: false },
+              { label: '60 שנ׳', value: 60, premium: false },
+              { label: '3 דק׳', value: 180, premium: true },
+            ].map(opt => {
+              const locked = opt.premium && !isPremium;
+              const active = maxDuration === opt.value;
+              return (
+                <button
+                  key={opt.value}
+                  className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all select-none ${
+                    active
+                      ? 'bg-white text-black shadow-lg scale-105'
+                      : locked
+                      ? 'bg-white/10 text-white/40 border border-white/10'
+                      : 'bg-white/20 text-white border border-white/20 hover:bg-white/30'
+                  }`}
+                  onClick={() => { if (!locked) setMaxDuration(opt.value); }}
+                >
+                  {locked && <Lock className="w-3 h-3" />}
+                  {opt.label}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Timer display during recording */}
+        {isRecording && (
+          <div className="flex items-center justify-center mb-3">
+            <div className="bg-black/60 backdrop-blur-sm text-white px-4 py-1.5 rounded-full text-base font-mono select-none pointer-events-none flex items-center gap-2">
+              <div className={`w-2 h-2 rounded-full ${isRecordingPaused ? 'bg-yellow-400' : 'bg-red-500 animate-pulse'}`} />
+              <span>{Math.floor(elapsedTime / 60)}:{(elapsedTime % 60).toString().padStart(2, '0')}</span>
+              <span className="text-white/40">/</span>
+              <span className="text-white/60">{Math.floor(maxDuration / 60)}:{(maxDuration % 60).toString().padStart(2, '0')}</span>
+            </div>
+          </div>
+        )}
+
         <div className="flex items-center justify-center gap-4 px-6">
           {recordedVideo ? (
             <div className="flex flex-col items-center gap-3">
