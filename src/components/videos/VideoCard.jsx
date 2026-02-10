@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Play, Download, Share2, Trash2, Clock, HardDrive, Subtitles, Pencil, Loader2 } from "lucide-react";
+import { Play, Download, Share2, Trash2, Clock, HardDrive, Subtitles, Pencil, Loader2, Film } from "lucide-react";
 import { base44 } from '@/api/base44Client';
+import { useNavigate } from 'react-router-dom';
+import { createPageUrl } from '@/utils';
 import moment from 'moment';
-import SubtitleEditor from './SubtitleEditor';
 
 function formatDuration(seconds) {
   if (!seconds) return '--:--';
@@ -20,9 +21,9 @@ function formatSize(bytes) {
 }
 
 export default function VideoCard({ recording, onDelete, onUpdate }) {
+  const navigate = useNavigate();
   const [showConfirm, setShowConfirm] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
-  const [showEditor, setShowEditor] = useState(false);
 
   const handleDownload = () => {
     const a = document.createElement('a');
@@ -48,12 +49,6 @@ export default function VideoCard({ recording, onDelete, onUpdate }) {
     await base44.functions.invoke('transcribeVideo', { recording_id: recording.id });
     if (onUpdate) onUpdate();
     setIsTranscribing(false);
-  };
-
-  const handleSaveSubtitles = async (subtitles) => {
-    await base44.entities.Recording.update(recording.id, { subtitles, subtitles_status: 'done' });
-    if (onUpdate) onUpdate();
-    setShowEditor(false);
   };
 
   const hasSubtitles = recording.subtitles && recording.subtitles.length > 0;
@@ -104,21 +99,20 @@ export default function VideoCard({ recording, onDelete, onUpdate }) {
           </div>
         </div>
         {/* Subtitle Section */}
-        <div className="mb-3">
-          {showEditor ? (
-            <SubtitleEditor
-              subtitles={recording.subtitles || []}
-              onSave={handleSaveSubtitles}
-              onCancel={() => setShowEditor(false)}
-            />
-          ) : hasSubtitles ? (
+        <div className="mb-3 space-y-2">
+          {hasSubtitles ? (
             <div className="bg-indigo-50 dark:bg-indigo-900/30 rounded-lg p-2.5">
               <div className="flex items-center justify-between mb-1.5">
                 <span className="text-xs font-medium text-indigo-700 dark:text-indigo-300 flex items-center gap-1">
                   <Subtitles className="w-3 h-3" />
                   כתוביות ({recording.subtitles.length} קטעים)
                 </span>
-                <Button size="sm" variant="ghost" className="h-6 text-xs text-indigo-600" onClick={() => setShowEditor(true)}>
+                <Button 
+                  size="sm" 
+                  variant="ghost" 
+                  className="h-6 text-xs text-indigo-600" 
+                  onClick={() => navigate(createPageUrl('VideoEditor') + '?id=' + recording.id)}
+                >
                   <Pencil className="w-3 h-3 ml-1" />
                   ערוך
                 </Button>
@@ -153,6 +147,16 @@ export default function VideoCard({ recording, onDelete, onUpdate }) {
               )}
             </Button>
           )}
+          
+          <Button
+            size="sm"
+            variant="outline"
+            className="w-full text-purple-600 border-purple-200 hover:bg-purple-50"
+            onClick={() => navigate(createPageUrl('VideoEditor') + '?id=' + recording.id)}
+          >
+            <Film className="w-4 h-4 ml-1" />
+            עורך כתוביות
+          </Button>
         </div>
 
         <div className="flex items-center gap-2">
