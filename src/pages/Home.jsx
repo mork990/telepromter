@@ -129,7 +129,8 @@ export default function Home() {
       backgroundColor,
       cameraFacing,
       scrollSpeed,
-      backgroundOpacity
+      backgroundOpacity,
+      videoQuality
     };
     localStorage.setItem('teleprompterSettings', JSON.stringify(settings));
 
@@ -156,7 +157,8 @@ export default function Home() {
       backgroundColor,
       cameraFacing,
       scrollSpeed,
-      backgroundOpacity
+      backgroundOpacity,
+      videoQuality
     };
     localStorage.setItem('teleprompterSettings', JSON.stringify(settings));
     navigate(createPageUrl('Settings'));
