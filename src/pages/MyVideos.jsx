@@ -55,6 +55,7 @@ export default function MyVideos() {
                 key={rec.id}
                 recording={rec}
                 onDelete={() => deleteMutation.mutate(rec.id)}
+                onUpdate={() => queryClient.invalidateQueries({ queryKey: ['recordings'] })}
               />
             ))}
           </div>
