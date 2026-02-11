@@ -16,8 +16,8 @@ Deno.serve(async (req) => {
     const timestamp = Math.round(new Date().getTime() / 1000);
     const folder = 'video-uploads';
 
-    // Generate signature manually: sha1 of "folder=video-uploads&timestamp=XXXXX" + api_secret
-    const toSign = `folder=${folder}&timestamp=${timestamp}${apiSecret}`;
+    // Generate signature: folder + resource_type + timestamp + api_secret
+    const toSign = `folder=${folder}&resource_type=video&timestamp=${timestamp}${apiSecret}`;
     const signature = createHash('sha1').update(toSign).digest('hex');
 
     return Response.json({
@@ -26,6 +26,7 @@ Deno.serve(async (req) => {
       folder,
       cloud_name: cloudName,
       api_key: apiKey,
+      resource_type: 'video',
     });
   } catch (error) {
     console.error('Signature error:', error);
