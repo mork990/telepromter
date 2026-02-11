@@ -47,6 +47,7 @@
  *
  * The mainPage value must match a key in the PAGES object exactly.
  */
+import AIEditor from './pages/AIEditor';
 import AdminPanel from './pages/AdminPanel';
 import Home from './pages/Home';
 import MyVideos from './pages/MyVideos';
@@ -54,11 +55,11 @@ import Pricing from './pages/Pricing';
 import Recording from './pages/Recording';
 import Settings from './pages/Settings';
 import VideoEditor from './pages/VideoEditor';
-import AIEditor from './pages/AIEditor';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
+    "AIEditor": AIEditor,
     "AdminPanel": AdminPanel,
     "Home": Home,
     "MyVideos": MyVideos,
@@ -66,7 +67,6 @@ export const PAGES = {
     "Recording": Recording,
     "Settings": Settings,
     "VideoEditor": VideoEditor,
-    "AIEditor": AIEditor,
 }
 
 export const pagesConfig = {

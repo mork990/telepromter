@@ -50,39 +50,94 @@ ${conversationHistory}
 
 תפקידך:
 1. אם המשתמש מבקש עריכה כללית (כמו "ערוך מקצועית") - תן המלצות ספציפיות מה כדאי לעשות ושאל אם להמשיך.
-2. אם המשתמש מבקש פעולה ספציפית - תאר מה בדיוק תעשה ותן הוראות ברורות.
-3. אם המשתמש מאשר - בצע את הפעולה ותאר מה עשית.
+2. אם המשתמש מבקש פעולה ספציפית - החזר JSON עם הפעולה שצריך לבצע.
+3. אם המשתמש מאשר המלצה קודמת - החזר JSON עם הפעולה.
 
-הפעולות שאתה יכול לבצע (דרך Cloudinary API):
-- trim: קיצור סרטון - פרמטרים: start_offset, end_offset (בשניות)
-- cut: חיתוך קטע מתוך הסרטון - פרמטרים: cut_start, cut_end (בשניות)
-- add_subtitles: הוספת כתוביות - פרמטרים: subtitles (מערך של {start, end, text}), font_size, font_color
-- speed: שינוי מהירות - פרמטרים: rate (0.5=חצי מהירות, 2=כפול)
-- resize: שינוי גודל/רזולוציה - פרמטרים: width, height, crop (scale/fill/fit/crop)
-- crop_area: חיתוך אזור מסוים מהפריים - פרמטרים: width, height, x, y, gravity
-- rotate: סיבוב - פרמטרים: angle (90, 180, 270 או כל זווית)
-- flip: היפוך - פרמטרים: direction (horizontal/vertical)
-- filter: אפקטים - פרמטרים: effect (grayscale, sepia, brightness, contrast, saturation, blur, pixelate), value (עוצמה)
-- add_text: הוספת טקסט מעוצב - פרמטרים: text, font_size, font_color, gravity, x, y, font_family
-- add_image_overlay: הוספת תמונה/לוגו - פרמטרים: image_url, gravity, width, height, x, y, opacity
-- remove_audio: הסרת אודיו (ללא פרמטרים)
-- volume: שליטה בעוצמת קול - פרמטרים: level (0-200, 100=רגיל)
-- replace_audio: החלפת רצועת אודיו - פרמטרים: audio_url
-- to_gif: המרה ל-GIF - פרמטרים: start_offset, end_offset, fps
-- concatenate: חיבור סרטונים - פרמטרים: video_urls (מערך כתובות)
-- transition: מעבר בין סרטונים - פרמטרים: video_url, effect (fade, wipe...), duration
-- extract_frame: חילוץ פריים כתמונה - פרמטרים: time (שניות)
+כשאתה רוצה לבצע פעולה בפועל, החזר את התשובה בפורמט הבא:
+הטקסט שלך למשתמש
+---ACTION---
+{"action": "שם_הפעולה", "params": {הפרמטרים}}
 
-ענה בעברית. היה ידידותי ומקצועי. תן תשובות קצרות וממוקדות.`;
+הפעולות הזמינות:
+- trim: קיצור סרטון - params: {start_offset, end_offset} (בשניות)
+- cut: חיתוך קטע - params: {cut_start, cut_end} (בשניות)
+- add_subtitles: כתוביות - params: {subtitles: [{start, end, text}], font_size, font_color}
+- speed: מהירות - params: {rate} (0.5=חצי, 2=כפול)
+- resize: גודל - params: {width, height, crop}
+- crop_area: חיתוך אזור - params: {width, height, x, y, gravity}
+- rotate: סיבוב - params: {angle}
+- flip: היפוך - params: {direction: "horizontal"/"vertical"}
+- filter: אפקט - params: {effect: "grayscale"/"sepia"/"brightness"/"contrast"/"saturation"/"blur"/"pixelate", value}
+- add_text: טקסט - params: {text, font_size, font_color, gravity, x, y, font_family}
+- add_image_overlay: תמונה - params: {image_url, gravity, width, height, x, y, opacity}
+- remove_audio: הסרת אודיו - params: {}
+- volume: עוצמת קול - params: {level} (0-200)
+- replace_audio: החלפת אודיו - params: {audio_url}
+- to_gif: ל-GIF - params: {start_offset, end_offset, fps}
+- concatenate: חיבור - params: {video_urls: [...]}
+- transition: מעבר - params: {video_url, effect, duration}
+- extract_frame: חילוץ פריים - params: {time}
 
-    const response = await base44.integrations.Core.InvokeLLM({
-      prompt,
-    });
+חשוב: אם המשתמש מבקש פעולה ברורה (כמו "קצר לשניות 5-30", "הפוך לשחור לבן", "הסר קול") - בצע מיד! אל תשאל שוב. כלול את ---ACTION--- עם ה-JSON.
+אם לא ברור מה לעשות - שאל.
 
-    setMessages(prev => {
-      const updated = prev.filter(m => !m.loading);
-      return [...updated, { role: 'assistant', content: response }];
-    });
+ענה בעברית. היה ידידותי ומקצועי. תן תשובות קצרות.`;
+
+    const response = await base44.integrations.Core.InvokeLLM({ prompt });
+
+    // Check if LLM returned an action to execute
+    const responseText = typeof response === 'string' ? response : JSON.stringify(response);
+    
+    if (responseText.includes('---ACTION---')) {
+      const [displayText, actionPart] = responseText.split('---ACTION---');
+      
+      // Show the AI message first
+      setMessages(prev => {
+        const updated = prev.filter(m => !m.loading);
+        return [...updated, { role: 'assistant', content: displayText.trim() + '\n\n⏳ מבצע את הפעולה...' }];
+      });
+
+      // Parse and execute the action
+      const actionJson = actionPart.trim();
+      const match = actionJson.match(/\{[\s\S]*\}/);
+      if (match) {
+        const { action, params } = JSON.parse(match[0]);
+        
+        const result = await base44.functions.invoke('cloudinaryEdit', {
+          video_url: selectedVideo.file_url,
+          action,
+          params
+        });
+
+        const resultData = result.data;
+        
+        if (resultData.success) {
+          setMessages(prev => {
+            const updated = prev.slice(0, -1); // Remove the "executing..." message
+            return [...updated, { 
+              role: 'assistant', 
+              content: displayText.trim(),
+              resultUrl: resultData.processed_url,
+              resultAction: action
+            }];
+          });
+        } else {
+          setMessages(prev => {
+            const updated = prev.slice(0, -1);
+            return [...updated, { 
+              role: 'assistant', 
+              content: displayText.trim() + `\n\n❌ שגיאה: ${resultData.error || 'משהו השתבש'}` 
+            }];
+          });
+        }
+      }
+    } else {
+      setMessages(prev => {
+        const updated = prev.filter(m => !m.loading);
+        return [...updated, { role: 'assistant', content: responseText }];
+      });
+    }
+    
     setProcessing(false);
   };
 
