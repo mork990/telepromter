@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useLayoutEffect } from 'react';
 
 const ThemeContext = createContext({ theme: 'dark', toggleTheme: () => {} });
 
@@ -6,31 +6,29 @@ export function useTheme() {
   return useContext(ThemeContext);
 }
 
-export default function ThemeProvider({ children }) {
-  const [theme, setTheme] = useState(() => {
+// Apply saved theme immediately before paint
+function getInitialTheme() {
+  try {
     const saved = localStorage.getItem('app-theme');
-    return saved || 'dark';
-  });
+    if (saved === 'light' || saved === 'dark') {
+      document.documentElement.setAttribute('data-theme', saved);
+      return saved;
+    }
+  } catch (e) {}
+  document.documentElement.setAttribute('data-theme', 'dark');
+  return 'dark';
+}
 
-  // Apply theme on mount and on change
-  useEffect(() => {
+export default function ThemeProvider({ children }) {
+  const [theme, setTheme] = useState(getInitialTheme);
+
+  useLayoutEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem('app-theme', theme);
   }, [theme]);
 
-  // Also apply immediately on first render
-  useEffect(() => {
-    const saved = localStorage.getItem('app-theme') || 'dark';
-    document.documentElement.setAttribute('data-theme', saved);
-  }, []);
-
   const toggleTheme = () => {
-    setTheme(prev => {
-      const next = prev === 'dark' ? 'light' : 'dark';
-      document.documentElement.setAttribute('data-theme', next);
-      localStorage.setItem('app-theme', next);
-      return next;
-    });
+    setTheme(prev => prev === 'dark' ? 'light' : 'dark');
   };
 
   return (
