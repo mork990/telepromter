@@ -8,7 +8,6 @@ export default function UploadVideoButton({ onUploaded }) {
   const [statusText, setStatusText] = useState('');
   const [percent, setPercent] = useState(0);
   const inputRef = useRef(null);
-  const xhrRef = useRef(null);
 
   const MAX_SIZE_MB = 500;
   const MAX_DURATION_SEC = 600;
