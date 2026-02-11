@@ -5,6 +5,7 @@ import { Film, Loader2 } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import VideoCard from '../components/videos/VideoCard';
+import UploadVideoButton from '../components/videos/UploadVideoButton';
 import BottomNav from '../components/navigation/BottomNav';
 
 export default function MyVideos() {
