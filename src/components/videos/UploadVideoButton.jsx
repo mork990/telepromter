@@ -149,6 +149,7 @@ export default function UploadVideoButton({ onUploaded }) {
 
   const resetState = () => {
     if (inputRef.current) inputRef.current.value = '';
+    cancelledRef.current = true;
     if (xhrRef.current) {
       xhrRef.current.abort();
       xhrRef.current = null;
