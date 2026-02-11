@@ -12,31 +12,27 @@ Deno.serve(async (req) => {
     const apiKey = (Deno.env.get("CLOUDINARY_API_KEY") || "").trim();
     const apiSecret = (Deno.env.get("CLOUDINARY_API_SECRET") || "").trim();
 
-    // Check if preset already exists by trying to get it
     const presetName = 'base44_video_unsigned';
-    
-    // Try to create the unsigned upload preset
-    const authHeader = 'Basic ' + btoa(`${apiKey}:${apiSecret}`);
-    
+    const authHeader = 'Basic ' + btoa(apiKey + ':' + apiSecret);
+
     // First try to get existing preset
     const getRes = await fetch(
-      `https://api.cloudinary.com/v1_1/${cloudName}/upload_presets/${presetName}`,
+      'https://api.cloudinary.com/v1_1/' + cloudName + '/upload_presets/' + presetName,
       { headers: { 'Authorization': authHeader } }
     );
 
     if (getRes.ok) {
-      // Preset already exists
-      return Response.json({ 
-        success: true, 
-        preset_name: presetName, 
+      return Response.json({
+        success: true,
+        preset_name: presetName,
         cloud_name: cloudName,
-        message: 'Preset already exists' 
+        message: 'Preset already exists'
       });
     }
 
     // Create new unsigned preset
     const createRes = await fetch(
-      `https://api.cloudinary.com/v1_1/${cloudName}/upload_presets`,
+      'https://api.cloudinary.com/v1_1/' + cloudName + '/upload_presets',
       {
         method: 'POST',
         headers: {
