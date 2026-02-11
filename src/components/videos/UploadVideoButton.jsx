@@ -57,11 +57,16 @@ export default function UploadVideoButton({ onUploaded }) {
       setStatusText(`מעלה ${sizeMB}MB...`);
       setPercent(10);
 
-      // Simulate progress since UploadFile doesn't provide progress events
+      // Simulate progress - slower for larger files
+      const estimatedSec = Math.max(5, Math.round(file.size / (1024 * 1024) / 2));
+      const incrementPerTick = 75 / (estimatedSec * 2); // reach ~85% by estimated time
       const progressInterval = setInterval(() => {
         setPercent(prev => {
           if (prev >= 85) { clearInterval(progressInterval); return 85; }
-          return prev + Math.random() * 3 + 1;
+          const newVal = prev + incrementPerTick;
+          const loadedMB = ((newVal / 90) * file.size / (1024 * 1024)).toFixed(0);
+          setStatusText(`מעלה ${loadedMB}/${sizeMB}MB...`);
+          return newVal;
         });
       }, 500);
 
