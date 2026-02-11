@@ -439,6 +439,7 @@ export default function VisualTimeline({
                     onRestore={() => onRestoreAudioSegment(i)}
                     onTrimStart={(e) => handleItemPointerDown(e, 'audio-seg', i, 'start')}
                     onTrimEnd={(e) => handleItemPointerDown(e, 'audio-seg', i, 'end')}
+                    onInsertFile={onInsertAudioFile}
                   />
                 ))}
               </div>
