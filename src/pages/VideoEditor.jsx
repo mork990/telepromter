@@ -9,6 +9,8 @@ import SubtitleOverlay from '../components/editor/SubtitleOverlay';
 import StylePanel from '../components/editor/StylePanel';
 import VisualTimeline from '../components/editor/VisualTimeline';
 import DraggableImage from '../components/editor/DraggableImage';
+import EffectsPanel from '../components/editor/EffectsPanel';
+import TemplatesPanel from '../components/editor/TemplatesPanel';
 
 export default function VideoEditor() {
   const navigate = useNavigate();
@@ -43,6 +45,8 @@ export default function VideoEditor() {
   const [isExporting, setIsExporting] = useState(false);
   const [videoHidden, setVideoHidden] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
+  const [activeEffect, setActiveEffect] = useState('none');
+  const [videoFilter, setVideoFilter] = useState('none');
 
   const { data: recording, isLoading } = useQuery({
     queryKey: ['recording', recordingId],
@@ -429,16 +433,16 @@ export default function VideoEditor() {
 
   if (isLoading || !recording) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0e0e1a]">
-        <Loader2 className="w-8 h-8 animate-spin text-[#00d4aa]" />
+      <div className="min-h-screen flex items-center justify-center bg-[#1d1022]">
+        <Loader2 className="w-8 h-8 animate-spin text-purple-500" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#0e0e1a] text-white" dir="rtl">
+    <div className="min-h-screen bg-[#1d1022] text-white" dir="rtl">
       {/* Header */}
-      <div className="sticky z-10 bg-[#1a1a2e]/80 backdrop-blur-xl border-b border-white/5" style={{ top: 'env(safe-area-inset-top)' }}>
+      <div className="sticky z-10 bg-[#1d1022]/90 backdrop-blur-xl border-b border-purple-500/10" style={{ top: 'env(safe-area-inset-top)' }}>
         <div className="max-w-lg mx-auto px-4 h-12 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 select-none" onClick={() => navigate(createPageUrl('MyVideos'))}>
@@ -469,7 +473,7 @@ export default function VideoEditor() {
             ref={videoRef}
             src={recording.file_url}
             className={`absolute inset-0 w-full h-full object-contain transition-opacity duration-150 ${videoHidden ? 'opacity-0' : 'opacity-100'}`}
-            style={{ zIndex: 1 }}
+            style={{ zIndex: 1, filter: videoFilter !== 'none' ? videoFilter : undefined }}
             playsInline
             preload="metadata"
             onClick={togglePlay}
@@ -507,9 +511,9 @@ export default function VideoEditor() {
         </div>
 
         {/* Playback controls */}
-        <div className="flex items-center justify-between bg-[#1a1a2e] rounded-xl px-4 py-2" dir="ltr">
+        <div className="flex items-center justify-between bg-[#2a1b30] rounded-xl px-4 py-2" dir="ltr">
           <span className="text-xs text-white/40 font-mono">{formatTimestamp(currentTime)}</span>
-          <button onClick={togglePlay} className="w-9 h-9 rounded-full bg-[#00d4aa] flex items-center justify-center select-none active:scale-95 transition-transform">
+          <button onClick={togglePlay} className="w-9 h-9 rounded-full bg-purple-600 flex items-center justify-center select-none active:scale-95 transition-transform">
             {isPlaying ? <Pause className="w-4 h-4 text-black" /> : <Play className="w-4 h-4 text-black" />}
           </button>
           <span className="text-xs text-white/40 font-mono">{formatTimestamp(duration)}</span>
@@ -554,12 +558,30 @@ export default function VideoEditor() {
           onMoveMediaLayer={handleMoveMediaLayer}
         />
 
+        {/* Effects Panel */}
+        <EffectsPanel
+          activeEffect={activeEffect}
+          onApplyEffect={(id, filter) => {
+            setActiveEffect(id);
+            setVideoFilter(filter);
+          }}
+        />
+
+        {/* Templates Panel */}
+        <TemplatesPanel
+          onApplyTemplate={(template) => {
+            setStyle(prev => ({ ...prev, ...template.subtitleStyle }));
+            setActiveEffect(template.effectId);
+            setVideoFilter(template.effect);
+          }}
+        />
+
         {/* Style Panel */}
         <StylePanel style={style} onChange={setStyle} />
 
         {/* Export Button */}
         <button
-          className="w-full h-12 rounded-full bg-gradient-to-r from-[#00d4aa] to-[#00a89d] text-black font-bold text-sm flex items-center justify-center gap-2 select-none active:scale-[0.98] transition-transform disabled:opacity-50"
+          className="w-full h-12 rounded-full bg-gradient-to-r from-purple-600 to-purple-800 text-white font-bold text-sm flex items-center justify-center gap-2 select-none active:scale-[0.98] transition-transform disabled:opacity-50"
           onClick={handleExport}
           disabled={isExporting}
         >
