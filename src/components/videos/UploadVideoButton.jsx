@@ -8,7 +8,7 @@ export default function UploadVideoButton({ onUploaded }) {
   const [percent, setPercent] = useState(0);
   const inputRef = useRef(null);
 
-  const MAX_SIZE_MB = 200;
+  const MAX_SIZE_MB = 500;
   const MAX_DURATION_SEC = 600; // 10 minutes
 
   const getFileDuration = (file) => {
@@ -54,7 +54,7 @@ export default function UploadVideoButton({ onUploaded }) {
     setProgress('בודק אורך...');
     const localDuration = await getFileDuration(file);
     if (localDuration > MAX_DURATION_SEC) {
-      alert('הסרטון ארוך מדי. האורך המקסימלי הוא 5 דקות.');
+      alert('הסרטון ארוך מדי. האורך המקסימלי הוא 10 דקות.');
       if (inputRef.current) inputRef.current.value = '';
       setUploading(false);
       setProgress('');
