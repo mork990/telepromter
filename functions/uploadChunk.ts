@@ -1,7 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import { createHash } from 'node:crypto';
 
-// Chunked upload to Cloudinary via JSON base64 payload
+// Chunked upload to Cloudinary via JSON base64 payload v2
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
