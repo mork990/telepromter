@@ -45,7 +45,7 @@ export default function CameraView({
   const [maxDuration, setMaxDuration] = useState(60); // 15, 60, 180
   const [elapsedTime, setElapsedTime] = useState(0);
   const elapsedIntervalRef = useRef(null);
-  const [textFrame, setTextFrame] = useState({ left: 5, top: 20, width: 90, height: 60 });
+  const [textFrame, setTextFrame] = useState({ left: 5, top: 10, width: 90, height: 60 });
 
   useEffect(() => {
     startCamera();

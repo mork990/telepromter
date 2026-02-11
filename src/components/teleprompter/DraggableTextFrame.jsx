@@ -13,7 +13,7 @@ export default function DraggableTextFrame({
   const startRef = useRef({ x: 0, y: 0, left: 0, top: 0, width: 0, height: 0 });
 
   // frame: { left%, top%, width%, height% }
-  const { left = 5, top = 20, width = 90, height = 60 } = frameStyle;
+  const { left = 5, top = 10, width = 90, height = 60 } = frameStyle;
 
   const getParent = () => {
     if (parentRef.current) return parentRef.current;
