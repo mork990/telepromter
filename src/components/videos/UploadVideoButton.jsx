@@ -4,11 +4,10 @@ import { Upload, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 
 export default function UploadVideoButton({ onUploaded }) {
   const [uploading, setUploading] = useState(false);
-  const [status, setStatus] = useState(''); // idle, checking, uploading, saving, done, error
+  const [status, setStatus] = useState('');
   const [statusText, setStatusText] = useState('');
   const [percent, setPercent] = useState(0);
   const inputRef = useRef(null);
-  const abortRef = useRef(null);
 
   const MAX_SIZE_MB = 500;
   const MAX_DURATION_SEC = 600;
@@ -26,36 +25,6 @@ export default function UploadVideoButton({ onUploaded }) {
       };
       video.onerror = () => { clearTimeout(timeout); resolve(0); URL.revokeObjectURL(video.src); video.remove(); };
       video.src = URL.createObjectURL(file);
-    });
-  };
-
-  const uploadWithProgress = (file) => {
-    return new Promise((resolve, reject) => {
-      // Use the UploadFile integration but wrap with a visual heartbeat
-      // The actual upload happens through the SDK
-      const controller = new AbortController();
-      abortRef.current = controller;
-
-      // Start the upload
-      const uploadPromise = base44.integrations.Core.UploadFile({ file });
-      
-      // Heartbeat: check every 2s that the promise is still pending
-      let alive = true;
-      const heartbeat = setInterval(() => {
-        if (!alive) clearInterval(heartbeat);
-      }, 2000);
-
-      uploadPromise
-        .then((result) => {
-          alive = false;
-          clearInterval(heartbeat);
-          resolve(result);
-        })
-        .catch((err) => {
-          alive = false;
-          clearInterval(heartbeat);
-          reject(err);
-        });
     });
   };
 
@@ -83,41 +52,52 @@ export default function UploadVideoButton({ onUploaded }) {
       return;
     }
 
-    // Start upload with animated progress
+    // Step 1: Upload file to Base44 storage
     setStatus('uploading');
     setStatusText(`מעלה ${sizeMB}MB...`);
 
-    // Animated progress: fast at start, slows down approaching 95%
     let currentPercent = 0;
     const progressInterval = setInterval(() => {
-      // Logarithmic slowdown - fast start, slow near end
-      const remaining = 95 - currentPercent;
-      const increment = Math.max(0.3, remaining * 0.03);
-      currentPercent = Math.min(95, currentPercent + increment);
+      const remaining = 70 - currentPercent;
+      const increment = Math.max(0.2, remaining * 0.025);
+      currentPercent = Math.min(70, currentPercent + increment);
       setPercent(Math.round(currentPercent));
     }, 300);
 
     try {
-      console.log('Starting upload, size:', sizeMB, 'MB');
-      const result = await base44.integrations.Core.UploadFile({ file });
-      console.log('Upload result:', result);
+      const uploadResult = await base44.integrations.Core.UploadFile({ file });
       clearInterval(progressInterval);
-      
-      const file_url = result?.file_url;
-      if (!file_url) {
-        throw new Error('No file_url returned from upload');
+
+      const tempUrl = uploadResult?.file_url;
+      if (!tempUrl) {
+        throw new Error('לא התקבל קישור מההעלאה');
       }
 
-      setPercent(97);
+      // Step 2: Send to backend for Cloudinary + save
+      setPercent(75);
       setStatus('saving');
-      setStatusText('שומר...');
+      setStatusText('מעבד ושומר...');
 
-      await base44.entities.Recording.create({
-        title: file.name.replace(/\.[^/.]+$/, ''),
-        file_url,
-        duration_seconds: localDuration || undefined,
+      // Animate from 75 to 95 during backend processing
+      let savingPercent = 75;
+      const savingInterval = setInterval(() => {
+        const rem = 95 - savingPercent;
+        savingPercent = Math.min(95, savingPercent + Math.max(0.2, rem * 0.02));
+        setPercent(Math.round(savingPercent));
+      }, 400);
+
+      const response = await base44.functions.invoke('uploadVideo', {
+        file_url: tempUrl,
+        file_name: file.name,
         file_size_bytes: file.size,
+        duration_seconds: localDuration || undefined,
       });
+
+      clearInterval(savingInterval);
+
+      if (!response.data?.success) {
+        throw new Error(response.data?.error || 'שגיאה בשמירה');
+      }
 
       setPercent(100);
       setStatus('done');
@@ -129,7 +109,6 @@ export default function UploadVideoButton({ onUploaded }) {
     } catch (err) {
       clearInterval(progressInterval);
       console.error('Upload failed:', err?.message || err);
-      console.error('Upload error details:', JSON.stringify(err, null, 2));
       setStatus('error');
       setStatusText('ההעלאה נכשלה');
       setPercent(0);
