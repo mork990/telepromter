@@ -47,11 +47,33 @@ export default function TrackSegment({
       }}
     >
       {seg.deleted ? (
-        <div className="absolute inset-0 bg-white/5 border border-dashed border-white/20 rounded-md flex items-center justify-center">
+        <div className="absolute inset-0 bg-white/5 border border-dashed border-white/20 rounded-md flex items-center justify-center gap-1.5">
+          <input
+            type="file"
+            ref={fileInputRef}
+            accept={color === 'green' ? 'audio/*,video/*' : 'video/*,image/*'}
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file && onInsertFile) {
+                onInsertFile(index, file);
+              }
+              e.target.value = '';
+            }}
+          />
+          <button
+            className="opacity-0 group-hover:opacity-100 transition-opacity bg-[#00d4aa]/20 hover:bg-[#00d4aa]/40 rounded-full p-1 shadow-md"
+            onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
+            onPointerDown={(e) => e.stopPropagation()}
+            title="הוסף קובץ"
+          >
+            <Plus className="w-3 h-3 text-[#00d4aa]" />
+          </button>
           <button
             className="opacity-0 group-hover:opacity-100 transition-opacity bg-[#1a1a2e] rounded-full p-1 shadow-md"
             onClick={(e) => { e.stopPropagation(); onRestore(); }}
             onPointerDown={(e) => e.stopPropagation()}
+            title="שחזר"
           >
             <Undo2 className="w-3 h-3 text-gray-500" />
           </button>
