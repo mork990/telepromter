@@ -39,9 +39,14 @@ export default function AIEditor() {
       .map(m => `${m.role === 'user' ? 'משתמש' : 'עוזר'}: ${m.content}`)
       .join('\n');
 
+    const videoDuration = selectedVideo.duration_seconds ? `${selectedVideo.duration_seconds} שניות` : 'לא ידוע';
+
     const prompt = `אתה עורך וידאו מקצועי AI. המשתמש העלה סרטון ורוצה לערוך אותו.
-כתובת הסרטון: ${selectedVideo.file_url}
-שם הסרטון: ${selectedVideo.title}
+
+פרטי הסרטון:
+- כתובת: ${selectedVideo.file_url}
+- שם: ${selectedVideo.title}
+- אורך: ${videoDuration}
 
 היסטוריית השיחה:
 ${conversationHistory}
@@ -49,18 +54,18 @@ ${conversationHistory}
 הודעת המשתמש הנוכחית: ${text}
 
 תפקידך:
-1. אם המשתמש מבקש עריכה כללית (כמו "ערוך מקצועית") - תן המלצות ספציפיות מה כדאי לעשות ושאל אם להמשיך.
-2. אם המשתמש מבקש פעולה ספציפית - החזר JSON עם הפעולה שצריך לבצע.
-3. אם המשתמש מאשר המלצה קודמת - החזר JSON עם הפעולה.
+1. אם המשתמש מבקש עריכה כללית - תן המלצות ספציפיות ושאל אם להמשיך.
+2. אם המשתמש מבקש פעולה ספציפית - החזר JSON עם הפעולה.
+3. אם המשתמש מאשר המלצה - החזר JSON.
 
-כשאתה רוצה לבצע פעולה בפועל, החזר את התשובה בפורמט הבא:
+כשאתה רוצה לבצע פעולה, החזר בפורמט:
 הטקסט שלך למשתמש
 ---ACTION---
 {"action": "שם_הפעולה", "params": {הפרמטרים}}
 
 הפעולות הזמינות:
-- trim: קיצור סרטון - params: {start_offset, end_offset} (בשניות)
-- cut: חיתוך קטע - params: {cut_start, cut_end} (בשניות)
+- trim: שמירת קטע מהסרטון - params: {start_offset, end_offset} (בשניות). דוגמה: לשמור רק שניות 5-30 -> start_offset=5, end_offset=30
+- cut: מחיקת קטע מאמצע הסרטון (הסרטון לפני ואחרי הקטע מתחבר) - params: {cut_start, cut_end} (בשניות). דוגמה: למחוק שניות 5-8 מסרטון של 18 שניות -> cut_start=5, cut_end=8. התוצאה תהיה סרטון באורך 15 שניות (18 פחות 3).
 - add_subtitles: כתוביות - params: {subtitles: [{start, end, text}], font_size, font_color}
 - speed: מהירות - params: {rate} (0.5=חצי, 2=כפול)
 - resize: גודל - params: {width, height, crop}
@@ -78,8 +83,12 @@ ${conversationHistory}
 - transition: מעבר - params: {video_url, effect, duration}
 - extract_frame: חילוץ פריים - params: {time}
 
-חשוב: אם המשתמש מבקש פעולה ברורה (כמו "קצר לשניות 5-30", "הפוך לשחור לבן", "הסר קול") - בצע מיד! אל תשאל שוב. כלול את ---ACTION--- עם ה-JSON.
-אם לא ברור מה לעשות - שאל.
+חשוב מאוד:
+- שים לב להבדל בין trim ל-cut: trim שומר רק את הקטע שצוין, cut מוחק את הקטע שצוין.
+- "מחק/הסר את הקטע בין X ל-Y" = פעולת cut (cut_start=X, cut_end=Y)
+- "קצר/שמור רק שניות X עד Y" = פעולת trim (start_offset=X, end_offset=Y)
+- אם המשתמש מבקש פעולה ברורה - בצע מיד! כלול ---ACTION--- עם JSON. אל תשאל שוב.
+- אם לא ברור - שאל.
 
 ענה בעברית. היה ידידותי ומקצועי. תן תשובות קצרות.`;
 
