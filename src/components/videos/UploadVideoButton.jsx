@@ -8,6 +8,7 @@ export default function UploadVideoButton({ onUploaded }) {
   const [statusText, setStatusText] = useState('');
   const [percent, setPercent] = useState(0);
   const inputRef = useRef(null);
+  const xhrRef = useRef(null);
 
   const MAX_SIZE_MB = 500;
   const MAX_DURATION_SEC = 600;
@@ -25,6 +26,54 @@ export default function UploadVideoButton({ onUploaded }) {
       };
       video.onerror = () => { clearTimeout(timeout); resolve(0); URL.revokeObjectURL(video.src); video.remove(); };
       video.src = URL.createObjectURL(file);
+    });
+  };
+
+  const uploadToCloudinary = (file, signatureData) => {
+    return new Promise((resolve, reject) => {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('signature', signatureData.signature);
+      formData.append('timestamp', signatureData.timestamp);
+      formData.append('folder', signatureData.folder);
+      formData.append('api_key', signatureData.api_key);
+      formData.append('resource_type', 'video');
+
+      const xhr = new XMLHttpRequest();
+      xhrRef.current = xhr;
+
+      xhr.upload.addEventListener('progress', (e) => {
+        if (e.lengthComputable) {
+          const pct = Math.round((e.loaded / e.total) * 90) + 5; // 5-95%
+          setPercent(pct);
+          const loadedMB = (e.loaded / (1024 * 1024)).toFixed(1);
+          const totalMB = (e.total / (1024 * 1024)).toFixed(0);
+          setStatusText(`מעלה ${loadedMB}/${totalMB}MB... ${pct}%`);
+        }
+      });
+
+      xhr.addEventListener('load', () => {
+        xhrRef.current = null;
+        if (xhr.status >= 200 && xhr.status < 300) {
+          const data = JSON.parse(xhr.responseText);
+          resolve(data);
+        } else {
+          reject(new Error('Upload failed: ' + xhr.status));
+        }
+      });
+
+      xhr.addEventListener('error', () => {
+        xhrRef.current = null;
+        reject(new Error('Network error during upload'));
+      });
+
+      xhr.addEventListener('abort', () => {
+        xhrRef.current = null;
+        reject(new Error('Upload cancelled'));
+      });
+
+      xhr.open('POST', `https://api.cloudinary.com/v1_1/${signatureData.cloud_name}/video/upload`);
+      xhr.send(formData);
     });
   };
 
@@ -53,37 +102,36 @@ export default function UploadVideoButton({ onUploaded }) {
     }
 
     try {
-      // Step 1: Upload to Base44 storage directly
+      // Step 1: Get upload signature from backend
+      setStatus('signing');
+      setStatusText('מכין העלאה...');
+      setPercent(2);
+
+      const sigResponse = await base44.functions.invoke('getUploadSignature');
+      const signatureData = sigResponse.data;
+
+      // Step 2: Upload directly to Cloudinary with real progress
       setStatus('uploading');
-      setStatusText(`מעלה ${sizeMB}MB... (זה יכול לקחת דקה או שתיים)`);
+      setStatusText(`מעלה ${sizeMB}MB...`);
       setPercent(5);
 
-      // Simulate progress while uploading (UploadFile doesn't give real progress)
-      let currentPct = 5;
-      const progressInterval = setInterval(() => {
-        currentPct += Math.random() * 3;
-        if (currentPct > 85) currentPct = 85;
-        setPercent(Math.round(currentPct));
-      }, 1500);
+      const cloudinaryResult = await uploadToCloudinary(file, signatureData);
 
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      clearInterval(progressInterval);
-
-      if (!file_url) {
+      if (!cloudinaryResult.secure_url) {
         throw new Error('לא התקבל קישור לקובץ');
       }
 
-      setPercent(90);
+      setPercent(95);
 
-      // Step 2: Save recording in DB
+      // Step 3: Save recording in DB
       setStatus('saving');
       setStatusText('שומר...');
 
       await base44.entities.Recording.create({
         title: (file.name || 'video').replace(/\.[^/.]+$/, ''),
-        file_url,
-        duration_seconds: localDuration || 0,
-        file_size_bytes: file.size,
+        file_url: cloudinaryResult.secure_url,
+        duration_seconds: Math.round(cloudinaryResult.duration || localDuration || 0),
+        file_size_bytes: cloudinaryResult.bytes || file.size,
       });
 
       setPercent(100);
@@ -107,6 +155,10 @@ export default function UploadVideoButton({ onUploaded }) {
 
   const resetState = () => {
     if (inputRef.current) inputRef.current.value = '';
+    if (xhrRef.current) {
+      xhrRef.current.abort();
+      xhrRef.current = null;
+    }
     setUploading(false);
     setStatus('');
     setStatusText('');
@@ -133,7 +185,6 @@ export default function UploadVideoButton({ onUploaded }) {
       }`}>
         {getIcon()}
         {uploading ? statusText : 'העלה סרטון'}
-        {uploading && percent > 0 && status !== 'done' && ` ${percent}%`}
         <input
           ref={inputRef}
           type="file"
