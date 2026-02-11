@@ -28,43 +28,31 @@ export default function UploadVideoButton({ onUploaded }) {
     });
   };
 
-  // Upload directly to Cloudinary using unsigned preset + XHR for real progress
-  const uploadToCloudinaryUnsigned = (file) => {
+  // Convert file to base64 in chunks to avoid memory issues
+  const fileToBase64 = (file) => {
     return new Promise((resolve, reject) => {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('upload_preset', 'base44_video_unsigned');
-
-      const xhr = new XMLHttpRequest();
-
-      xhr.upload.onprogress = (e) => {
-        if (e.lengthComputable) {
-          const pct = Math.round((e.loaded / e.total) * 90);
-          setPercent(pct);
-        }
-      };
-
-      xhr.onload = () => {
-        if (xhr.status >= 200 && xhr.status < 300) {
-          try {
-            resolve(JSON.parse(xhr.responseText));
-          } catch {
-            reject(new Error('Invalid response from Cloudinary'));
-          }
-        } else {
-          let msg = 'Upload failed: ' + xhr.status;
-          try { msg = JSON.parse(xhr.responseText)?.error?.message || msg; } catch {}
-          reject(new Error(msg));
-        }
-      };
-
-      xhr.onerror = () => reject(new Error('Network error during upload'));
-      xhr.ontimeout = () => reject(new Error('Upload timeout'));
-      xhr.timeout = 600000;
-
-      xhr.open('POST', 'https://api.cloudinary.com/v1_1/dq9tkpfwm/video/upload');
-      xhr.send(formData);
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(new Error('Failed to read file'));
+      reader.readAsDataURL(file);
     });
+  };
+
+  // Simulate progress
+  const simulateProgress = (startPct, endPct, durationMs) => {
+    const steps = 30;
+    const stepMs = durationMs / steps;
+    const stepPct = (endPct - startPct) / steps;
+    let current = startPct;
+    const interval = setInterval(() => {
+      current += stepPct;
+      if (current >= endPct) {
+        current = endPct;
+        clearInterval(interval);
+      }
+      setPercent(Math.round(current));
+    }, stepMs);
+    return () => clearInterval(interval);
   };
 
   const handleUpload = async (e) => {
@@ -92,19 +80,43 @@ export default function UploadVideoButton({ onUploaded }) {
     }
 
     try {
-      // Step 1: Upload directly to Cloudinary (unsigned preset, no CORS issues)
+      // Step 1: Convert to base64 data URI
       setStatus('uploading');
+      setStatusText('מכין קובץ...');
+      setPercent(5);
+
+      const dataUri = await fileToBase64(file);
+      setPercent(15);
       setStatusText(`מעלה ${sizeMB}MB...`);
-      
-      const cloudResult = await uploadToCloudinaryUnsigned(file);
-      
+
+      // Step 2: Upload to Cloudinary using fetch + base64 data URI
+      const stopProgress = simulateProgress(15, 85, 60000);
+
+      const formData = new FormData();
+      formData.append('file', dataUri);
+      formData.append('upload_preset', 'base44_video_unsigned');
+
+      const cloudRes = await fetch('https://api.cloudinary.com/v1_1/dq9tkpfwm/video/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      stopProgress();
+
+      if (!cloudRes.ok) {
+        const errData = await cloudRes.json().catch(() => ({}));
+        throw new Error(errData?.error?.message || 'Cloudinary upload failed: ' + cloudRes.status);
+      }
+
+      const cloudResult = await cloudRes.json();
       const fileUrl = cloudResult.secure_url;
       if (!fileUrl) {
         throw new Error('No URL returned from Cloudinary');
       }
 
-      // Step 2: Save recording in DB via backend
-      setPercent(93);
+      setPercent(90);
+
+      // Step 3: Save recording in DB via backend
       setStatus('saving');
       setStatusText('שומר...');
 
