@@ -315,14 +315,14 @@ Deno.serve(async (req) => {
     const resultUrl = cloudinary.url(publicId, {
       resource_type: 'video',
       transformation: transformations,
-      format: 'mp4',
+      format: outputFormat,
     });
 
     // Use eager transformation to actually process the video
     const eagerResult = await cloudinary.uploader.explicit(publicId, {
       resource_type: 'video',
       type: 'upload',
-      eager: transformations.length > 0 ? [transformations] : undefined,
+      eager: transformations.length > 0 ? [{ ...Object.assign({}, ...transformations), format: outputFormat }] : undefined,
       eager_async: false,
     });
 
