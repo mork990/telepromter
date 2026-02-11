@@ -41,8 +41,9 @@ export default function MyVideos() {
         className="sticky z-10 bg-[#1a1a2e]/80 backdrop-blur-xl border-b border-white/5"
         style={{ top: 'env(safe-area-inset-top)' }}
       >
-        <div className="px-4 h-12 flex items-center">
+        <div className="px-4 h-12 flex items-center justify-between">
           <h1 className="text-base font-bold">הסרטונים שלי</h1>
+          <UploadVideoButton onUploaded={() => queryClient.invalidateQueries({ queryKey: ['recordings'] })} />
         </div>
       </div>
 
