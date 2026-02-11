@@ -50,7 +50,7 @@ export default function MyVideos() {
       <div className="px-4 py-4 pb-24">
         {isLoading ? (
           <div className="flex justify-center py-20">
-            <Loader2 className="w-8 h-8 animate-spin text-[#00d4aa]" />
+            <Loader2 className="w-8 h-8 animate-spin" style={{ color: 'var(--accent)' }} />
           </div>
         ) : recordings.length === 0 ? (
           <div className="text-center py-20">

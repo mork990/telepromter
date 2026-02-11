@@ -45,7 +45,7 @@ export default function Pricing() {
       {/* Header */}
       <div className="sticky z-10 backdrop-blur-xl" style={{ top: 'env(safe-area-inset-top)', backgroundColor: 'var(--nav-bg)', borderBottom: '1px solid var(--border-color)' }}>
         <div className="px-4 h-12 flex items-center gap-3">
-          <button className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 select-none" onClick={() => navigate(createPageUrl('Home'))}>
+          <button className="w-8 h-8 flex items-center justify-center rounded-lg select-none" style={{ color: 'var(--text-primary)' }} onClick={() => navigate(createPageUrl('Home'))}>
             <ArrowRight className="w-5 h-5 text-white" />
           </button>
           <h1 className="text-base font-bold">תוכניות מנוי</h1>
@@ -58,7 +58,7 @@ export default function Pricing() {
             <div className="text-center mb-4">
               <h2 className="text-xl font-bold">חינמי</h2>
               <p className="text-3xl font-extrabold mt-2">₪0</p>
-              <p className="text-sm text-white/40">לתמיד</p>
+              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>לתמיד</p>
             </div>
             <ul className="space-y-3">
               {freeFeaturesArr.map((f, i) => (
@@ -87,7 +87,7 @@ export default function Pricing() {
                 <h2 className="text-xl font-bold">פרימיום</h2>
               </div>
               <p className="text-3xl font-extrabold mt-2">₪29.90</p>
-              <p className="text-sm text-white/40">לחודש</p>
+              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>לחודש</p>
             </div>
             <ul className="space-y-3">
               {premiumFeaturesArr.map((f, i) => (
@@ -104,7 +104,8 @@ export default function Pricing() {
               </button>
             ) : !isLoggedIn ? (
               <button 
-                className="w-full mt-6 h-12 rounded-full bg-gradient-to-r from-[#00d4aa] to-[#00a89d] text-black font-bold text-sm flex items-center justify-center gap-1.5 select-none active:scale-[0.98] transition-transform"
+                className="w-full mt-6 h-12 rounded-full text-black font-bold text-sm flex items-center justify-center gap-1.5 select-none active:scale-[0.98] transition-transform"
+                style={{ background: 'linear-gradient(90deg, var(--accent), var(--accent-secondary))' }}
                 onClick={() => base44.auth.redirectToLogin(window.location.href)}
               >
                 <LogIn className="w-5 h-5" />
