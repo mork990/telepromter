@@ -1,5 +1,5 @@
-import React from 'react';
-import { Trash2, Undo2 } from "lucide-react";
+import React, { useRef } from 'react';
+import { Trash2, Undo2, Plus } from "lucide-react";
 
 function formatTime(seconds) {
   if (!seconds || isNaN(seconds)) return '0:00';
