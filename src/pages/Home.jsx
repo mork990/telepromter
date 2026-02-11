@@ -2,7 +2,7 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { createPageUrl } from '@/utils';
 import { useNavigate } from 'react-router-dom';
-import { Video, LogIn, User, Type, ChevronLeft } from "lucide-react";
+import { Video, LogIn, User, Type, ChevronLeft, Shield } from "lucide-react";
 import { base44 } from '@/api/base44Client';
 import TextInput from '../components/teleprompter/TextInput';
 import PrompterPreview from '../components/teleprompter/PrompterPreview';
@@ -104,13 +104,23 @@ export default function Home() {
               </button>
             )}
             {!authLoading && currentUser && (
-              <button
-                className="text-xs text-white/50 font-medium px-3 py-1.5 rounded-full bg-white/5 select-none"
-                onClick={() => base44.auth.logout()}
-              >
-                <User className="w-3.5 h-3.5 inline ml-1" />
-                {currentUser.full_name?.split(' ')[0] || 'חשבון'}
-              </button>
+              <div className="flex items-center gap-1">
+                {currentUser.role === 'admin' && (
+                  <button
+                    className="text-xs text-[#00d4aa] font-medium px-2.5 py-1.5 rounded-full bg-[#00d4aa]/10 select-none"
+                    onClick={() => navigate(createPageUrl('AdminPanel'))}
+                  >
+                    <Shield className="w-3.5 h-3.5" />
+                  </button>
+                )}
+                <button
+                  className="text-xs text-white/50 font-medium px-3 py-1.5 rounded-full bg-white/5 select-none"
+                  onClick={() => base44.auth.logout()}
+                >
+                  <User className="w-3.5 h-3.5 inline ml-1" />
+                  {currentUser.full_name?.split(' ')[0] || 'חשבון'}
+                </button>
+              </div>
             )}
           </div>
         </div>
