@@ -1,6 +1,6 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { Scissors, Type, Trash2, ZoomIn, ZoomOut, Undo2, Image, Volume2, Subtitles, Loader2 } from "lucide-react";
+import { Scissors, Type, Trash2, ZoomIn, ZoomOut, Undo2, Image, Volume2, Subtitles, Loader2, Film } from "lucide-react";
 import SubtitleBubble from './SubtitleBubble';
 import TrackSegment from './TrackSegment';
 import ImageTrackItem from './ImageTrackItem';
@@ -310,7 +310,8 @@ export default function VisualTimeline({
   // Track layout calculations
   const videoTrackTop = LABEL_HEIGHT;
   const audioTrackTop = videoTrackTop + TRACK_HEIGHT + TRACK_GAP + LABEL_HEIGHT;
-  const imageTrackTop = audioTrackTop + TRACK_HEIGHT + TRACK_GAP + LABEL_HEIGHT;
+  const mediaLayerTrackTop = audioTrackTop + TRACK_HEIGHT + TRACK_GAP + LABEL_HEIGHT;
+  const imageTrackTop = mediaLayerTrackTop + TRACK_HEIGHT + TRACK_GAP + LABEL_HEIGHT;
   const subtitleTrackTop = imageTrackTop + TRACK_HEIGHT + TRACK_GAP + LABEL_HEIGHT;
   const totalHeight = subtitleTrackTop + TRACK_HEIGHT + 4;
 
@@ -321,6 +322,7 @@ export default function VisualTimeline({
   const toolButtons = [
     { mode: 'split-video', icon: Scissors, label: 'פיצול וידאו', color: 'text-indigo-500' },
     { mode: 'split-audio', icon: Scissors, label: 'פיצול אודיו', color: 'text-green-500' },
+    { mode: 'media-layer', icon: Film, label: 'שכבה', color: 'text-purple-500' },
     { mode: 'image', icon: Image, label: 'תמונה', color: 'text-pink-500' },
     { mode: 'subtitle', icon: Type, label: 'כתובית', color: 'text-amber-500' },
     { mode: 'delete', icon: Trash2, label: 'מחק', color: 'text-rose-500' },
@@ -329,6 +331,7 @@ export default function VisualTimeline({
   const toolHints = {
     'split-video': 'לחץ על הטיימליין לפיצול הוידאו',
     'split-audio': 'לחץ על הטיימליין לפיצול האודיו',
+    'media-layer': 'לחץ על הטיימליין להוספת שכבת מדיה (וידאו/תמונה/אודיו)',
     'image': 'לחץ על הטיימליין להוספת תמונה',
     'subtitle': 'גרור על הטיימליין להוספת כתובית',
     'delete': 'לחץ על קטע למחיקה',
