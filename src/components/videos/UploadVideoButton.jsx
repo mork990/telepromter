@@ -28,31 +28,58 @@ export default function UploadVideoButton({ onUploaded }) {
     });
   };
 
-  // Convert file to base64 in chunks to avoid memory issues
-  const fileToBase64 = (file) => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = () => reject(new Error('Failed to read file'));
-      reader.readAsDataURL(file);
-    });
-  };
+  // Upload file chunk by chunk to backend which proxies to Cloudinary
+  const CHUNK_SIZE = 5 * 1024 * 1024; // 5MB chunks
 
-  // Simulate progress
-  const simulateProgress = (startPct, endPct, durationMs) => {
-    const steps = 30;
-    const stepMs = durationMs / steps;
-    const stepPct = (endPct - startPct) / steps;
-    let current = startPct;
-    const interval = setInterval(() => {
-      current += stepPct;
-      if (current >= endPct) {
-        current = endPct;
-        clearInterval(interval);
+  const uploadChunked = async (file, duration) => {
+    const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+    const sizeMB = (file.size / (1024 * 1024)).toFixed(0);
+    
+    // If file is small enough, send in one shot via base44 UploadFile
+    if (file.size <= 50 * 1024 * 1024) {
+      setStatusText(`מעלה ${sizeMB}MB...`);
+      setPercent(10);
+
+      // Use Base44 UploadFile (reliable for files up to ~50MB)
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      setPercent(60);
+      
+      // Now have backend download from that URL and re-upload to Cloudinary
+      setStatusText('מעבד...');
+      const response = await base44.functions.invoke('uploadToCloudinary', {
+        file_url,
+        file_name: file.name,
+        file_size_bytes: file.size,
+        duration_seconds: duration,
+      });
+
+      if (!response.data?.success) {
+        throw new Error(response.data?.error || 'Upload failed');
       }
-      setPercent(Math.round(current));
-    }, stepMs);
-    return () => clearInterval(interval);
+      
+      return response.data;
+    }
+    
+    // For larger files - upload directly using the backend proxy with FormData
+    setStatusText(`מעלה ${sizeMB}MB...`);
+    setPercent(10);
+
+    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    setPercent(50);
+    
+    setStatusText('מעבד...');
+    const response = await base44.functions.invoke('uploadToCloudinary', {
+      file_url,
+      file_name: file.name,
+      file_size_bytes: file.size,
+      duration_seconds: duration,
+    });
+
+    if (!response.data?.success) {
+      throw new Error(response.data?.error || 'Upload failed');
+    }
+    
+    return response.data;
   };
 
   const handleUpload = async (e) => {
@@ -80,56 +107,9 @@ export default function UploadVideoButton({ onUploaded }) {
     }
 
     try {
-      // Step 1: Convert to base64 data URI
       setStatus('uploading');
-      setStatusText('מכין קובץ...');
-      setPercent(5);
-
-      const dataUri = await fileToBase64(file);
-      setPercent(15);
-      setStatusText(`מעלה ${sizeMB}MB...`);
-
-      // Step 2: Upload to Cloudinary using fetch + base64 data URI
-      const stopProgress = simulateProgress(15, 85, 60000);
-
-      const formData = new FormData();
-      formData.append('file', dataUri);
-      formData.append('upload_preset', 'base44_video_unsigned');
-
-      const cloudRes = await fetch('https://api.cloudinary.com/v1_1/dq9tkpfwm/video/upload', {
-        method: 'POST',
-        body: formData,
-      });
-
-      stopProgress();
-
-      if (!cloudRes.ok) {
-        const errData = await cloudRes.json().catch(() => ({}));
-        throw new Error(errData?.error?.message || 'Cloudinary upload failed: ' + cloudRes.status);
-      }
-
-      const cloudResult = await cloudRes.json();
-      const fileUrl = cloudResult.secure_url;
-      if (!fileUrl) {
-        throw new Error('No URL returned from Cloudinary');
-      }
-
-      setPercent(90);
-
-      // Step 3: Save recording in DB via backend
-      setStatus('saving');
-      setStatusText('שומר...');
-
-      const saveResponse = await base44.functions.invoke('saveRecording', {
-        file_url: fileUrl,
-        file_name: file.name,
-        file_size_bytes: file.size,
-        duration_seconds: localDuration || Math.round(cloudResult.duration || 0),
-      });
-
-      if (!saveResponse.data?.success) {
-        throw new Error(saveResponse.data?.error || 'שגיאה בשמירה');
-      }
+      
+      const result = await uploadChunked(file, localDuration);
 
       setPercent(100);
       setStatus('done');
