@@ -436,9 +436,9 @@ export default function VideoEditor() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0e0e1a] text-white" dir="rtl">
+    <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }} dir="rtl">
       {/* Header */}
-      <div className="sticky z-10 bg-[#1a1a2e]/80 backdrop-blur-xl border-b border-white/5" style={{ top: 'env(safe-area-inset-top)' }}>
+      <div className="sticky z-10 backdrop-blur-xl" style={{ top: 'env(safe-area-inset-top)', backgroundColor: 'var(--nav-bg)', borderBottom: '1px solid var(--border-color)' }}>
         <div className="max-w-lg mx-auto px-4 h-12 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 select-none" onClick={() => navigate(createPageUrl('MyVideos'))}>
@@ -447,7 +447,8 @@ export default function VideoEditor() {
             <h1 className="text-base font-bold">עורך וידאו</h1>
           </div>
           <button 
-            className="h-8 px-4 rounded-full bg-white/10 text-white text-sm font-medium flex items-center gap-1.5 select-none hover:bg-white/15 transition-colors disabled:opacity-50"
+            className="h-8 px-4 rounded-full text-sm font-medium flex items-center gap-1.5 select-none transition-colors disabled:opacity-50"
+            style={{ backgroundColor: 'var(--chip-bg)', color: 'var(--text-primary)' }}
             onClick={handleSave} 
             disabled={isSaving}
           >
@@ -507,12 +508,12 @@ export default function VideoEditor() {
         </div>
 
         {/* Playback controls */}
-        <div className="flex items-center justify-between bg-[#1a1a2e] rounded-xl px-4 py-2" dir="ltr">
-          <span className="text-xs text-white/40 font-mono">{formatTimestamp(currentTime)}</span>
-          <button onClick={togglePlay} className="w-9 h-9 rounded-full bg-[#00d4aa] flex items-center justify-center select-none active:scale-95 transition-transform">
+        <div className="flex items-center justify-between rounded-xl px-4 py-2" style={{ backgroundColor: 'var(--bg-card)' }} dir="ltr">
+          <span className="text-xs font-mono" style={{ color: 'var(--text-muted)' }}>{formatTimestamp(currentTime)}</span>
+          <button onClick={togglePlay} className="w-9 h-9 rounded-full flex items-center justify-center select-none active:scale-95 transition-transform" style={{ backgroundColor: 'var(--accent)' }}>
             {isPlaying ? <Pause className="w-4 h-4 text-black" /> : <Play className="w-4 h-4 text-black" />}
           </button>
-          <span className="text-xs text-white/40 font-mono">{formatTimestamp(duration)}</span>
+          <span className="text-xs font-mono" style={{ color: 'var(--text-muted)' }}>{formatTimestamp(duration)}</span>
         </div>
 
         {/* Visual Timeline */}
