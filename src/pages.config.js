@@ -55,6 +55,7 @@ import Pricing from './pages/Pricing';
 import Recording from './pages/Recording';
 import Settings from './pages/Settings';
 import VideoEditor from './pages/VideoEditor';
+import Teleprompter from './pages/Teleprompter';
 import __Layout from './Layout.jsx';
 
 
@@ -67,6 +68,7 @@ export const PAGES = {
     "Recording": Recording,
     "Settings": Settings,
     "VideoEditor": VideoEditor,
+    "Teleprompter": Teleprompter,
 }
 
 export const pagesConfig = {
