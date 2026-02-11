@@ -1,11 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
-import { v2 as cloudinary } from 'npm:cloudinary@2.5.1';
-
-cloudinary.config({
-  cloud_name: (Deno.env.get("CLOUDINARY_CLOUD_NAME") || "").trim(),
-  api_key: (Deno.env.get("CLOUDINARY_API_KEY") || "").trim(),
-  api_secret: (Deno.env.get("CLOUDINARY_API_SECRET") || "").trim(),
-});
+import { createHash } from 'node:crypto';
 
 Deno.serve(async (req) => {
   try {
@@ -15,20 +9,23 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const cloudName = (Deno.env.get("CLOUDINARY_CLOUD_NAME") || "").trim();
+    const apiKey = (Deno.env.get("CLOUDINARY_API_KEY") || "").trim();
+    const apiSecret = (Deno.env.get("CLOUDINARY_API_SECRET") || "").trim();
+
     const timestamp = Math.round(new Date().getTime() / 1000);
     const folder = 'video-uploads';
 
-    const signature = cloudinary.utils.api_sign_request(
-      { timestamp, folder },
-      Deno.env.get("CLOUDINARY_API_SECRET").trim()
-    );
+    // Generate signature manually: sha1 of "folder=video-uploads&timestamp=XXXXX" + api_secret
+    const toSign = `folder=${folder}&timestamp=${timestamp}${apiSecret}`;
+    const signature = createHash('sha1').update(toSign).digest('hex');
 
     return Response.json({
       signature,
       timestamp,
       folder,
-      cloud_name: Deno.env.get("CLOUDINARY_CLOUD_NAME").trim(),
-      api_key: Deno.env.get("CLOUDINARY_API_KEY").trim(),
+      cloud_name: cloudName,
+      api_key: apiKey,
     });
   } catch (error) {
     console.error('Signature error:', error);
