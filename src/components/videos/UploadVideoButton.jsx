@@ -13,14 +13,16 @@ export default function UploadVideoButton({ onUploaded }) {
 
   const getFileDuration = (file) => {
     return new Promise((resolve) => {
+      const timeout = setTimeout(() => { resolve(0); }, 5000);
       const video = document.createElement('video');
       video.preload = 'metadata';
       video.onloadedmetadata = () => {
+        clearTimeout(timeout);
         resolve(Math.round(video.duration));
         URL.revokeObjectURL(video.src);
         video.remove();
       };
-      video.onerror = () => { resolve(0); URL.revokeObjectURL(video.src); video.remove(); };
+      video.onerror = () => { clearTimeout(timeout); resolve(0); URL.revokeObjectURL(video.src); video.remove(); };
       video.src = URL.createObjectURL(file);
     });
   };
