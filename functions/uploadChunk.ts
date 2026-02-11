@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { createHash } from 'node:crypto';
 
 Deno.serve(async (req) => {
   try {
@@ -8,21 +9,10 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const contentType = req.headers.get('content-type') || '';
-    if (!contentType.includes('multipart/form-data')) {
-      return Response.json({ error: 'Expected multipart/form-data' }, { status: 400 });
-    }
+    const body = await req.json();
+    const { chunk_base64, upload_id, chunk_index, total_chunks, total_size, range_start, range_end } = body;
 
-    const formData = await req.formData();
-    const chunk = formData.get('chunk');
-    const uploadId = formData.get('upload_id');
-    const chunkIndex = formData.get('chunk_index');
-    const totalChunks = formData.get('total_chunks');
-    const totalSize = formData.get('total_size');
-    const rangeStart = formData.get('range_start');
-    const rangeEnd = formData.get('range_end');
-
-    if (!chunk || !uploadId) {
+    if (!chunk_base64 || !upload_id) {
       return Response.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
@@ -33,27 +23,33 @@ Deno.serve(async (req) => {
     const timestamp = Math.round(Date.now() / 1000);
     const folder = 'video-uploads';
 
-    // Create signature
+    // Create signature (alphabetical params + api_secret)
     const toSign = `folder=${folder}&timestamp=${timestamp}${apiSecret}`;
-    const { createHash } = await import('node:crypto');
     const signature = createHash('sha1').update(toSign).digest('hex');
+
+    // Decode base64 chunk to binary
+    const binaryStr = atob(chunk_base64);
+    const bytes = new Uint8Array(binaryStr.length);
+    for (let i = 0; i < binaryStr.length; i++) {
+      bytes[i] = binaryStr.charCodeAt(i);
+    }
+    const chunkBlob = new Blob([bytes], { type: 'video/mp4' });
 
     // Build form data for Cloudinary
     const cloudFormData = new FormData();
-    cloudFormData.append('file', chunk);
+    cloudFormData.append('file', chunkBlob, 'chunk.mp4');
     cloudFormData.append('api_key', apiKey);
     cloudFormData.append('timestamp', String(timestamp));
     cloudFormData.append('signature', signature);
     cloudFormData.append('folder', folder);
-    cloudFormData.append('resource_type', 'video');
 
     const cloudRes = await fetch(
       `https://api.cloudinary.com/v1_1/${cloudName}/video/upload`,
       {
         method: 'POST',
         headers: {
-          'X-Unique-Upload-Id': uploadId,
-          'Content-Range': `bytes ${rangeStart}-${rangeEnd}/${totalSize}`,
+          'X-Unique-Upload-Id': upload_id,
+          'Content-Range': `bytes ${range_start}-${range_end}/${total_size}`,
         },
         body: cloudFormData,
       }
@@ -63,13 +59,12 @@ Deno.serve(async (req) => {
     let resData;
     try { resData = JSON.parse(resText); } catch(_) { resData = { raw: resText }; }
 
-    if (!cloudRes.ok && cloudRes.status !== 200) {
-      // For chunked uploads, Cloudinary returns various status codes
-      // 408 means "waiting for more chunks" which is expected
+    if (!cloudRes.ok) {
+      // 408 means Cloudinary is waiting for more chunks - this is expected
       if (cloudRes.status === 408) {
         return Response.json({ 
           status: 'pending', 
-          chunk_index: Number(chunkIndex),
+          chunk_index: chunk_index,
           message: 'Chunk received, waiting for more' 
         });
       }
@@ -80,7 +75,7 @@ Deno.serve(async (req) => {
     // If this is the last chunk, Cloudinary returns the full video info
     return Response.json({
       status: resData?.secure_url ? 'complete' : 'pending',
-      chunk_index: Number(chunkIndex),
+      chunk_index: chunk_index,
       data: resData,
     });
   } catch (error) {
