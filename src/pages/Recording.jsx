@@ -19,12 +19,12 @@ export default function Recording() {
 
     setSettings({
       text: params.get('text') || '',
-      fontSize: parseInt(params.get('fontSize')) || saved.fontSize || 32,
+      fontSize: params.get('fontSize') ? parseInt(params.get('fontSize')) : (saved.fontSize || 32),
       textColor: params.get('textColor') || saved.textColor || '#FFFFFF',
       backgroundColor: params.get('backgroundColor') || saved.backgroundColor || '#000000',
-      scrollSpeed: parseInt(params.get('scrollSpeed')) || saved.scrollSpeed || 50,
+      scrollSpeed: params.get('scrollSpeed') ? parseInt(params.get('scrollSpeed')) : (saved.scrollSpeed || 50),
       cameraFacing: params.get('cameraFacing') || saved.cameraFacing || 'user',
-      backgroundOpacity: params.get('backgroundOpacity') !== null ? parseInt(params.get('backgroundOpacity')) : (saved.backgroundOpacity !== undefined ? saved.backgroundOpacity : 80),
+      backgroundOpacity: params.get('backgroundOpacity') ? parseInt(params.get('backgroundOpacity')) : (saved.backgroundOpacity !== undefined ? saved.backgroundOpacity : 80),
       videoQuality: params.get('videoQuality') || saved.videoQuality || '1080',
       isPremium: params.get('isPremium') === '1'
     });
