@@ -24,12 +24,37 @@ export default function VideoSelector({ onVideoSelected, selectedVideoUrl }) {
     enabled: !!currentUser,
   });
 
+  const getVideoDuration = (url) => {
+    return new Promise((resolve) => {
+      const video = document.createElement('video');
+      video.preload = 'metadata';
+      video.onloadedmetadata = () => {
+        resolve(Math.round(video.duration));
+        video.remove();
+      };
+      video.onerror = () => { resolve(0); video.remove(); };
+      video.src = url;
+    });
+  };
+
   const handleFileUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploading(true);
     const { file_url } = await base44.integrations.Core.UploadFile({ file });
-    onVideoSelected({ file_url, title: file.name, isUploaded: true });
+    const duration = await getVideoDuration(file_url);
+    const recording = await base44.entities.Recording.create({
+      title: file.name.replace(/\.[^/.]+$/, ''),
+      file_url,
+      duration_seconds: duration || undefined,
+      file_size_bytes: file.size,
+    });
+    onVideoSelected({ 
+      file_url, 
+      title: recording.title, 
+      recordingId: recording.id,
+      duration_seconds: duration 
+    });
     setUploading(false);
   };
 
