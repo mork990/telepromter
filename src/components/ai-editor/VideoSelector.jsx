@@ -5,11 +5,23 @@ import { Upload, Film, Loader2, Check } from 'lucide-react';
 
 export default function VideoSelector({ onVideoSelected, selectedVideoUrl }) {
   const [uploading, setUploading] = useState(false);
-  const [tab, setTab] = useState('library'); // 'library' | 'upload'
+  const [tab, setTab] = useState('library');
+
+  const { data: currentUser } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: () => base44.auth.me(),
+  });
 
   const { data: recordings = [], isLoading } = useQuery({
-    queryKey: ['recordings-for-ai'],
-    queryFn: () => base44.entities.Recording.list('-created_date', 20),
+    queryKey: ['recordings-for-ai', currentUser?.email],
+    queryFn: async () => {
+      if (!currentUser) return [];
+      if (currentUser.role === 'admin') {
+        return base44.entities.Recording.list('-created_date', 20);
+      }
+      return base44.entities.Recording.filter({ created_by: currentUser.email }, '-created_date', 20);
+    },
+    enabled: !!currentUser,
   });
 
   const handleFileUpload = async (e) => {
