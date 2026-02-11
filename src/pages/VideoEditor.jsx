@@ -261,6 +261,34 @@ export default function VideoEditor() {
   // Selected image for editing position/size
   const [selectedImageIndex, setSelectedImageIndex] = useState(null);
 
+  // --- Insert file into deleted segment ---
+  const handleInsertVideoFile = useCallback(async (segIndex, file) => {
+    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    const seg = videoSegments[segIndex];
+    if (!seg) return;
+    // Add as image overlay (video or image) that replaces the deleted segment visually
+    const isImage = file.type.startsWith('image/');
+    setImageOverlays(prev => [...prev, {
+      file_url,
+      start: seg.originalStart,
+      end: seg.originalEnd,
+      type: isImage ? 'replace' : 'replace',
+      x: 0, y: 0, width: 100, height: 100,
+      isVideo: !isImage,
+    }]);
+  }, [videoSegments]);
+
+  const handleInsertAudioFile = useCallback(async (segIndex, file) => {
+    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    const seg = audioSegments[segIndex];
+    if (!seg) return;
+    setAudioSegments(prev => {
+      const updated = [...prev];
+      updated[segIndex] = { ...updated[segIndex], deleted: false, replacementUrl: file_url };
+      return updated;
+    });
+  }, [audioSegments]);
+
   // --- Subtitle handlers ---
   const currentSubtitle = subtitles.find(s => currentTime >= s.start && currentTime <= s.end);
 
