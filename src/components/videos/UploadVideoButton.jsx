@@ -71,40 +71,32 @@ export default function UploadVideoButton({ onUploaded }) {
     }
 
     try {
-      // Step 1: Get signed upload params from backend
+      // Step 1: Upload file to Base44 storage first
       setStatus('uploading');
-      setStatusText('מתחיל העלאה...');
-      
-      const signResponse = await base44.functions.invoke('getUploadSignature');
-      const signData = signResponse.data;
-      
-      if (!signData?.signature) {
-        throw new Error('Failed to get upload signature');
-      }
-
-      // Step 2: Upload directly to Cloudinary with real progress
       setStatusText(`מעלה ${sizeMB}MB...`);
-      const cloudResult = await uploadToCloudinary(file, signData);
       
-      const fileUrl = cloudResult.secure_url;
-      if (!fileUrl) {
-        throw new Error('No URL returned from Cloudinary');
-      }
+      const stopProgress = simulateProgress(5, 50, 30000);
+      
+      const { file_url: storageUrl } = await base44.integrations.Core.UploadFile({ file });
+      
+      stopProgress();
+      setPercent(55);
+      setStatusText('מעבד...');
 
-      // Step 3: Save recording in DB
-      setPercent(93);
-      setStatus('saving');
-      setStatusText('שומר...');
-
-      const saveResponse = await base44.functions.invoke('saveRecording', {
-        file_url: fileUrl,
+      // Step 2: Backend uploads to Cloudinary and saves recording
+      const stopProgress2 = simulateProgress(55, 90, 60000);
+      
+      const response = await base44.functions.invoke('uploadToCloudinary', {
+        file_url: storageUrl,
         file_name: file.name,
         file_size_bytes: file.size,
-        duration_seconds: localDuration || Math.round(cloudResult.duration || 0),
+        duration_seconds: localDuration,
       });
 
-      if (!saveResponse.data?.success) {
-        throw new Error(saveResponse.data?.error || 'שגיאה בשמירה');
+      stopProgress2();
+
+      if (!response.data?.success) {
+        throw new Error(response.data?.error || 'שגיאה בהעלאה');
       }
 
       setPercent(100);
