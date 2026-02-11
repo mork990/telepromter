@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { Type, Subtitles, Film, LogIn, User, Shield, Sparkles } from 'lucide-react';
+import { Type, Subtitles, Film, Sparkles, LogIn, User, Shield, Scissors, Wand2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { motion } from 'framer-motion';
+import MainActionCard from '../components/home/MainActionCard';
 import FeatureCard from '../components/home/FeatureCard';
+import RecentVideos from '../components/home/RecentVideos';
 import BottomNav from '../components/navigation/BottomNav';
 
 export default function Home() {
@@ -22,35 +24,13 @@ export default function Home() {
     });
   }, []);
 
-  const features = [
-    {
-      icon: Type,
-      title: 'טלפרומפטר',
-      description: 'צלם סרטונים עם טקסט נגלל על המסך',
-      page: 'Recording',
-      gradient: 'bg-gradient-to-br from-emerald-500 via-teal-600 to-cyan-700',
-    },
-    {
-      icon: Subtitles,
-      title: 'כתוביות',
-      description: 'כתוביות אוטומטיות עם AI לכל סרטון',
-      page: 'MyVideos',
-      gradient: 'bg-gradient-to-br from-amber-500 via-orange-600 to-red-600',
-    },
-    {
-      icon: Film,
-      title: 'עריכת וידאו',
-      description: 'חתוך, ערוך והוסף אפקטים בקלות',
-      page: 'MyVideos',
-      gradient: 'bg-gradient-to-br from-indigo-500 via-purple-600 to-violet-700',
-    },
-    {
-      icon: Sparkles,
-      title: 'עורך AI',
-      description: 'ערוך סרטונים עם הוראות טקסט פשוטות',
-      page: 'AIEditor',
-      gradient: 'bg-gradient-to-br from-pink-500 via-rose-600 to-fuchsia-700',
-    },
+  const tools = [
+    { icon: Sparkles, title: 'עורך AI', page: 'AIEditor', badge: 'חדש' },
+    { icon: Subtitles, title: 'כתוביות', page: 'MyVideos' },
+    { icon: Scissors, title: 'עריכת וידאו', page: 'MyVideos' },
+    { icon: Film, title: 'הסרטונים שלי', page: 'MyVideos' },
+    { icon: Wand2, title: 'אפקטים', page: 'MyVideos' },
+    { icon: Type, title: 'טלפרומפטר', page: 'Recording' },
   ];
 
   return (
@@ -100,37 +80,50 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Hero */}
-      <div className="px-5 pt-8 pb-6 text-center">
-        <motion.h1
-          initial={{ opacity: 0, y: -10 }}
+      <div className="px-4 pt-5 pb-28 space-y-6">
+        {/* Main Action Cards - 2 big tiles */}
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="text-3xl font-extrabold leading-tight mb-3"
+          transition={{ duration: 0.4 }}
+          className="flex gap-3"
         >
-          <span className="bg-gradient-to-l from-[#00d4aa] to-[#00e4bb] bg-clip-text text-transparent">
-            סטודיו וידאו
-          </span>
-          <br />
-          <span className="text-white/90 text-xl font-bold">בכף היד שלך</span>
-        </motion.h1>
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          className="text-sm text-white/35"
-        >
-          בחר כלי להתחלה
-        </motion.p>
-      </div>
+          <MainActionCard
+            icon={Film}
+            title="סרטון חדש"
+            page="Recording"
+            gradient="bg-gradient-to-br from-[#00d4aa] to-[#00876e]"
+          />
+          <MainActionCard
+            icon={Type}
+            title="טלפרומפטר"
+            page="Recording"
+            gradient="bg-gradient-to-br from-indigo-500 to-violet-700"
+          />
+        </motion.div>
 
-      {/* Feature Grid - 2x2 */}
-      <div className="px-4 pb-28">
-        <div className="grid grid-cols-2 gap-3">
-          {features.map((feature, i) => (
-            <FeatureCard key={feature.title} {...feature} delay={0.1 + i * 0.1} />
-          ))}
-        </div>
+        {/* Recent Videos Carousel */}
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.1 }}
+        >
+          <RecentVideos />
+        </motion.div>
+
+        {/* Tools Grid - 3x2 */}
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.2 }}
+        >
+          <h3 className="text-sm font-bold text-white/80 mb-3 px-1">כלים</h3>
+          <div className="grid grid-cols-3 gap-2.5">
+            {tools.map((tool) => (
+              <FeatureCard key={tool.title} {...tool} />
+            ))}
+          </div>
+        </motion.div>
       </div>
 
       <BottomNav activePage="Home" />
