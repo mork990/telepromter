@@ -98,10 +98,16 @@ export default function UploadVideoButton({ onUploaded }) {
     }, 300);
 
     try {
-      const { file_url } = await uploadWithProgress(file);
+      console.log('Starting upload, size:', sizeMB, 'MB');
+      const result = await base44.integrations.Core.UploadFile({ file });
+      console.log('Upload result:', result);
       clearInterval(progressInterval);
       
-      // Upload succeeded!
+      const file_url = result?.file_url;
+      if (!file_url) {
+        throw new Error('No file_url returned from upload');
+      }
+
       setPercent(97);
       setStatus('saving');
       setStatusText('שומר...');
@@ -122,12 +128,13 @@ export default function UploadVideoButton({ onUploaded }) {
       }, 1200);
     } catch (err) {
       clearInterval(progressInterval);
-      console.error('Upload failed:', err);
+      console.error('Upload failed:', err?.message || err);
+      console.error('Upload error details:', JSON.stringify(err, null, 2));
       setStatus('error');
       setStatusText('ההעלאה נכשלה');
       setPercent(0);
       setTimeout(() => {
-        alert(`ההעלאה נכשלה.\n\nגודל: ${sizeMB}MB\n\nנסה שוב, או נסה קובץ קטן יותר.`);
+        alert(`ההעלאה נכשלה.\n\nגודל: ${sizeMB}MB\nשגיאה: ${err?.message || 'לא ידוע'}\n\nנסה שוב.`);
         resetState();
       }, 500);
     }
