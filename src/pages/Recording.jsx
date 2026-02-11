@@ -9,15 +9,23 @@ export default function Recording() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
+    
+    // Load saved settings from localStorage as defaults
+    let saved = {};
+    try {
+      const raw = localStorage.getItem('teleprompterSettings');
+      if (raw) saved = JSON.parse(raw);
+    } catch (e) {}
+
     setSettings({
       text: params.get('text') || '',
-      fontSize: parseInt(params.get('fontSize')) || 32,
-      textColor: params.get('textColor') || '#FFFFFF',
-      backgroundColor: params.get('backgroundColor') || '#000000',
-      scrollSpeed: parseInt(params.get('scrollSpeed')) || 50,
-      cameraFacing: params.get('cameraFacing') || 'user',
-      backgroundOpacity: parseInt(params.get('backgroundOpacity')) || 80,
-      videoQuality: params.get('videoQuality') || '1080',
+      fontSize: parseInt(params.get('fontSize')) || saved.fontSize || 32,
+      textColor: params.get('textColor') || saved.textColor || '#FFFFFF',
+      backgroundColor: params.get('backgroundColor') || saved.backgroundColor || '#000000',
+      scrollSpeed: parseInt(params.get('scrollSpeed')) || saved.scrollSpeed || 50,
+      cameraFacing: params.get('cameraFacing') || saved.cameraFacing || 'user',
+      backgroundOpacity: parseInt(params.get('backgroundOpacity')) ?? saved.backgroundOpacity ?? 80,
+      videoQuality: params.get('videoQuality') || saved.videoQuality || '1080',
       isPremium: params.get('isPremium') === '1'
     });
   }, []);
