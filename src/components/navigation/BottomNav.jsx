@@ -1,13 +1,14 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { Video, Film, Settings, Crown } from 'lucide-react';
+import { Video, Film, Settings, Crown, Sparkles } from 'lucide-react';
 
 export default function BottomNav({ activePage }) {
   const navigate = useNavigate();
 
   const tabs = [
     { id: 'Home', icon: Video, label: 'צילום' },
+    { id: 'AIEditor', icon: Sparkles, label: 'עורך AI' },
     { id: 'MyVideos', icon: Film, label: 'סרטונים' },
     { id: 'Settings', icon: Settings, label: 'הגדרות' },
     { id: 'Pricing', icon: Crown, label: 'פרימיום' },
