@@ -48,16 +48,24 @@ export default function UploadVideoButton({ onUploaded }) {
       const end = Math.min(start + CHUNK_SIZE, totalSize);
       const chunk = file.slice(start, end);
 
-      const formData = new FormData();
-      formData.append('chunk', chunk, 'chunk.mp4');
-      formData.append('upload_id', uploadId);
-      formData.append('chunk_index', String(i));
-      formData.append('total_chunks', String(totalChunks));
-      formData.append('total_size', String(totalSize));
-      formData.append('range_start', String(start));
-      formData.append('range_end', String(end - 1));
+      // Convert chunk to base64 for JSON transport
+      const arrayBuffer = await chunk.arrayBuffer();
+      const bytes = new Uint8Array(arrayBuffer);
+      let binary = '';
+      for (let j = 0; j < bytes.length; j++) {
+        binary += String.fromCharCode(bytes[j]);
+      }
+      const chunkBase64 = btoa(binary);
 
-      const res = await base44.functions.invoke('uploadChunk', formData);
+      const res = await base44.functions.invoke('uploadChunk', {
+        chunk_base64: chunkBase64,
+        upload_id: uploadId,
+        chunk_index: i,
+        total_chunks: totalChunks,
+        total_size: totalSize,
+        range_start: start,
+        range_end: end - 1,
+      });
       lastResponse = res.data;
 
       const pct = Math.round(((i + 1) / totalChunks) * 90) + 5;
