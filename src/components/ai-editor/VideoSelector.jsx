@@ -90,7 +90,7 @@ export default function VideoSelector({ onVideoSelected, selectedVideoUrl }) {
             <>
               <Upload className="w-8 h-8 text-white/40" />
               <span className="text-sm text-white/50">לחץ להעלאת קובץ וידאו</span>
-              <span className="text-xs text-white/30">MP4, MOV, WEBM</span>
+              <span className="text-xs text-white/30">MP4, MOV, WEBM – גם סרטונים שלא צולמו באפליקציה</span>
             </>
           )}
           <input
