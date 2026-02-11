@@ -8,6 +8,43 @@ css
   --safe-area-bottom: env(safe-area-inset-bottom, 0px);
   --safe-area-left: env(safe-area-inset-left, 0px);
   --safe-area-right: env(safe-area-inset-right, 0px);
+
+  /* Dark theme (default) */
+  --bg-primary: #0e0e1a;
+  --bg-secondary: #1a1a2e;
+  --bg-card: #1a1a2e;
+  --text-primary: #ffffff;
+  --text-secondary: rgba(255,255,255,0.7);
+  --text-muted: rgba(255,255,255,0.4);
+  --text-faint: rgba(255,255,255,0.5);
+  --border-color: rgba(255,255,255,0.05);
+  --border-subtle: rgba(255,255,255,0.1);
+  --hover-bg: rgba(255,255,255,0.1);
+  --accent: #00d4aa;
+  --accent-secondary: #00a89d;
+  --accent-bg: rgba(0,212,170,0.1);
+  --nav-bg: rgba(26,26,46,0.95);
+  --chip-bg: rgba(255,255,255,0.05);
+  --shadow-accent: rgba(0,212,170,0.2);
+}
+
+[data-theme="light"] {
+  --bg-primary: #f5f5f7;
+  --bg-secondary: #ffffff;
+  --bg-card: #ffffff;
+  --text-primary: #1a1a2e;
+  --text-secondary: #4a4a5a;
+  --text-muted: #8a8a9a;
+  --text-faint: #6a6a7a;
+  --border-color: rgba(0,0,0,0.06);
+  --border-subtle: rgba(0,0,0,0.1);
+  --hover-bg: rgba(0,0,0,0.05);
+  --accent: #00a89d;
+  --accent-secondary: #00d4aa;
+  --accent-bg: rgba(0,168,157,0.1);
+  --nav-bg: rgba(255,255,255,0.95);
+  --chip-bg: rgba(0,0,0,0.04);
+  --shadow-accent: rgba(0,168,157,0.15);
 }
 
 html {
