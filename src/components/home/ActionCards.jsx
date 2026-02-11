@@ -29,7 +29,7 @@ export default function ActionCards() {
 
       {/* Teleprompter */}
       <button
-        onClick={() => navigate(createPageUrl('Recording'))}
+        onClick={() => navigate(createPageUrl('Teleprompter'))}
         className="relative group overflow-hidden rounded-3xl bg-[#2a1b30] p-5 text-right border border-white/5 hover:border-purple-500/50 active:scale-[0.98] transition-all duration-300"
       >
         <div className="flex flex-col h-full justify-between min-h-[110px]">

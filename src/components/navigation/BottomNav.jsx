@@ -9,7 +9,7 @@ export default function BottomNav({ activePage }) {
   const tabs = [
     { id: 'Home', icon: Home, label: 'בית' },
     { id: 'MyVideos', icon: Film, label: 'עריכה' },
-    { id: 'Recording', icon: FileText, label: 'טלפרומפטר' },
+    { id: 'Teleprompter', icon: FileText, label: 'טלפרומפטר' },
     { id: 'AIEditor', icon: Sparkles, label: 'כלי AI' },
     { id: 'Settings', icon: User, label: 'פרופיל' },
   ];
