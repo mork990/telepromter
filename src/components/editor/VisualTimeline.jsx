@@ -4,6 +4,7 @@ import { Scissors, Type, Trash2, ZoomIn, ZoomOut, Undo2, Image, Volume2, Subtitl
 import SubtitleBubble from './SubtitleBubble';
 import TrackSegment from './TrackSegment';
 import ImageTrackItem from './ImageTrackItem';
+import MediaLayerItem from './MediaLayerItem';
 
 function formatTime(seconds) {
   if (!seconds || isNaN(seconds)) return '0:00';
@@ -47,6 +48,11 @@ export default function VisualTimeline({
   isTranscribing,
   onInsertVideoFile,
   onInsertAudioFile,
+  mediaLayers = [],
+  onAddMediaLayer,
+  onDeleteMediaLayer,
+  onTrimMediaLayer,
+  onMoveMediaLayer,
 }) {
   const containerRef = useRef(null);
   const scrollRef = useRef(null);
@@ -54,7 +60,7 @@ export default function VisualTimeline({
   const dragStartRef = useRef({ x: 0, startVal: 0, endVal: 0 });
   const didDragRef = useRef(false);
   
-  const [toolMode, setToolMode] = useState(null); // 'split-video', 'split-audio', 'subtitle', 'delete', 'image'
+  const [toolMode, setToolMode] = useState(null); // 'split-video', 'split-audio', 'subtitle', 'delete', 'image', 'media-layer'
   const [pxPerSec, setPxPerSec] = useState(0);
   const [isZoomed, setIsZoomed] = useState(false);
 
@@ -67,7 +73,9 @@ export default function VisualTimeline({
   const [splitCursorTime, setSplitCursorTime] = useState(null);
 
   const fileInputRef = useRef(null);
+  const mediaLayerInputRef = useRef(null);
   const [pendingImageTime, setPendingImageTime] = useState(null);
+  const [pendingMediaLayerTime, setPendingMediaLayerTime] = useState(null);
 
   useEffect(() => {
     if (!scrollRef.current || !duration) return;
