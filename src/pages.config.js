@@ -47,26 +47,26 @@
  *
  * The mainPage value must match a key in the PAGES object exactly.
  */
-import AdminPanel from './pages/AdminPanel';
-import Recording from './pages/Recording';
-import VideoEditor from './pages/VideoEditor';
 import AIEditor from './pages/AIEditor';
+import AdminPanel from './pages/AdminPanel';
+import Home from './pages/Home';
 import MyVideos from './pages/MyVideos';
 import Pricing from './pages/Pricing';
+import Recording from './pages/Recording';
 import Settings from './pages/Settings';
-import Home from './pages/Home';
+import VideoEditor from './pages/VideoEditor';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
-    "AdminPanel": AdminPanel,
-    "Recording": Recording,
-    "VideoEditor": VideoEditor,
     "AIEditor": AIEditor,
+    "AdminPanel": AdminPanel,
+    "Home": Home,
     "MyVideos": MyVideos,
     "Pricing": Pricing,
+    "Recording": Recording,
     "Settings": Settings,
-    "Home": Home,
+    "VideoEditor": VideoEditor,
 }
 
 export const pagesConfig = {

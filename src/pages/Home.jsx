@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { Type, Subtitles, Film, LogIn, User, Shield, Sparkles } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
+import { motion } from 'framer-motion';
 import FeatureCard from '../components/home/FeatureCard';
 import BottomNav from '../components/navigation/BottomNav';
 
@@ -25,30 +26,30 @@ export default function Home() {
     {
       icon: Type,
       title: 'טלפרומפטר',
-      description: 'צלם סרטונים עם טקסט נגלל על המסך – מושלם להקלטות מקצועיות',
+      description: 'צלם סרטונים עם טקסט נגלל על המסך',
       page: 'Recording',
-      iconBg: 'bg-gradient-to-br from-[#00d4aa] to-[#00a89d]',
+      gradient: 'bg-gradient-to-br from-emerald-500 via-teal-600 to-cyan-700',
     },
     {
       icon: Subtitles,
-      title: 'כתוביות אוטומטיות',
-      description: 'הוסף כתוביות לסרטונים שלך באופן אוטומטי עם AI',
+      title: 'כתוביות',
+      description: 'כתוביות אוטומטיות עם AI לכל סרטון',
       page: 'MyVideos',
-      iconBg: 'bg-gradient-to-br from-amber-500 to-orange-600',
+      gradient: 'bg-gradient-to-br from-amber-500 via-orange-600 to-red-600',
     },
     {
       icon: Film,
-      title: 'עריכת סרטונים',
-      description: 'חתוך, ערוך והוסף אפקטים לסרטונים שלך בממשק פשוט ונוח',
+      title: 'עריכת וידאו',
+      description: 'חתוך, ערוך והוסף אפקטים בקלות',
       page: 'MyVideos',
-      iconBg: 'bg-gradient-to-br from-indigo-500 to-purple-600',
+      gradient: 'bg-gradient-to-br from-indigo-500 via-purple-600 to-violet-700',
     },
     {
       icon: Sparkles,
       title: 'עורך AI',
-      description: 'תן ל-AI לערוך את הסרטונים שלך – פשוט תגיד מה אתה רוצה',
+      description: 'ערוך סרטונים עם הוראות טקסט פשוטות',
       page: 'AIEditor',
-      iconBg: 'bg-gradient-to-br from-pink-500 to-rose-600',
+      gradient: 'bg-gradient-to-br from-pink-500 via-rose-600 to-fuchsia-700',
     },
   ];
 
@@ -56,7 +57,7 @@ export default function Home() {
     <div className="min-h-screen bg-[#0e0e1a] text-white" dir="rtl">
       {/* Header */}
       <div
-        className="sticky z-10 bg-[#1a1a2e]/80 backdrop-blur-xl border-b border-white/5"
+        className="sticky z-10 bg-[#0e0e1a]/80 backdrop-blur-xl border-b border-white/5"
         style={{ top: 'env(safe-area-inset-top)' }}
       >
         <div className="px-4 h-12 flex items-center justify-between">
@@ -99,25 +100,37 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Hero Section */}
-      <div className="px-5 pt-8 pb-4">
-        <h1 className="text-2xl font-extrabold leading-tight mb-2">
-          הכלי המקצועי שלך
-          <br />
-          <span className="bg-gradient-to-l from-[#00d4aa] to-[#00a89d] bg-clip-text text-transparent">
-            לעריכת סרטונים
+      {/* Hero */}
+      <div className="px-5 pt-8 pb-6 text-center">
+        <motion.h1
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="text-3xl font-extrabold leading-tight mb-3"
+        >
+          <span className="bg-gradient-to-l from-[#00d4aa] to-[#00e4bb] bg-clip-text text-transparent">
+            סטודיו וידאו
           </span>
-        </h1>
-        <p className="text-sm text-white/40 leading-relaxed">
-          טלפרומפטר, כתוביות אוטומטיות ועריכה מתקדמת — הכל במקום אחד
-        </p>
+          <br />
+          <span className="text-white/90 text-xl font-bold">בכף היד שלך</span>
+        </motion.h1>
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          className="text-sm text-white/35"
+        >
+          בחר כלי להתחלה
+        </motion.p>
       </div>
 
-      {/* Feature Cards */}
-      <div className="px-4 pb-28 space-y-3">
-        {features.map((feature) => (
-          <FeatureCard key={feature.title} {...feature} />
-        ))}
+      {/* Feature Grid - 2x2 */}
+      <div className="px-4 pb-28">
+        <div className="grid grid-cols-2 gap-3">
+          {features.map((feature, i) => (
+            <FeatureCard key={feature.title} {...feature} delay={0.1 + i * 0.1} />
+          ))}
+        </div>
       </div>
 
       <BottomNav activePage="Home" />
