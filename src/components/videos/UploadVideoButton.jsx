@@ -30,29 +30,35 @@ export default function UploadVideoButton({ onUploaded }) {
     });
   };
 
-  const CHUNK_SIZE = 6 * 1024 * 1024; // 6MB chunks for direct Cloudinary upload
+  const CHUNK_SIZE = 20 * 1024 * 1024; // 20MB chunks
 
-  const CLOUD_NAME = 'dq9tkpfwm';
-  const UPLOAD_PRESET = 'base44_video_unsigned';
+  const getSignature = async () => {
+    const res = await base44.functions.invoke('getUploadSignature');
+    return res.data;
+  };
 
   const uploadToCloudinary = async (file) => {
     cancelledRef.current = false;
     const totalSize = file.size;
+    const sig = await getSignature();
 
-    // Small file (<20MB) - single upload with XHR for progress
-    if (totalSize < 20 * 1024 * 1024) {
-      return await uploadSingleFile(file);
+    // Small file (<100MB) - single upload with XHR for progress
+    if (totalSize < 100 * 1024 * 1024) {
+      return await uploadSingleFile(file, sig);
     }
 
-    // Large file - chunked upload directly to Cloudinary
-    return await uploadChunkedDirect(file);
+    // Large file - chunked signed upload directly to Cloudinary
+    return await uploadChunkedDirect(file, sig);
   };
 
-  const uploadSingleFile = (file) => {
+  const uploadSingleFile = (file, sig) => {
     return new Promise((resolve, reject) => {
       const fd = new FormData();
       fd.append('file', file);
-      fd.append('upload_preset', UPLOAD_PRESET);
+      fd.append('api_key', sig.api_key);
+      fd.append('timestamp', String(sig.timestamp));
+      fd.append('signature', sig.signature);
+      fd.append('folder', sig.folder);
 
       const xhr = new XMLHttpRequest();
       xhrRef.current = xhr;
@@ -80,12 +86,12 @@ export default function UploadVideoButton({ onUploaded }) {
       xhr.onerror = () => reject(new Error('שגיאת רשת בהעלאה'));
       xhr.onabort = () => reject(new Error('ההעלאה בוטלה'));
 
-      xhr.open('POST', `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/video/upload`);
+      xhr.open('POST', `https://api.cloudinary.com/v1_1/${sig.cloud_name}/video/upload`);
       xhr.send(fd);
     });
   };
 
-  const uploadChunkedDirect = async (file) => {
+  const uploadChunkedDirect = async (file, sig) => {
     const totalSize = file.size;
     const totalChunks = Math.ceil(totalSize / CHUNK_SIZE);
     const uploadId = `uqid-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
@@ -100,10 +106,13 @@ export default function UploadVideoButton({ onUploaded }) {
 
       const fd = new FormData();
       fd.append('file', chunk, file.name || 'video.mp4');
-      fd.append('upload_preset', UPLOAD_PRESET);
+      fd.append('api_key', sig.api_key);
+      fd.append('timestamp', String(sig.timestamp));
+      fd.append('signature', sig.signature);
+      fd.append('folder', sig.folder);
 
       const res = await fetch(
-        `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/video/upload`,
+        `https://api.cloudinary.com/v1_1/${sig.cloud_name}/video/upload`,
         {
           method: 'POST',
           headers: {
