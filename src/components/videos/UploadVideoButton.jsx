@@ -29,43 +29,21 @@ export default function UploadVideoButton({ onUploaded }) {
     });
   };
 
-  // Upload directly to Cloudinary with real XHR progress
-  const uploadToCloudinary = (file, signData) => {
-    return new Promise((resolve, reject) => {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('signature', signData.signature);
-      formData.append('timestamp', signData.timestamp);
-      formData.append('api_key', signData.api_key);
-      formData.append('folder', signData.folder);
-
-      const xhr = new XMLHttpRequest();
-      xhrRef.current = xhr;
-
-      xhr.upload.onprogress = (e) => {
-        if (e.lengthComputable) {
-          const pct = Math.round((e.loaded / e.total) * 90);
-          setPercent(pct);
-        }
-      };
-
-      xhr.onload = () => {
-        if (xhr.status >= 200 && xhr.status < 300) {
-          const data = JSON.parse(xhr.responseText);
-          resolve(data);
-        } else {
-          reject(new Error(`Upload failed: ${xhr.status}`));
-        }
-      };
-
-      xhr.onerror = () => reject(new Error('Network error'));
-      xhr.ontimeout = () => reject(new Error('Upload timeout'));
-      xhr.timeout = 600000; // 10 min
-
-      const url = `https://api.cloudinary.com/v1_1/${signData.cloud_name}/video/upload`;
-      xhr.open('POST', url);
-      xhr.send(formData);
-    });
+  // Simulate progress while backend uploads to Cloudinary
+  const simulateProgress = (startPct, endPct, durationMs) => {
+    const steps = 20;
+    const stepMs = durationMs / steps;
+    const stepPct = (endPct - startPct) / steps;
+    let current = startPct;
+    const interval = setInterval(() => {
+      current += stepPct;
+      if (current >= endPct) {
+        current = endPct;
+        clearInterval(interval);
+      }
+      setPercent(Math.round(current));
+    }, stepMs);
+    return () => clearInterval(interval);
   };
 
   const handleUpload = async (e) => {
