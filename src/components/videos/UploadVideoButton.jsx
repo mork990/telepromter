@@ -4,6 +4,7 @@ import { Upload, Loader2 } from 'lucide-react';
 
 export default function UploadVideoButton({ onUploaded }) {
   const [uploading, setUploading] = useState(false);
+  const [progress, setProgress] = useState('');
   const inputRef = useRef(null);
 
   const getVideoDuration = (url) => {
@@ -19,21 +20,39 @@ export default function UploadVideoButton({ onUploaded }) {
     });
   };
 
+  const MAX_SIZE_MB = 200;
+
   const handleUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    if (file.size > MAX_SIZE_MB * 1024 * 1024) {
+      alert(`הקובץ גדול מדי. הגודל המקסימלי הוא ${MAX_SIZE_MB}MB`);
+      if (inputRef.current) inputRef.current.value = '';
+      return;
+    }
+
     setUploading(true);
-    const { file_url } = await base44.integrations.Core.UploadFile({ file });
-    const duration = await getVideoDuration(file_url);
-    await base44.entities.Recording.create({
-      title: file.name.replace(/\.[^/.]+$/, ''),
-      file_url,
-      duration_seconds: duration || undefined,
-      file_size_bytes: file.size,
-    });
-    if (inputRef.current) inputRef.current.value = '';
-    setUploading(false);
-    onUploaded?.();
+    setProgress('מעלה...');
+    try {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      setProgress('מעבד...');
+      const duration = await getVideoDuration(file_url);
+      await base44.entities.Recording.create({
+        title: file.name.replace(/\.[^/.]+$/, ''),
+        file_url,
+        duration_seconds: duration || undefined,
+        file_size_bytes: file.size,
+      });
+      onUploaded?.();
+    } catch (err) {
+      console.error('Upload failed:', err);
+      alert('ההעלאה נכשלה. נסה קובץ קטן יותר או נסה שוב.');
+    } finally {
+      if (inputRef.current) inputRef.current.value = '';
+      setUploading(false);
+      setProgress('');
+    }
   };
 
   return (
@@ -43,7 +62,7 @@ export default function UploadVideoButton({ onUploaded }) {
       ) : (
         <Upload className="w-4 h-4" />
       )}
-      {uploading ? 'מעלה...' : 'העלה סרטון'}
+      {uploading ? (progress || 'מעלה...') : 'העלה סרטון'}
       <input
         ref={inputRef}
         type="file"
