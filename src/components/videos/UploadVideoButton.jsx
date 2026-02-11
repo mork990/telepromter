@@ -53,18 +53,27 @@ export default function UploadVideoButton({ onUploaded }) {
     }
 
     try {
-      // Step 1: Upload to Base44 storage directly (built-in, no external API)
+      // Step 1: Upload to Base44 storage directly
       setStatus('uploading');
-      setStatusText(`מעלה ${sizeMB}MB...`);
-      setPercent(10);
+      setStatusText(`מעלה ${sizeMB}MB... (זה יכול לקחת דקה או שתיים)`);
+      setPercent(5);
+
+      // Simulate progress while uploading (UploadFile doesn't give real progress)
+      let currentPct = 5;
+      const progressInterval = setInterval(() => {
+        currentPct += Math.random() * 3;
+        if (currentPct > 85) currentPct = 85;
+        setPercent(Math.round(currentPct));
+      }, 1500);
 
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      clearInterval(progressInterval);
 
       if (!file_url) {
         throw new Error('לא התקבל קישור לקובץ');
       }
 
-      setPercent(80);
+      setPercent(90);
 
       // Step 2: Save recording in DB
       setStatus('saving');
