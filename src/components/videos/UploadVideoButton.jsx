@@ -38,7 +38,6 @@ export default function UploadVideoButton({ onUploaded }) {
       formData.append('timestamp', signData.timestamp);
       formData.append('api_key', signData.api_key);
       formData.append('folder', signData.folder);
-      formData.append('resource_type', 'video');
 
       const xhr = new XMLHttpRequest();
       xhrRef.current = xhr;
