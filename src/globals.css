@@ -29,22 +29,22 @@ css
 }
 
 [data-theme="light"] {
-  --bg-primary: #f5f5f7;
+  --bg-primary: #eef0f4;
   --bg-secondary: #ffffff;
   --bg-card: #ffffff;
   --text-primary: #1a1a2e;
   --text-secondary: #4a4a5a;
-  --text-muted: #8a8a9a;
-  --text-faint: #6a6a7a;
-  --border-color: rgba(0,0,0,0.06);
-  --border-subtle: rgba(0,0,0,0.1);
-  --hover-bg: rgba(0,0,0,0.05);
-  --accent: #00a89d;
-  --accent-secondary: #00d4aa;
-  --accent-bg: rgba(0,168,157,0.1);
-  --nav-bg: rgba(255,255,255,0.95);
-  --chip-bg: rgba(0,0,0,0.04);
-  --shadow-accent: rgba(0,168,157,0.15);
+  --text-muted: #7a7a8a;
+  --text-faint: #5a5a6a;
+  --border-color: rgba(0,0,0,0.12);
+  --border-subtle: rgba(0,0,0,0.15);
+  --hover-bg: rgba(0,0,0,0.06);
+  --accent: #00967e;
+  --accent-secondary: #00b89a;
+  --accent-bg: rgba(0,150,126,0.12);
+  --nav-bg: rgba(255,255,255,0.97);
+  --chip-bg: rgba(0,0,0,0.06);
+  --shadow-accent: rgba(0,150,126,0.2);
 }
 
 html {
