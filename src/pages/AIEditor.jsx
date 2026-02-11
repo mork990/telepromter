@@ -183,11 +183,11 @@ ${conversationHistory}
   };
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }} dir="rtl">
+    <div className="min-h-screen bg-[#0e0e1a] text-white flex flex-col" dir="rtl">
       {/* Header */}
       <div
-        className="sticky z-10 backdrop-blur-xl"
-        style={{ top: 'env(safe-area-inset-top)', backgroundColor: 'var(--nav-bg)', borderBottom: '1px solid var(--border-color)' }}
+        className="sticky z-10 bg-[#1a1a2e]/80 backdrop-blur-xl border-b border-white/5"
+        style={{ top: 'env(safe-area-inset-top)' }}
       >
         <div className="px-4 h-12 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -199,8 +199,7 @@ ${conversationHistory}
           {selectedVideo && (
             <button
               onClick={handleReset}
-              className="text-xs font-medium px-3 py-1.5 rounded-full flex items-center gap-1"
-              style={{ color: 'var(--text-faint)', backgroundColor: 'var(--chip-bg)' }}
+              className="text-xs text-white/50 font-medium px-3 py-1.5 rounded-full bg-white/5 flex items-center gap-1"
             >
               <RotateCcw className="w-3.5 h-3.5" />
               התחל מחדש
@@ -213,12 +212,12 @@ ${conversationHistory}
       <div className="flex-1 overflow-y-auto px-4 pt-4 pb-44">
         {showSelector ? (
           <div className="space-y-4">
-            <div className="rounded-2xl p-4" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
+            <div className="bg-[#1a1a2e] rounded-2xl border border-white/5 p-4">
               <div className="flex items-center gap-2 mb-3">
                 <Sparkles className="w-5 h-5 text-purple-400" />
                 <h2 className="text-lg font-bold">עריכת סרטון עם AI</h2>
               </div>
-              <p className="text-sm mb-4" style={{ color: 'var(--text-faint)' }}>
+              <p className="text-sm text-white/50 mb-4">
                 בחר סרטון מהספרייה שלך או העלה סרטון חדש, ותאר ב-AI מה תרצה לעשות איתו.
               </p>
               <VideoSelector
@@ -230,7 +229,7 @@ ${conversationHistory}
         ) : (
           <div className="space-y-4">
             {/* Selected video preview */}
-            <div className="rounded-2xl p-3" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
+            <div className="bg-[#1a1a2e] rounded-2xl border border-white/5 p-3">
               <div className="flex items-center gap-3">
                 <div className="w-20 h-12 rounded-lg bg-black/50 overflow-hidden flex-shrink-0">
                   <video
@@ -241,12 +240,11 @@ ${conversationHistory}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-white font-medium truncate">{selectedVideo.title}</p>
-                  <p className="text-xs" style={{ color: 'var(--accent)' }}>סרטון נטען</p>
+                  <p className="text-xs text-[#00d4aa]">סרטון נטען</p>
                 </div>
                 <button
                   onClick={() => setShowSelector(true)}
-                  className="text-xs px-2 py-1 rounded-lg"
-                  style={{ color: 'var(--text-muted)', backgroundColor: 'var(--chip-bg)' }}
+                  className="text-xs text-white/40 px-2 py-1 rounded-lg bg-white/5"
                 >
                   החלף
                 </button>
@@ -267,8 +265,7 @@ ${conversationHistory}
       {/* Chat input - only show when video is selected */}
       {selectedVideo && !showSelector && (
         <div
-          className="fixed left-0 right-0 z-40 px-4 pb-2 backdrop-blur-xl"
-          style={{ backgroundColor: 'var(--bg-primary)', borderTop: '1px solid var(--border-color)' }}
+          className="fixed left-0 right-0 z-40 px-4 pb-2 bg-[#0e0e1a]/95 backdrop-blur-xl border-t border-white/5"
           style={{ bottom: 'calc(72px + env(safe-area-inset-bottom))' }}
         >
           <div className="pt-3">

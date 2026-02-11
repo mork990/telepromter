@@ -1,6 +1,5 @@
 import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import ThemeProvider from './components/theme/ThemeProvider';
 
 const pageVariants = {
   initial: { opacity: 0, x: 20 },
@@ -41,34 +40,30 @@ export default function Layout({ children, currentPageName }) {
   }, []);
 
   return (
-    <ThemeProvider>
-      <div 
-        className="app-container min-h-screen" 
-        dir="rtl"
-        style={{
-          backgroundColor: 'var(--bg-primary)',
-          color: 'var(--text-primary)',
-          paddingTop: 'env(safe-area-inset-top)',
-          paddingBottom: 'env(safe-area-inset-bottom)',
-          paddingLeft: 'env(safe-area-inset-left)',
-          paddingRight: 'env(safe-area-inset-right)',
-          overscrollBehavior: 'none'
-        }}
-      >
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={currentPageName}
-            initial="initial"
-            animate="animate"
-            exit="exit"
-            variants={pageVariants}
-            transition={pageTransition}
-            className="min-h-screen"
-          >
-            {children}
-          </motion.div>
-        </AnimatePresence>
-      </div>
-    </ThemeProvider>
+    <div 
+      className="app-container min-h-screen bg-[#0e0e1a]" 
+      dir="rtl"
+      style={{
+        paddingTop: 'env(safe-area-inset-top)',
+        paddingBottom: 'env(safe-area-inset-bottom)',
+        paddingLeft: 'env(safe-area-inset-left)',
+        paddingRight: 'env(safe-area-inset-right)',
+        overscrollBehavior: 'none'
+      }}
+    >
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={currentPageName}
+          initial="initial"
+          animate="animate"
+          exit="exit"
+          variants={pageVariants}
+          transition={pageTransition}
+          className="min-h-screen"
+        >
+          {children}
+        </motion.div>
+      </AnimatePresence>
+    </div>
   );
 }

@@ -8,7 +8,6 @@ import TextInput from '../components/teleprompter/TextInput';
 import PrompterPreview from '../components/teleprompter/PrompterPreview';
 import { useSubscription } from '../components/subscription/useSubscription';
 import BottomNav from '../components/navigation/BottomNav';
-import ThemeToggle from '@/components/theme/ThemeToggle';
 
 export default function Home() {
   const navigate = useNavigate();
@@ -81,25 +80,23 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }} dir="rtl">
+    <div className="min-h-screen bg-[#0e0e1a] text-white" dir="rtl">
       {/* Header */}
       <div 
-        className="sticky z-10 backdrop-blur-xl"
-        style={{ top: 'env(safe-area-inset-top)', backgroundColor: 'var(--nav-bg)', borderBottom: '1px solid var(--border-color)' }}
+        className="sticky z-10 bg-[#1a1a2e]/80 backdrop-blur-xl border-b border-white/5"
+        style={{ top: 'env(safe-area-inset-top)' }}
       >
         <div className="px-4 h-12 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: `linear-gradient(135deg, var(--accent), var(--accent-secondary))` }}>
+            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#00d4aa] to-[#00a89d] flex items-center justify-center">
               <Type className="w-4 h-4 text-white" />
             </div>
             <span className="text-base font-bold tracking-tight">פרומפטר</span>
           </div>
           <div className="flex items-center gap-1">
-            <ThemeToggle />
             {!authLoading && !currentUser && (
               <button 
-                className="text-xs font-medium px-3 py-1.5 rounded-full select-none"
-                style={{ color: 'var(--accent)', backgroundColor: 'var(--accent-bg)' }}
+                className="text-xs text-[#00d4aa] font-medium px-3 py-1.5 rounded-full bg-[#00d4aa]/10 select-none"
                 onClick={() => base44.auth.redirectToLogin()}
               >
                 <LogIn className="w-3.5 h-3.5 inline ml-1" />
@@ -110,16 +107,14 @@ export default function Home() {
               <div className="flex items-center gap-1">
                 {currentUser.role === 'admin' && (
                   <button
-                    className="text-xs font-medium px-2.5 py-1.5 rounded-full select-none"
-                    style={{ color: 'var(--accent)', backgroundColor: 'var(--accent-bg)' }}
+                    className="text-xs text-[#00d4aa] font-medium px-2.5 py-1.5 rounded-full bg-[#00d4aa]/10 select-none"
                     onClick={() => navigate(createPageUrl('AdminPanel'))}
                   >
                     <Shield className="w-3.5 h-3.5" />
                   </button>
                 )}
                 <button
-                  className="text-xs font-medium px-3 py-1.5 rounded-full select-none"
-                  style={{ color: 'var(--text-muted)', backgroundColor: 'var(--chip-bg)' }}
+                  className="text-xs text-white/50 font-medium px-3 py-1.5 rounded-full bg-white/5 select-none"
                   onClick={() => base44.auth.logout()}
                 >
                   <User className="w-3.5 h-3.5 inline ml-1" />
@@ -134,13 +129,13 @@ export default function Home() {
       {/* Main Content */}
       <div className="px-4 pt-4 pb-24 space-y-4">
         {/* Text Input Area */}
-        <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
-          <div className="px-4 py-3 flex items-center justify-between" style={{ borderBottom: '1px solid var(--border-color)' }}>
-            <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>הטקסט שלך</span>
+        <div className="bg-[#1a1a2e] rounded-2xl border border-white/5 overflow-hidden">
+          <div className="px-4 py-3 border-b border-white/5 flex items-center justify-between">
+            <span className="text-sm font-medium text-white/70">הטקסט שלך</span>
             {text.trim() && (
               <button 
                 onClick={() => setShowPreview(!showPreview)}
-                className="text-xs font-medium" style={{ color: 'var(--accent)' }}
+                className="text-xs text-[#00d4aa] font-medium"
               >
                 {showPreview ? 'עריכה' : 'תצוגה מקדימה'}
               </button>
@@ -163,11 +158,11 @@ export default function Home() {
         </div>
 
         {/* Quick Tips */}
-        <div className="rounded-2xl p-4" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
-          <p className="text-xs mb-2 font-medium" style={{ color: 'var(--text-muted)' }}>💡 טיפים מהירים</p>
+        <div className="bg-[#1a1a2e] rounded-2xl border border-white/5 p-4">
+          <p className="text-xs text-white/40 mb-2 font-medium">💡 טיפים מהירים</p>
           <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1" style={{ scrollbarWidth: 'none' }}>
             {['הזן טקסט או העלה קובץ', 'התאם הגדרות בעמוד הגדרות', 'גלול ידנית בזמן צילום'].map((tip, i) => (
-              <div key={i} className="flex-shrink-0 rounded-lg px-3 py-2 text-[11px]" style={{ backgroundColor: 'var(--chip-bg)', color: 'var(--text-faint)' }}>
+              <div key={i} className="flex-shrink-0 bg-white/5 rounded-lg px-3 py-2 text-[11px] text-white/50">
                 {tip}
               </div>
             ))}
@@ -183,15 +178,11 @@ export default function Home() {
         <button
           onClick={startRecording}
           disabled={!text.trim()}
-          className="h-14 px-8 rounded-full font-bold text-base flex items-center gap-2 shadow-lg select-none transition-all active:scale-95"
-          style={text.trim() ? {
-            background: `linear-gradient(90deg, var(--accent), var(--accent-secondary))`,
-            color: '#000',
-            boxShadow: `0 10px 25px var(--shadow-accent)`,
-          } : {
-            backgroundColor: 'var(--hover-bg)',
-            color: 'var(--text-muted)',
-          }}
+          className={`h-14 px-8 rounded-full font-bold text-base flex items-center gap-2 shadow-lg shadow-[#00d4aa]/20 select-none transition-all active:scale-95 ${
+            text.trim() 
+              ? 'bg-gradient-to-r from-[#00d4aa] to-[#00a89d] text-black' 
+              : 'bg-white/10 text-white/30'
+          }`}
         >
           <Video className="w-5 h-5" />
           התחל צילום
