@@ -29,18 +29,21 @@ export default function UploadVideoButton({ onUploaded }) {
     });
   };
 
-  const uploadToCloudinary = (file, cloudName) => {
+  const uploadToCloudinary = (file, signatureData) => {
     return new Promise((resolve, reject) => {
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('upload_preset', 'base44_video_unsigned');
+      formData.append('api_key', signatureData.api_key);
+      formData.append('timestamp', String(signatureData.timestamp));
+      formData.append('signature', signatureData.signature);
+      formData.append('folder', signatureData.folder);
 
       const xhr = new XMLHttpRequest();
       xhrRef.current = xhr;
 
       xhr.upload.addEventListener('progress', (e) => {
         if (e.lengthComputable) {
-          const pct = Math.round((e.loaded / e.total) * 90) + 5; // 5-95%
+          const pct = Math.round((e.loaded / e.total) * 90) + 5;
           setPercent(pct);
           const loadedMB = (e.loaded / (1024 * 1024)).toFixed(1);
           const totalMB = (e.total / (1024 * 1024)).toFixed(0);
@@ -73,7 +76,7 @@ export default function UploadVideoButton({ onUploaded }) {
         reject(new Error('ההעלאה בוטלה'));
       });
 
-      xhr.open('POST', `https://api.cloudinary.com/v1_1/${cloudName}/video/upload`);
+      xhr.open('POST', `https://api.cloudinary.com/v1_1/${signatureData.cloud_name}/video/upload`);
       xhr.send(formData);
     });
   };
