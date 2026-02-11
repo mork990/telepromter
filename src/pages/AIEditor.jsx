@@ -64,7 +64,6 @@ ${conversationHistory}
 
     const response = await base44.integrations.Core.InvokeLLM({
       prompt,
-      file_urls: [selectedVideo.file_url],
     });
 
     setMessages(prev => {
