@@ -67,13 +67,14 @@ export default function MyVideos() {
             </button>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="grid grid-cols-2 gap-3">
             {recordings.map((rec) => (
               <VideoCard
                 key={rec.id}
                 recording={rec}
                 onDelete={() => deleteMutation.mutate(rec.id)}
                 onUpdate={() => queryClient.invalidateQueries({ queryKey: ['recordings'] })}
+                compact
               />
             ))}
           </div>
