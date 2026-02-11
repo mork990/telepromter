@@ -7,6 +7,23 @@ export default function UploadVideoButton({ onUploaded }) {
   const [progress, setProgress] = useState('');
   const inputRef = useRef(null);
 
+  const MAX_SIZE_MB = 200;
+  const MAX_DURATION_SEC = 300; // 5 minutes
+
+  const getFileDuration = (file) => {
+    return new Promise((resolve) => {
+      const video = document.createElement('video');
+      video.preload = 'metadata';
+      video.onloadedmetadata = () => {
+        resolve(Math.round(video.duration));
+        URL.revokeObjectURL(video.src);
+        video.remove();
+      };
+      video.onerror = () => { resolve(0); URL.revokeObjectURL(video.src); video.remove(); };
+      video.src = URL.createObjectURL(file);
+    });
+  };
+
   const getVideoDuration = (url) => {
     return new Promise((resolve) => {
       const video = document.createElement('video');
@@ -20,8 +37,6 @@ export default function UploadVideoButton({ onUploaded }) {
     });
   };
 
-  const MAX_SIZE_MB = 200;
-
   const handleUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -33,11 +48,21 @@ export default function UploadVideoButton({ onUploaded }) {
     }
 
     setUploading(true);
+    setProgress('בודק אורך...');
+    const localDuration = await getFileDuration(file);
+    if (localDuration > MAX_DURATION_SEC) {
+      alert('הסרטון ארוך מדי. האורך המקסימלי הוא 5 דקות.');
+      if (inputRef.current) inputRef.current.value = '';
+      setUploading(false);
+      setProgress('');
+      return;
+    }
+
     setProgress('מעלה...');
     try {
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
       setProgress('מעבד...');
-      const duration = await getVideoDuration(file_url);
+      const duration = localDuration || await getVideoDuration(file_url);
       await base44.entities.Recording.create({
         title: file.name.replace(/\.[^/.]+$/, ''),
         file_url,
