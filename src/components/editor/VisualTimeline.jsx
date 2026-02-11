@@ -45,6 +45,8 @@ export default function VisualTimeline({
   onUpdateSubtitle,
   onAutoTranscribe,
   isTranscribing,
+  onInsertVideoFile,
+  onInsertAudioFile,
 }) {
   const containerRef = useRef(null);
   const scrollRef = useRef(null);
