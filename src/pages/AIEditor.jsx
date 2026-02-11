@@ -83,58 +83,84 @@ ${conversationHistory}
 
 ענה בעברית. היה ידידותי ומקצועי. תן תשובות קצרות.`;
 
-    const response = await base44.integrations.Core.InvokeLLM({ prompt });
+    try {
+      const response = await base44.integrations.Core.InvokeLLM({ prompt });
 
-    // Check if LLM returned an action to execute
-    const responseText = typeof response === 'string' ? response : JSON.stringify(response);
-    
-    if (responseText.includes('---ACTION---')) {
-      const [displayText, actionPart] = responseText.split('---ACTION---');
+      // Check if LLM returned an action to execute
+      const responseText = typeof response === 'string' ? response : JSON.stringify(response);
       
-      // Show the AI message first
-      setMessages(prev => {
-        const updated = prev.filter(m => !m.loading);
-        return [...updated, { role: 'assistant', content: displayText.trim() + '\n\n⏳ מבצע את הפעולה...' }];
-      });
-
-      // Parse and execute the action
-      const actionJson = actionPart.trim();
-      const match = actionJson.match(/\{[\s\S]*\}/);
-      if (match) {
-        const { action, params } = JSON.parse(match[0]);
+      if (responseText.includes('---ACTION---')) {
+        const parts = responseText.split('---ACTION---');
+        const displayText = parts[0].trim();
+        const actionPart = parts[1] || '';
         
-        const result = await base44.functions.invoke('cloudinaryEdit', {
-          video_url: selectedVideo.file_url,
-          action,
-          params
+        // Show the AI message first
+        setMessages(prev => {
+          const updated = prev.filter(m => !m.loading);
+          return [...updated, { role: 'assistant', content: displayText + '\n\n⏳ מבצע את הפעולה...' }];
         });
 
-        const resultData = result.data;
-        
-        if (resultData.success) {
-          setMessages(prev => {
-            const updated = prev.slice(0, -1); // Remove the "executing..." message
-            return [...updated, { 
-              role: 'assistant', 
-              content: displayText.trim(),
-              resultUrl: resultData.processed_url,
-              resultAction: action
-            }];
-          });
+        // Parse and execute the action
+        const match = actionPart.match(/\{[\s\S]*\}/);
+        if (match) {
+          try {
+            const { action, params } = JSON.parse(match[0]);
+            
+            const result = await base44.functions.invoke('cloudinaryEdit', {
+              video_url: selectedVideo.file_url,
+              action,
+              params
+            });
+
+            const resultData = result.data;
+            
+            if (resultData.success) {
+              setMessages(prev => {
+                const updated = prev.slice(0, -1);
+                return [...updated, { 
+                  role: 'assistant', 
+                  content: displayText,
+                  resultUrl: resultData.processed_url,
+                  resultAction: action
+                }];
+              });
+            } else {
+              setMessages(prev => {
+                const updated = prev.slice(0, -1);
+                return [...updated, { 
+                  role: 'assistant', 
+                  content: displayText + `\n\n❌ שגיאה: ${resultData.error || 'משהו השתבש'}` 
+                }];
+              });
+            }
+          } catch (parseErr) {
+            console.error('Action parse/execute error:', parseErr);
+            setMessages(prev => {
+              const updated = prev.slice(0, -1);
+              return [...updated, { 
+                role: 'assistant', 
+                content: displayText + '\n\n❌ שגיאה בביצוע הפעולה. נסה שוב.' 
+              }];
+            });
+          }
         } else {
+          // No valid JSON found, just show text
           setMessages(prev => {
             const updated = prev.slice(0, -1);
-            return [...updated, { 
-              role: 'assistant', 
-              content: displayText.trim() + `\n\n❌ שגיאה: ${resultData.error || 'משהו השתבש'}` 
-            }];
+            return [...updated, { role: 'assistant', content: displayText }];
           });
         }
+      } else {
+        setMessages(prev => {
+          const updated = prev.filter(m => !m.loading);
+          return [...updated, { role: 'assistant', content: responseText }];
+        });
       }
-    } else {
+    } catch (err) {
+      console.error('AI Editor error:', err);
       setMessages(prev => {
         const updated = prev.filter(m => !m.loading);
-        return [...updated, { role: 'assistant', content: responseText }];
+        return [...updated, { role: 'assistant', content: '❌ קרתה שגיאה. נסה שוב.' }];
       });
     }
     
