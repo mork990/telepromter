@@ -57,7 +57,21 @@ export default function UploadVideoButton({ onUploaded }) {
       setStatusText(`מעלה ${sizeMB}MB...`);
       setPercent(10);
 
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      // Simulate progress since UploadFile doesn't provide progress events
+      const progressInterval = setInterval(() => {
+        setPercent(prev => {
+          if (prev >= 85) { clearInterval(progressInterval); return 85; }
+          return prev + Math.random() * 3 + 1;
+        });
+      }, 500);
+
+      let file_url;
+      try {
+        const result = await base44.integrations.Core.UploadFile({ file });
+        file_url = result.file_url;
+      } finally {
+        clearInterval(progressInterval);
+      }
 
       setPercent(90);
 
