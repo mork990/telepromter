@@ -482,7 +482,8 @@ export default function CameraView({
             {[
               { label: '15 שנ׳', value: 15, premium: false },
               { label: '60 שנ׳', value: 60, premium: false },
-              { label: '3 דק׳', value: 180, premium: true },
+              { label: '3 דק׳', value: 180, premium: false },
+              { label: '5 דק׳', value: 300, premium: true },
             ].map(opt => {
               const locked = opt.premium && !isPremium;
               const active = maxDuration === opt.value;
