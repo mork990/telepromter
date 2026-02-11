@@ -19,7 +19,7 @@ function formatSize(bytes) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-export default function VideoCard({ recording, onDelete, onUpdate }) {
+export default function VideoCard({ recording, onDelete, onUpdate, compact }) {
   const navigate = useNavigate();
   const [showConfirm, setShowConfirm] = useState(false);
 
@@ -51,66 +51,54 @@ export default function VideoCard({ recording, onDelete, onUpdate }) {
           <video src={recording.file_url} className="w-full h-full object-cover" preload="metadata" />
         )}
         <div className="absolute inset-0 flex items-center justify-center">
-          <div className="bg-black/50 rounded-full p-3">
-            <Play className="w-8 h-8 text-white fill-white" />
+          <div className={`bg-black/50 rounded-full ${compact ? 'p-2' : 'p-3'}`}>
+            <Play className={`${compact ? 'w-5 h-5' : 'w-8 h-8'} text-white fill-white`} />
           </div>
         </div>
+        {recording.duration_seconds > 0 && (
+          <div className="absolute bottom-1.5 left-1.5 bg-black/70 text-white text-[10px] px-1.5 py-0.5 rounded">
+            {formatDuration(recording.duration_seconds)}
+          </div>
+        )}
         {recording.quality && (
-          <div className="absolute top-2 left-2 bg-black/60 text-white text-xs px-2 py-0.5 rounded">
+          <div className="absolute top-1.5 left-1.5 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded">
             {recording.quality}p
           </div>
         )}
       </div>
-      <div className="p-4">
-        <div className="flex items-start justify-between mb-3">
-          <div>
-            <h3 className="font-semibold text-white text-sm">
-              {recording.title || 'סרטון ללא שם'}
-            </h3>
-            <p className="text-xs text-white/30 mt-0.5">
-              {moment(recording.created_date).format('DD/MM/YYYY HH:mm')}
-            </p>
-          </div>
-          <div className="flex items-center gap-2 text-xs text-white/30">
-            {recording.duration_seconds > 0 && (
-              <span className="flex items-center gap-1">
-                <Clock className="w-3 h-3" />
-                {formatDuration(recording.duration_seconds)}
-              </span>
-            )}
-            {recording.file_size_bytes > 0 && (
-              <span className="flex items-center gap-1">
-                <HardDrive className="w-3 h-3" />
-                {formatSize(recording.file_size_bytes)}
-              </span>
-            )}
-          </div>
-        </div>
+      <div className={compact ? 'p-2.5' : 'p-4'}>
+        <h3 className={`font-semibold text-white truncate ${compact ? 'text-xs' : 'text-sm'}`}>
+          {recording.title || 'סרטון ללא שם'}
+        </h3>
+        <p className={`text-white/30 mt-0.5 ${compact ? 'text-[10px]' : 'text-xs'}`}>
+          {moment(recording.created_date).format('DD/MM/YY')}
+          {!compact && recording.file_size_bytes > 0 && ` • ${formatSize(recording.file_size_bytes)}`}
+        </p>
 
         <button
-          className="w-full h-9 rounded-lg bg-[#00d4aa]/10 text-[#00d4aa] text-sm font-medium flex items-center justify-center gap-1.5 mb-3 select-none hover:bg-[#00d4aa]/20 transition-colors"
+          className={`w-full rounded-lg bg-[#00d4aa]/10 text-[#00d4aa] font-medium flex items-center justify-center gap-1 select-none hover:bg-[#00d4aa]/20 transition-colors ${compact ? 'h-7 text-[11px] mt-2 mb-1.5' : 'h-9 text-sm mt-3 mb-3'}`}
           onClick={() => navigate(createPageUrl('VideoEditor') + '?id=' + recording.id)}
         >
-          <Film className="w-4 h-4" />
-          עריכת סרטון
+          <Film className={compact ? 'w-3 h-3' : 'w-4 h-4'} />
+          עריכה
         </button>
 
-        <div className="flex items-center gap-2">
-          <button className="flex-1 h-9 rounded-lg bg-white/5 text-white/70 text-sm font-medium flex items-center justify-center gap-1.5 select-none hover:bg-white/10 transition-colors" onClick={handleDownload}>
-            <Download className="w-4 h-4" />
-            הורד
+        <div className={`flex items-center ${compact ? 'gap-1.5' : 'gap-2'}`}>
+          <button className={`flex-1 rounded-lg bg-white/5 text-white/70 font-medium flex items-center justify-center gap-1 select-none hover:bg-white/10 transition-colors ${compact ? 'h-7 text-[11px]' : 'h-9 text-sm'}`} onClick={handleDownload}>
+            <Download className={compact ? 'w-3 h-3' : 'w-4 h-4'} />
+            {!compact && 'הורד'}
           </button>
-          <button className="flex-1 h-9 rounded-lg bg-white/5 text-white/70 text-sm font-medium flex items-center justify-center gap-1.5 select-none hover:bg-white/10 transition-colors" onClick={handleShare}>
-            <Share2 className="w-4 h-4" />
-            שתף
+          <button className={`flex-1 rounded-lg bg-white/5 text-white/70 font-medium flex items-center justify-center gap-1 select-none hover:bg-white/10 transition-colors ${compact ? 'h-7 text-[11px]' : 'h-9 text-sm'}`} onClick={handleShare}>
+            <Share2 className={compact ? 'w-3 h-3' : 'w-4 h-4'} />
+            {!compact && 'שתף'}
           </button>
           {showConfirm ? (
-            <button className="h-9 px-3 rounded-lg bg-red-600 text-white text-sm font-medium select-none" onClick={() => { onDelete(); setShowConfirm(false); }}>
+            <button className={`px-2 rounded-lg bg-red-600 text-white font-medium select-none ${compact ? 'h-7 text-[10px]' : 'h-9 text-sm px-3'}`} onClick={() => { onDelete(); setShowConfirm(false); }}>
               בטוח?
             </button>
           ) : (
-            <button className="h-9 w-9 rounded-lg bg-white/5 text-red-400/60 flex items-center justify-center select-none hover:bg-red-500/10 transition-colors" onClick={() => setShowConfirm(true)}>
-              <Trash2 className="w-4 h-4" />
+            <button className={`rounded-lg bg-white/5 text-red-400/60 flex items-center justify-center select-none hover:bg-red-500/10 transition-colors ${compact ? 'h-7 w-7' : 'h-9 w-9'}`} onClick={() => setShowConfirm(true)}>
+              <Trash2 className={compact ? 'w-3 h-3' : 'w-4 h-4'} />
             </button>
           )}
         </div>
