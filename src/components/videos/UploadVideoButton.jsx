@@ -58,10 +58,20 @@ export default function UploadVideoButton({ onUploaded }) {
       return;
     }
 
-    setProgress('מעלה...');
+    const sizeMB = (file.size / (1024 * 1024)).toFixed(0);
+    setProgress(`מעלה... (${sizeMB}MB)`);
+
+    // Show elapsed time so user knows it's still working
+    const startTime = Date.now();
+    const progressInterval = setInterval(() => {
+      const elapsed = Math.floor((Date.now() - startTime) / 1000);
+      setProgress(`מעלה... (${sizeMB}MB) ${elapsed} שניות`);
+    }, 1000);
+
     try {
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      setProgress('מעבד...');
+      clearInterval(progressInterval);
+      setProgress('שומר...');
       const duration = localDuration || await getVideoDuration(file_url);
       await base44.entities.Recording.create({
         title: file.name.replace(/\.[^/.]+$/, ''),
@@ -71,6 +81,7 @@ export default function UploadVideoButton({ onUploaded }) {
       });
       onUploaded?.();
     } catch (err) {
+      clearInterval(progressInterval);
       console.error('Upload failed:', err);
       alert('ההעלאה נכשלה. נסה קובץ קטן יותר או נסה שוב.');
     } finally {
