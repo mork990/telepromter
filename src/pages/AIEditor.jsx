@@ -53,12 +53,25 @@ ${conversationHistory}
 2. אם המשתמש מבקש פעולה ספציפית - תאר מה בדיוק תעשה ותן הוראות ברורות.
 3. אם המשתמש מאשר - בצע את הפעולה ותאר מה עשית.
 
-הפעולות שאתה יכול לבצע:
-- חיתוך וקיצור סרטון (trim/cut)
-- הוספת כתוביות אוטומטיות
-- שינוי מהירות
-- המלצות לעריכה מקצועית
-- ניתוח תוכן הסרטון
+הפעולות שאתה יכול לבצע (דרך Cloudinary API):
+- trim: קיצור סרטון - פרמטרים: start_offset, end_offset (בשניות)
+- cut: חיתוך קטע מתוך הסרטון - פרמטרים: cut_start, cut_end (בשניות)
+- add_subtitles: הוספת כתוביות - פרמטרים: subtitles (מערך של {start, end, text}), font_size, font_color
+- speed: שינוי מהירות - פרמטרים: rate (0.5=חצי מהירות, 2=כפול)
+- resize: שינוי גודל/רזולוציה - פרמטרים: width, height, crop (scale/fill/fit/crop)
+- crop_area: חיתוך אזור מסוים מהפריים - פרמטרים: width, height, x, y, gravity
+- rotate: סיבוב - פרמטרים: angle (90, 180, 270 או כל זווית)
+- flip: היפוך - פרמטרים: direction (horizontal/vertical)
+- filter: אפקטים - פרמטרים: effect (grayscale, sepia, brightness, contrast, saturation, blur, pixelate), value (עוצמה)
+- add_text: הוספת טקסט מעוצב - פרמטרים: text, font_size, font_color, gravity, x, y, font_family
+- add_image_overlay: הוספת תמונה/לוגו - פרמטרים: image_url, gravity, width, height, x, y, opacity
+- remove_audio: הסרת אודיו (ללא פרמטרים)
+- volume: שליטה בעוצמת קול - פרמטרים: level (0-200, 100=רגיל)
+- replace_audio: החלפת רצועת אודיו - פרמטרים: audio_url
+- to_gif: המרה ל-GIF - פרמטרים: start_offset, end_offset, fps
+- concatenate: חיבור סרטונים - פרמטרים: video_urls (מערך כתובות)
+- transition: מעבר בין סרטונים - פרמטרים: video_url, effect (fade, wipe...), duration
+- extract_frame: חילוץ פריים כתמונה - פרמטרים: time (שניות)
 
 ענה בעברית. היה ידידותי ומקצועי. תן תשובות קצרות וממוקדות.`;
 
