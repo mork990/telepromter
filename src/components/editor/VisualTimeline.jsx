@@ -413,6 +413,7 @@ export default function VisualTimeline({
                     onRestore={() => onRestoreVideoSegment(i)}
                     onTrimStart={(e) => handleItemPointerDown(e, 'video-seg', i, 'start')}
                     onTrimEnd={(e) => handleItemPointerDown(e, 'video-seg', i, 'end')}
+                    onInsertFile={onInsertVideoFile}
                   />
                 ))}
               </div>
