@@ -33,11 +33,11 @@ css
   --bg-secondary: #ffffff;
   --bg-card: #ffffff;
   --text-primary: #1a1a2e;
-  --text-secondary: #4a4a5a;
-  --text-muted: #7a7a8a;
+  --text-secondary: #3a3a4a;
+  --text-muted: #6a6a7a;
   --text-faint: #5a5a6a;
   --border-color: rgba(0,0,0,0.12);
-  --border-subtle: rgba(0,0,0,0.15);
+  --border-subtle: rgba(0,0,0,0.18);
   --hover-bg: rgba(0,0,0,0.06);
   --accent: #00967e;
   --accent-secondary: #00b89a;
@@ -45,6 +45,13 @@ css
   --nav-bg: rgba(255,255,255,0.97);
   --chip-bg: rgba(0,0,0,0.06);
   --shadow-accent: rgba(0,150,126,0.2);
+  --card-shadow: 0 1px 4px rgba(0,0,0,0.08);
+}
+
+/* Card shadow for light mode */
+[data-theme="light"] .rounded-2xl,
+[data-theme="light"] .rounded-xl {
+  box-shadow: var(--card-shadow, none);
 }
 
 html {
