@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
-import { Film, ChevronLeft, Play } from 'lucide-react';
+import { Film, Play, MoreVertical } from 'lucide-react';
+import moment from 'moment';
 
 export default function RecentVideos() {
   const navigate = useNavigate();
@@ -27,48 +28,60 @@ export default function RecentVideos() {
 
   if (!recordings.length) return null;
 
+  const formatDuration = (sec) => {
+    if (!sec) return '';
+    const m = String(Math.floor(sec / 60)).padStart(2, '0');
+    const s = String(Math.floor(sec % 60)).padStart(2, '0');
+    return `${m}:${s}`;
+  };
+
   return (
-    <div>
-      <div className="flex items-center justify-between mb-3 px-1">
-        <h3 className="text-sm font-bold text-white/80">סרטונים אחרונים</h3>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-bold text-white">פרויקטים אחרונים</h2>
         <button
           onClick={() => navigate(createPageUrl('MyVideos'))}
-          className="text-xs text-[#00d4aa] font-medium flex items-center gap-0.5"
+          className="text-sm font-medium text-purple-400 hover:text-purple-300 transition-colors"
         >
-          הכל
-          <ChevronLeft className="w-3.5 h-3.5" />
+          הצג הכל
         </button>
       </div>
-      <div className="flex gap-2.5 overflow-x-auto pb-2 -mx-1 px-1" style={{ scrollbarWidth: 'none' }}>
+      <div className="flex overflow-x-auto gap-4 pb-3 -mx-5 px-5" style={{ scrollbarWidth: 'none' }}>
         {recordings.map((rec) => (
-          <button
+          <div
             key={rec.id}
             onClick={() => navigate(createPageUrl('VideoEditor') + `?id=${rec.id}`)}
-            className="flex-shrink-0 w-28 group"
+            className="shrink-0 w-64 group cursor-pointer"
           >
-            <div className="w-28 h-36 rounded-xl bg-[#1a1a2e] border border-white/5 overflow-hidden relative">
+            <div className="relative aspect-video rounded-xl overflow-hidden mb-3 bg-[#2a1b30] border border-white/5">
               {rec.thumbnail_url ? (
-                <img src={rec.thumbnail_url} alt="" className="w-full h-full object-cover" />
+                <img src={rec.thumbnail_url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
               ) : (
-                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-white/5 to-white/[0.02]">
-                  <Film className="w-6 h-6 text-white/20" />
+                <div className="w-full h-full flex items-center justify-center">
+                  <Film className="w-8 h-8 text-white/20" />
                 </div>
               )}
-              {/* Play overlay */}
-              <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                <Play className="w-6 h-6 text-white fill-white" />
-              </div>
-              {/* Duration badge */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-60" />
               {rec.duration_seconds > 0 && (
-                <div className="absolute bottom-1.5 left-1.5 text-[9px] text-white bg-black/60 rounded px-1 py-0.5 font-medium">
-                  {Math.floor(rec.duration_seconds / 60)}:{String(Math.floor(rec.duration_seconds % 60)).padStart(2, '0')}
+                <div className="absolute bottom-2 left-2 bg-black/70 backdrop-blur-sm px-1.5 py-0.5 rounded text-[10px] font-medium text-white">
+                  {formatDuration(rec.duration_seconds)}
                 </div>
               )}
             </div>
-            <p className="text-[10px] text-white/40 mt-1.5 truncate text-center px-1">
-              {rec.title || 'ללא כותרת'}
-            </p>
-          </button>
+            <div className="flex justify-between items-start gap-2">
+              <div className="min-w-0">
+                <h3 className="font-semibold text-sm text-white truncate text-right">
+                  {rec.title || 'ללא כותרת'}
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5 text-right">
+                  {moment(rec.created_date).fromNow()}
+                </p>
+              </div>
+              <button className="text-slate-400 hover:text-white shrink-0" onClick={(e) => e.stopPropagation()}>
+                <MoreVertical className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
         ))}
       </div>
     </div>
