@@ -8,7 +8,7 @@ import TextInput from '../components/teleprompter/TextInput';
 import PrompterPreview from '../components/teleprompter/PrompterPreview';
 import { useSubscription } from '../components/subscription/useSubscription';
 import BottomNav from '../components/navigation/BottomNav';
-import ThemeToggle from '../components/theme/ThemeToggle';
+import ThemeToggle from '@/components/theme/ThemeToggle';
 
 export default function Home() {
   const navigate = useNavigate();
