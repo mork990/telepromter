@@ -34,10 +34,9 @@ export default function UploadVideoButton({ onUploaded }) {
       const formData = new FormData();
       formData.append('file', file);
       formData.append('signature', signatureData.signature);
-      formData.append('timestamp', signatureData.timestamp);
+      formData.append('timestamp', String(signatureData.timestamp));
       formData.append('folder', signatureData.folder);
       formData.append('api_key', signatureData.api_key);
-      formData.append('resource_type', 'video');
 
       const xhr = new XMLHttpRequest();
       xhrRef.current = xhr;
@@ -58,18 +57,23 @@ export default function UploadVideoButton({ onUploaded }) {
           const data = JSON.parse(xhr.responseText);
           resolve(data);
         } else {
-          reject(new Error('Upload failed: ' + xhr.status));
+          let errMsg = 'Upload failed: ' + xhr.status;
+          try {
+            const errData = JSON.parse(xhr.responseText);
+            errMsg = errData?.error?.message || errMsg;
+          } catch(_) {}
+          reject(new Error(errMsg));
         }
       });
 
       xhr.addEventListener('error', () => {
         xhrRef.current = null;
-        reject(new Error('Network error during upload'));
+        reject(new Error('שגיאת רשת בזמן ההעלאה. בדוק את חיבור האינטרנט ונסה שוב.'));
       });
 
       xhr.addEventListener('abort', () => {
         xhrRef.current = null;
-        reject(new Error('Upload cancelled'));
+        reject(new Error('ההעלאה בוטלה'));
       });
 
       xhr.open('POST', `https://api.cloudinary.com/v1_1/${signatureData.cloud_name}/video/upload`);
