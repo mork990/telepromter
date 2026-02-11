@@ -28,14 +28,28 @@ Deno.serve(async (req) => {
     const videoBlob = await videoResponse.blob();
     const file = new File([videoBlob], 'video.mp4', { type: 'video/mp4' });
 
-    // Transcribe with Whisper - verbose_json gives us timestamps
-    const transcription = await openai.audio.transcriptions.create({
-      file: file,
-      model: 'whisper-1',
-      language: 'he',
-      response_format: 'verbose_json',
-      timestamp_granularities: ['segment'],
+    // Transcribe with Whisper via Groq API
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('model', 'whisper-large-v3');
+    formData.append('language', 'he');
+    formData.append('response_format', 'verbose_json');
+
+    const groqResponse = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${Deno.env.get("GROQ_API_KEY")}`,
+      },
+      body: formData,
     });
+
+    if (!groqResponse.ok) {
+      const errText = await groqResponse.text();
+      console.error('Groq error:', errText);
+      throw new Error('Transcription failed: ' + errText);
+    }
+
+    const transcription = await groqResponse.json();
 
     // Convert segments to subtitle format
     const subtitles = (transcription.segments || []).map((seg) => ({
