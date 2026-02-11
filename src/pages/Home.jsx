@@ -1,28 +1,15 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { Button } from "@/components/ui/button";
-import { createPageUrl } from '@/utils';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Video, LogIn, User, Type, ChevronLeft, Shield } from "lucide-react";
+import { createPageUrl } from '@/utils';
+import { Type, Subtitles, Film, LogIn, User, Shield, Sparkles } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
-import TextInput from '../components/teleprompter/TextInput';
-import PrompterPreview from '../components/teleprompter/PrompterPreview';
-import { useSubscription } from '../components/subscription/useSubscription';
+import FeatureCard from '../components/home/FeatureCard';
 import BottomNav from '../components/navigation/BottomNav';
 
 export default function Home() {
   const navigate = useNavigate();
-  const [text, setText] = useState('');
-  const [fontSize, setFontSize] = useState(32);
-  const [textColor, setTextColor] = useState('#FFFFFF');
-  const [backgroundColor, setBackgroundColor] = useState('#000000');
-  const [scrollSpeed, setScrollSpeed] = useState(50);
-  const [cameraFacing, setCameraFacing] = useState('user');
-  const [backgroundOpacity, setBackgroundOpacity] = useState(80);
-  const [videoQuality, setVideoQuality] = useState('1080');
-  const { isPremium } = useSubscription();
   const [currentUser, setCurrentUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
-  const [showPreview, setShowPreview] = useState(false);
 
   useEffect(() => {
     base44.auth.isAuthenticated().then(async (isAuth) => {
@@ -34,55 +21,41 @@ export default function Home() {
     });
   }, []);
 
-  useEffect(() => {
-    const savedSettings = localStorage.getItem('teleprompterSettings');
-    if (savedSettings) {
-      const settings = JSON.parse(savedSettings);
-      setFontSize(settings.fontSize || 32);
-      setTextColor(settings.textColor || '#FFFFFF');
-      setBackgroundColor(settings.backgroundColor || '#000000');
-      setCameraFacing(settings.cameraFacing || 'user');
-      setScrollSpeed(settings.scrollSpeed || 50);
-      setBackgroundOpacity(settings.backgroundOpacity || 80);
-      setVideoQuality(settings.videoQuality || '1080');
-    }
-    const savedText = localStorage.getItem('currentText');
-    if (savedText) setText(savedText);
-
-    const params = new URLSearchParams(window.location.search);
-    const urlText = params.get('text');
-    if (urlText) {
-      setText(urlText);
-      setFontSize(parseInt(params.get('fontSize')) || 32);
-      setTextColor(params.get('textColor') || '#FFFFFF');
-      setBackgroundColor(params.get('backgroundColor') || '#000000');
-      setScrollSpeed(parseInt(params.get('scrollSpeed')) || 50);
-      setBackgroundOpacity(parseInt(params.get('backgroundOpacity')) || 80);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (text) localStorage.setItem('currentText', text);
-  }, [text]);
-
-  const startRecording = () => {
-    if (!text.trim()) {
-      alert('אנא הזן טקסט לפני תחילת הצילום');
-      return;
-    }
-    const settings = { fontSize, textColor, backgroundColor, cameraFacing, scrollSpeed, backgroundOpacity, videoQuality };
-    localStorage.setItem('teleprompterSettings', JSON.stringify(settings));
-    const params = new URLSearchParams({
-      text, fontSize, textColor, backgroundColor, scrollSpeed, cameraFacing, backgroundOpacity, videoQuality,
-      isPremium: isPremium ? '1' : '0'
-    });
-    navigate(createPageUrl('Recording') + '?' + params.toString());
-  };
+  const features = [
+    {
+      icon: Type,
+      title: 'טלפרומפטר',
+      description: 'צלם סרטונים עם טקסט נגלל על המסך – מושלם להקלטות מקצועיות',
+      page: 'Recording',
+      iconBg: 'bg-gradient-to-br from-[#00d4aa] to-[#00a89d]',
+    },
+    {
+      icon: Subtitles,
+      title: 'כתוביות אוטומטיות',
+      description: 'הוסף כתוביות לסרטונים שלך באופן אוטומטי עם AI',
+      page: 'MyVideos',
+      iconBg: 'bg-gradient-to-br from-amber-500 to-orange-600',
+    },
+    {
+      icon: Film,
+      title: 'עריכת סרטונים',
+      description: 'חתוך, ערוך והוסף אפקטים לסרטונים שלך בממשק פשוט ונוח',
+      page: 'MyVideos',
+      iconBg: 'bg-gradient-to-br from-indigo-500 to-purple-600',
+    },
+    {
+      icon: Sparkles,
+      title: 'עורך AI',
+      description: 'תן ל-AI לערוך את הסרטונים שלך – פשוט תגיד מה אתה רוצה',
+      page: 'AIEditor',
+      iconBg: 'bg-gradient-to-br from-pink-500 to-rose-600',
+    },
+  ];
 
   return (
     <div className="min-h-screen bg-[#0e0e1a] text-white" dir="rtl">
       {/* Header */}
-      <div 
+      <div
         className="sticky z-10 bg-[#1a1a2e]/80 backdrop-blur-xl border-b border-white/5"
         style={{ top: 'env(safe-area-inset-top)' }}
       >
@@ -91,11 +64,11 @@ export default function Home() {
             <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#00d4aa] to-[#00a89d] flex items-center justify-center">
               <Type className="w-4 h-4 text-white" />
             </div>
-            <span className="text-base font-bold tracking-tight">פרומפטר</span>
+            <span className="text-base font-bold tracking-tight">VideoAI</span>
           </div>
           <div className="flex items-center gap-1">
             {!authLoading && !currentUser && (
-              <button 
+              <button
                 className="text-xs text-[#00d4aa] font-medium px-3 py-1.5 rounded-full bg-[#00d4aa]/10 select-none"
                 onClick={() => base44.auth.redirectToLogin()}
               >
@@ -126,67 +99,25 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="px-4 pt-4 pb-24 space-y-4">
-        {/* Text Input Area */}
-        <div className="bg-[#1a1a2e] rounded-2xl border border-white/5 overflow-hidden">
-          <div className="px-4 py-3 border-b border-white/5 flex items-center justify-between">
-            <span className="text-sm font-medium text-white/70">הטקסט שלך</span>
-            {text.trim() && (
-              <button 
-                onClick={() => setShowPreview(!showPreview)}
-                className="text-xs text-[#00d4aa] font-medium"
-              >
-                {showPreview ? 'עריכה' : 'תצוגה מקדימה'}
-              </button>
-            )}
-          </div>
-          <div className="p-4">
-            {showPreview && text ? (
-              <div className="rounded-xl overflow-hidden" style={{ height: 200 }}>
-                <PrompterPreview
-                  text={text}
-                  fontSize={fontSize}
-                  textColor={textColor}
-                  backgroundColor={backgroundColor}
-                />
-              </div>
-            ) : (
-              <TextInput text={text} onTextChange={setText} />
-            )}
-          </div>
-        </div>
-
-        {/* Quick Tips */}
-        <div className="bg-[#1a1a2e] rounded-2xl border border-white/5 p-4">
-          <p className="text-xs text-white/40 mb-2 font-medium">💡 טיפים מהירים</p>
-          <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1" style={{ scrollbarWidth: 'none' }}>
-            {['הזן טקסט או העלה קובץ', 'התאם הגדרות בעמוד הגדרות', 'גלול ידנית בזמן צילום'].map((tip, i) => (
-              <div key={i} className="flex-shrink-0 bg-white/5 rounded-lg px-3 py-2 text-[11px] text-white/50">
-                {tip}
-              </div>
-            ))}
-          </div>
-        </div>
+      {/* Hero Section */}
+      <div className="px-5 pt-8 pb-4">
+        <h1 className="text-2xl font-extrabold leading-tight mb-2">
+          הכלי המקצועי שלך
+          <br />
+          <span className="bg-gradient-to-l from-[#00d4aa] to-[#00a89d] bg-clip-text text-transparent">
+            לעריכת סרטונים
+          </span>
+        </h1>
+        <p className="text-sm text-white/40 leading-relaxed">
+          טלפרומפטר, כתוביות אוטומטיות ועריכה מתקדמת — הכל במקום אחד
+        </p>
       </div>
 
-      {/* Floating Record Button */}
-      <div 
-        className="fixed left-0 right-0 z-40 flex justify-center"
-        style={{ bottom: 'calc(72px + 12px + env(safe-area-inset-bottom))' }}
-      >
-        <button
-          onClick={startRecording}
-          disabled={!text.trim()}
-          className={`h-14 px-8 rounded-full font-bold text-base flex items-center gap-2 shadow-lg shadow-[#00d4aa]/20 select-none transition-all active:scale-95 ${
-            text.trim() 
-              ? 'bg-gradient-to-r from-[#00d4aa] to-[#00a89d] text-black' 
-              : 'bg-white/10 text-white/30'
-          }`}
-        >
-          <Video className="w-5 h-5" />
-          התחל צילום
-        </button>
+      {/* Feature Cards */}
+      <div className="px-4 pb-28 space-y-3">
+        {features.map((feature) => (
+          <FeatureCard key={feature.title} {...feature} />
+        ))}
       </div>
 
       <BottomNav activePage="Home" />
