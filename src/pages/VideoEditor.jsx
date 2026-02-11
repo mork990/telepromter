@@ -36,6 +36,8 @@ export default function VideoEditor() {
   const [audioSegments, setAudioSegments] = useState([]);
   // Image overlays: { file_url, start, end, type: 'overlay'|'replace'|'background' }
   const [imageOverlays, setImageOverlays] = useState([]);
+  // Media layers: { file_url, start, end, mediaType: 'video'|'image'|'audio' }
+  const [mediaLayers, setMediaLayers] = useState([]);
 
   const [isSaving, setIsSaving] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
@@ -260,6 +262,40 @@ export default function VideoEditor() {
 
   // Selected image for editing position/size
   const [selectedImageIndex, setSelectedImageIndex] = useState(null);
+
+  // --- Media layer handlers ---
+  const handleAddMediaLayer = useCallback(async (file, start, end, mediaType) => {
+    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    setMediaLayers(prev => [...prev, { file_url, start, end, mediaType }]);
+  }, []);
+
+  const handleDeleteMediaLayer = useCallback((index) => {
+    setMediaLayers(prev => prev.filter((_, i) => i !== index));
+  }, []);
+
+  const handleTrimMediaLayer = useCallback((index, edge, newTime) => {
+    setMediaLayers(prev => {
+      const updated = [...prev];
+      const layer = { ...updated[index] };
+      if (edge === 'start') {
+        layer.start = Math.max(0, Math.min(layer.end - 0.2, newTime));
+      } else {
+        layer.end = Math.min(duration, Math.max(layer.start + 0.2, newTime));
+      }
+      updated[index] = layer;
+      return updated;
+    });
+  }, [duration]);
+
+  const handleMoveMediaLayer = useCallback((index, start) => {
+    setMediaLayers(prev => {
+      const updated = [...prev];
+      const dur = updated[index].end - updated[index].start;
+      const newStart = Math.max(0, Math.min(duration - dur, start));
+      updated[index] = { ...updated[index], start: newStart, end: newStart + dur };
+      return updated;
+    });
+  }, [duration]);
 
   // --- Insert file into deleted segment ---
   const handleInsertVideoFile = useCallback(async (segIndex, file) => {
@@ -511,6 +547,11 @@ export default function VideoEditor() {
           isTranscribing={isTranscribing}
           onInsertVideoFile={handleInsertVideoFile}
           onInsertAudioFile={handleInsertAudioFile}
+          mediaLayers={mediaLayers}
+          onAddMediaLayer={handleAddMediaLayer}
+          onDeleteMediaLayer={handleDeleteMediaLayer}
+          onTrimMediaLayer={handleTrimMediaLayer}
+          onMoveMediaLayer={handleMoveMediaLayer}
         />
 
         {/* Style Panel */}
