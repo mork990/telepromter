@@ -8,7 +8,7 @@ export default function UploadVideoButton({ onUploaded }) {
   const inputRef = useRef(null);
 
   const MAX_SIZE_MB = 200;
-  const MAX_DURATION_SEC = 300; // 5 minutes
+  const MAX_DURATION_SEC = 600; // 10 minutes
 
   const getFileDuration = (file) => {
     return new Promise((resolve) => {
