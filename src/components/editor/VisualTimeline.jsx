@@ -340,6 +340,7 @@ export default function VisualTimeline({
   return (
     <div className="space-y-2" dir="rtl">
       <input type="file" ref={fileInputRef} accept="image/*" className="hidden" onChange={handleFileSelected} />
+      <input type="file" ref={mediaLayerInputRef} accept="video/*,image/*,audio/*" className="hidden" onChange={handleMediaLayerFileSelected} />
 
       {editingSubIndex !== null && subtitles[editingSubIndex] && (
         <SubtitleBubble
@@ -483,6 +484,30 @@ export default function VisualTimeline({
                     onTrimStart={(e) => handleItemPointerDown(e, 'audio-seg', i, 'start')}
                     onTrimEnd={(e) => handleItemPointerDown(e, 'audio-seg', i, 'end')}
                     onInsertFile={onInsertAudioFile}
+                  />
+                ))}
+              </div>
+
+              {/* Divider */}
+              <div className="absolute left-0 right-0 pointer-events-none bg-white/5" 
+                style={{ top: `${mediaLayerTrackTop - TRACK_GAP / 2}px`, height: '1px' }} />
+
+              {/* === MEDIA LAYER TRACK === */}
+              <div className="absolute left-0 right-0" style={{ top: `${mediaLayerTrackTop - LABEL_HEIGHT}px`, height: `${LABEL_HEIGHT + TRACK_HEIGHT}px` }}>
+                <div className="absolute top-0 right-1 text-[9px] text-purple-500 font-medium pointer-events-none z-10">🎞️ שכבות</div>
+                {mediaLayers.map((layer, i) => (
+                  <MediaLayerItem
+                    key={`ml-${i}`}
+                    layer={layer}
+                    index={i}
+                    timeToPx={timeToPx}
+                    trackTop={LABEL_HEIGHT}
+                    trackHeight={TRACK_HEIGHT}
+                    toolMode={toolMode}
+                    onDelete={() => onDeleteMediaLayer(i)}
+                    onTrimStart={(e) => handleItemPointerDown(e, 'media-layer', i, 'start')}
+                    onTrimEnd={(e) => handleItemPointerDown(e, 'media-layer', i, 'end')}
+                    onMove={(e) => handleItemPointerDown(e, 'media-layer', i, 'move')}
                   />
                 ))}
               </div>
