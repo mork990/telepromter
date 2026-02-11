@@ -24,7 +24,7 @@ export default function Recording() {
       backgroundColor: params.get('backgroundColor') || saved.backgroundColor || '#000000',
       scrollSpeed: parseInt(params.get('scrollSpeed')) || saved.scrollSpeed || 50,
       cameraFacing: params.get('cameraFacing') || saved.cameraFacing || 'user',
-      backgroundOpacity: parseInt(params.get('backgroundOpacity')) ?? saved.backgroundOpacity ?? 80,
+      backgroundOpacity: params.get('backgroundOpacity') !== null ? parseInt(params.get('backgroundOpacity')) : (saved.backgroundOpacity !== undefined ? saved.backgroundOpacity : 80),
       videoQuality: params.get('videoQuality') || saved.videoQuality || '1080',
       isPremium: params.get('isPremium') === '1'
     });
