@@ -30,7 +30,7 @@ export default function UploadVideoButton({ onUploaded }) {
     });
   };
 
-  const CHUNK_SIZE = 5 * 1024 * 1024; // 5MB per chunk
+  const CHUNK_SIZE = 3 * 1024 * 1024; // 3MB per chunk (base64 expands ~33%)
 
   const uploadChunked = async (file) => {
     const totalSize = file.size;
