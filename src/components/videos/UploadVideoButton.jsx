@@ -29,19 +29,17 @@ export default function UploadVideoButton({ onUploaded }) {
     });
   };
 
-  const CHUNK_SIZE = 6 * 1024 * 1024; // 6MB per chunk
+  const CHUNK_SIZE = 5 * 1024 * 1024; // 5MB per chunk
 
-  const uploadToCloudinary = async (file, signatureData) => {
-    const cloudName = signatureData.cloud_name;
-    const uploadUrl = `https://api.cloudinary.com/v1_1/${cloudName}/video/upload`;
+  const uploadChunked = async (file) => {
     const totalSize = file.size;
     const totalChunks = Math.ceil(totalSize / CHUNK_SIZE);
-    const uniqueId = `uqid-${Date.now()}`;
+    const uploadId = `uqid-${Date.now()}-${Math.random().toString(36).slice(2)}`;
     let lastResponse = null;
+    cancelledRef.current = false;
 
     for (let i = 0; i < totalChunks; i++) {
-      // Check if cancelled
-      if (!xhrRef.current && i > 0) {
+      if (cancelledRef.current) {
         throw new Error('ההעלאה בוטלה');
       }
 
@@ -50,59 +48,34 @@ export default function UploadVideoButton({ onUploaded }) {
       const chunk = file.slice(start, end);
 
       const formData = new FormData();
-      formData.append('file', chunk);
-      formData.append('api_key', signatureData.api_key);
-      formData.append('timestamp', String(signatureData.timestamp));
-      formData.append('signature', signatureData.signature);
-      formData.append('folder', signatureData.folder);
+      formData.append('chunk', chunk, 'chunk.mp4');
+      formData.append('upload_id', uploadId);
+      formData.append('chunk_index', String(i));
+      formData.append('total_chunks', String(totalChunks));
+      formData.append('total_size', String(totalSize));
+      formData.append('range_start', String(start));
+      formData.append('range_end', String(end - 1));
 
-      const chunkResult = await new Promise((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        xhrRef.current = xhr;
+      const res = await base44.functions.invoke('uploadChunk', formData);
+      lastResponse = res.data;
 
-        xhr.upload.addEventListener('progress', (e) => {
-          if (e.lengthComputable) {
-            const chunkUploaded = start + e.loaded;
-            const pct = Math.round((chunkUploaded / totalSize) * 90) + 5;
-            setPercent(pct);
-            const loadedMB = (chunkUploaded / (1024 * 1024)).toFixed(1);
-            const totalMB = (totalSize / (1024 * 1024)).toFixed(0);
-            setStatusText(`מעלה ${loadedMB}/${totalMB}MB... ${pct}%`);
-          }
-        });
+      const pct = Math.round(((i + 1) / totalChunks) * 90) + 5;
+      setPercent(pct);
+      const loadedMB = (end / (1024 * 1024)).toFixed(1);
+      const totalMB = (totalSize / (1024 * 1024)).toFixed(0);
+      setStatusText(`מעלה ${loadedMB}/${totalMB}MB... ${pct}%`);
 
-        xhr.addEventListener('load', () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            resolve(JSON.parse(xhr.responseText));
-          } else {
-            let errMsg = 'Upload failed: ' + xhr.status;
-            try {
-              const errData = JSON.parse(xhr.responseText);
-              errMsg = errData?.error?.message || errMsg;
-            } catch(_) {}
-            reject(new Error(errMsg));
-          }
-        });
-
-        xhr.addEventListener('error', () => {
-          reject(new Error('שגיאת רשת בזמן ההעלאה. בדוק את חיבור האינטרנט ונסה שוב.'));
-        });
-
-        xhr.addEventListener('abort', () => {
-          reject(new Error('ההעלאה בוטלה'));
-        });
-
-        xhr.open('POST', uploadUrl);
-        xhr.setRequestHeader('X-Unique-Upload-Id', uniqueId);
-        xhr.setRequestHeader('Content-Range', `bytes ${start}-${end - 1}/${totalSize}`);
-        xhr.send(formData);
-      });
-
-      lastResponse = chunkResult;
+      if (lastResponse?.status === 'complete' && lastResponse?.data?.secure_url) {
+        return lastResponse.data;
+      }
     }
 
-    xhrRef.current = null;
-    return lastResponse;
+    // If last chunk didn't return complete, check the response
+    if (lastResponse?.data?.secure_url) {
+      return lastResponse.data;
+    }
+
+    throw new Error('ההעלאה הסתיימה אבל לא התקבל קישור לסרטון');
   };
 
   const handleUpload = async (e) => {
