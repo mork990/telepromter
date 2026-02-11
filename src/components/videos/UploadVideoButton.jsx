@@ -30,43 +30,100 @@ export default function UploadVideoButton({ onUploaded }) {
     });
   };
 
-  const CHUNK_SIZE = 3 * 1024 * 1024; // 3MB per chunk (base64 expands ~33%)
+  const CHUNK_SIZE = 6 * 1024 * 1024; // 6MB chunks for direct Cloudinary upload
 
-  const uploadChunked = async (file) => {
+  const uploadToCloudinary = async (file) => {
+    cancelledRef.current = false;
+    
+    // Get signature from backend for signed upload
+    const sigRes = await base44.functions.invoke('getUploadSignature');
+    const { signature, timestamp, folder, cloud_name, api_key } = sigRes.data;
+
+    const totalSize = file.size;
+
+    // Small file - single upload with XHR for progress
+    if (totalSize < 20 * 1024 * 1024) {
+      return await uploadSingleFile(file, { signature, timestamp, folder, cloud_name, api_key });
+    }
+
+    // Large file - chunked upload directly to Cloudinary
+    return await uploadChunkedDirect(file, { signature, timestamp, folder, cloud_name, api_key });
+  };
+
+  const uploadSingleFile = (file, { signature, timestamp, folder, cloud_name, api_key }) => {
+    return new Promise((resolve, reject) => {
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('api_key', api_key);
+      fd.append('timestamp', String(timestamp));
+      fd.append('signature', signature);
+      fd.append('folder', folder);
+      fd.append('resource_type', 'video');
+
+      const xhr = new XMLHttpRequest();
+      xhrRef.current = xhr;
+
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable) {
+          const pct = Math.round((e.loaded / e.total) * 90) + 5;
+          setPercent(pct);
+          const loadedMB = (e.loaded / (1024 * 1024)).toFixed(1);
+          const totalMB = (e.total / (1024 * 1024)).toFixed(0);
+          setStatusText(`מעלה ${loadedMB}/${totalMB}MB... ${pct}%`);
+        }
+      };
+
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          const data = JSON.parse(xhr.responseText);
+          resolve(data);
+        } else {
+          let errMsg = 'Upload failed: ' + xhr.status;
+          try { errMsg = JSON.parse(xhr.responseText)?.error?.message || errMsg; } catch(_) {}
+          reject(new Error(errMsg));
+        }
+      };
+
+      xhr.onerror = () => reject(new Error('Network error during upload'));
+      xhr.onabort = () => reject(new Error('ההעלאה בוטלה'));
+
+      xhr.open('POST', `https://api.cloudinary.com/v1_1/${cloud_name}/video/upload`);
+      xhr.send(fd);
+    });
+  };
+
+  const uploadChunkedDirect = async (file, { signature, timestamp, folder, cloud_name, api_key }) => {
     const totalSize = file.size;
     const totalChunks = Math.ceil(totalSize / CHUNK_SIZE);
-    const uploadId = `uqid-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    let lastResponse = null;
-    cancelledRef.current = false;
+    const uploadId = `uqid-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    let lastData = null;
 
     for (let i = 0; i < totalChunks; i++) {
-      if (cancelledRef.current) {
-        throw new Error('ההעלאה בוטלה');
-      }
+      if (cancelledRef.current) throw new Error('ההעלאה בוטלה');
 
       const start = i * CHUNK_SIZE;
       const end = Math.min(start + CHUNK_SIZE, totalSize);
       const chunk = file.slice(start, end);
 
-      // Convert chunk to base64 for JSON transport
-      const arrayBuffer = await chunk.arrayBuffer();
-      const bytes = new Uint8Array(arrayBuffer);
-      let binary = '';
-      for (let j = 0; j < bytes.length; j++) {
-        binary += String.fromCharCode(bytes[j]);
-      }
-      const chunkBase64 = btoa(binary);
+      const fd = new FormData();
+      fd.append('file', chunk, file.name || 'video.mp4');
+      fd.append('api_key', api_key);
+      fd.append('timestamp', String(timestamp));
+      fd.append('signature', signature);
+      fd.append('folder', folder);
+      fd.append('resource_type', 'video');
 
-      const res = await base44.functions.invoke('uploadChunk', {
-        chunk_base64: chunkBase64,
-        upload_id: uploadId,
-        chunk_index: i,
-        total_chunks: totalChunks,
-        total_size: totalSize,
-        range_start: start,
-        range_end: end - 1,
-      });
-      lastResponse = res.data;
+      const res = await fetch(
+        `https://api.cloudinary.com/v1_1/${cloud_name}/video/upload`,
+        {
+          method: 'POST',
+          headers: {
+            'X-Unique-Upload-Id': uploadId,
+            'Content-Range': `bytes ${start}-${end - 1}/${totalSize}`,
+          },
+          body: fd,
+        }
+      );
 
       const pct = Math.round(((i + 1) / totalChunks) * 90) + 5;
       setPercent(pct);
@@ -74,14 +131,23 @@ export default function UploadVideoButton({ onUploaded }) {
       const totalMB = (totalSize / (1024 * 1024)).toFixed(0);
       setStatusText(`מעלה ${loadedMB}/${totalMB}MB... ${pct}%`);
 
-      if (lastResponse?.status === 'complete' && lastResponse?.data?.secure_url) {
-        return lastResponse.data;
+      // Cloudinary returns 408 for intermediate chunks, 200 for last
+      if (res.status === 408) {
+        continue; // expected, next chunk
       }
+
+      if (!res.ok) {
+        const errText = await res.text();
+        let errMsg = 'Cloudinary error ' + res.status;
+        try { errMsg = JSON.parse(errText)?.error?.message || errMsg; } catch(_) {}
+        throw new Error(errMsg);
+      }
+
+      lastData = await res.json();
     }
 
-    // If last chunk didn't return complete, check the response
-    if (lastResponse?.data?.secure_url) {
-      return lastResponse.data;
+    if (lastData?.secure_url) {
+      return lastData;
     }
 
     throw new Error('ההעלאה הסתיימה אבל לא התקבל קישור לסרטון');
@@ -112,20 +178,17 @@ export default function UploadVideoButton({ onUploaded }) {
     }
 
     try {
-      // Step 1: Upload in chunks via backend
       setStatus('uploading');
       setStatusText(`מעלה ${sizeMB}MB...`);
       setPercent(5);
 
-      const cloudinaryResult = await uploadChunked(file);
+      const cloudinaryResult = await uploadToCloudinary(file);
 
       if (!cloudinaryResult.secure_url) {
         throw new Error('לא התקבל קישור לקובץ');
       }
 
       setPercent(95);
-
-      // Step 3: Save recording in DB
       setStatus('saving');
       setStatusText('שומר...');
 
