@@ -29,56 +29,80 @@ export default function UploadVideoButton({ onUploaded }) {
     });
   };
 
-  const uploadToCloudinary = (file, signatureData) => {
-    return new Promise((resolve, reject) => {
+  const CHUNK_SIZE = 6 * 1024 * 1024; // 6MB per chunk
+
+  const uploadToCloudinary = async (file, signatureData) => {
+    const cloudName = signatureData.cloud_name;
+    const uploadUrl = `https://api.cloudinary.com/v1_1/${cloudName}/video/upload`;
+    const totalSize = file.size;
+    const totalChunks = Math.ceil(totalSize / CHUNK_SIZE);
+    const uniqueId = `uqid-${Date.now()}`;
+    let lastResponse = null;
+
+    for (let i = 0; i < totalChunks; i++) {
+      // Check if cancelled
+      if (!xhrRef.current && i > 0) {
+        throw new Error('ההעלאה בוטלה');
+      }
+
+      const start = i * CHUNK_SIZE;
+      const end = Math.min(start + CHUNK_SIZE, totalSize);
+      const chunk = file.slice(start, end);
+
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append('file', chunk);
       formData.append('api_key', signatureData.api_key);
       formData.append('timestamp', String(signatureData.timestamp));
       formData.append('signature', signatureData.signature);
       formData.append('folder', signatureData.folder);
 
-      const xhr = new XMLHttpRequest();
-      xhrRef.current = xhr;
+      const chunkResult = await new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhrRef.current = xhr;
 
-      xhr.upload.addEventListener('progress', (e) => {
-        if (e.lengthComputable) {
-          const pct = Math.round((e.loaded / e.total) * 90) + 5;
-          setPercent(pct);
-          const loadedMB = (e.loaded / (1024 * 1024)).toFixed(1);
-          const totalMB = (e.total / (1024 * 1024)).toFixed(0);
-          setStatusText(`מעלה ${loadedMB}/${totalMB}MB... ${pct}%`);
-        }
+        xhr.upload.addEventListener('progress', (e) => {
+          if (e.lengthComputable) {
+            const chunkUploaded = start + e.loaded;
+            const pct = Math.round((chunkUploaded / totalSize) * 90) + 5;
+            setPercent(pct);
+            const loadedMB = (chunkUploaded / (1024 * 1024)).toFixed(1);
+            const totalMB = (totalSize / (1024 * 1024)).toFixed(0);
+            setStatusText(`מעלה ${loadedMB}/${totalMB}MB... ${pct}%`);
+          }
+        });
+
+        xhr.addEventListener('load', () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            resolve(JSON.parse(xhr.responseText));
+          } else {
+            let errMsg = 'Upload failed: ' + xhr.status;
+            try {
+              const errData = JSON.parse(xhr.responseText);
+              errMsg = errData?.error?.message || errMsg;
+            } catch(_) {}
+            reject(new Error(errMsg));
+          }
+        });
+
+        xhr.addEventListener('error', () => {
+          reject(new Error('שגיאת רשת בזמן ההעלאה. בדוק את חיבור האינטרנט ונסה שוב.'));
+        });
+
+        xhr.addEventListener('abort', () => {
+          reject(new Error('ההעלאה בוטלה'));
+        });
+
+        xhr.open('POST', uploadUrl);
+        xhr.setRequestHeader('X-Unique-Upload-Id', uniqueId);
+        xhr.setRequestHeader('Content-Range', `bytes ${start}-${end - 1}/${totalSize}`);
+        xhr.send(formData);
       });
 
-      xhr.addEventListener('load', () => {
-        xhrRef.current = null;
-        if (xhr.status >= 200 && xhr.status < 300) {
-          const data = JSON.parse(xhr.responseText);
-          resolve(data);
-        } else {
-          let errMsg = 'Upload failed: ' + xhr.status;
-          try {
-            const errData = JSON.parse(xhr.responseText);
-            errMsg = errData?.error?.message || errMsg;
-          } catch(_) {}
-          reject(new Error(errMsg));
-        }
-      });
+      lastResponse = chunkResult;
+    }
 
-      xhr.addEventListener('error', () => {
-        xhrRef.current = null;
-        reject(new Error('שגיאת רשת בזמן ההעלאה. בדוק את חיבור האינטרנט ונסה שוב.'));
-      });
-
-      xhr.addEventListener('abort', () => {
-        xhrRef.current = null;
-        reject(new Error('ההעלאה בוטלה'));
-      });
-
-      xhr.open('POST', `https://api.cloudinary.com/v1_1/${signatureData.cloud_name}/video/upload`);
-      xhr.send(formData);
-    });
+    xhrRef.current = null;
+    return lastResponse;
   };
 
   const handleUpload = async (e) => {
