@@ -28,60 +28,6 @@ export default function UploadVideoButton({ onUploaded }) {
     });
   };
 
-  // Upload file chunk by chunk to backend which proxies to Cloudinary
-  const CHUNK_SIZE = 5 * 1024 * 1024; // 5MB chunks
-
-  const uploadChunked = async (file, duration) => {
-    const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
-    const sizeMB = (file.size / (1024 * 1024)).toFixed(0);
-    
-    // If file is small enough, send in one shot via base44 UploadFile
-    if (file.size <= 50 * 1024 * 1024) {
-      setStatusText(`מעלה ${sizeMB}MB...`);
-      setPercent(10);
-
-      // Use Base44 UploadFile (reliable for files up to ~50MB)
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      setPercent(60);
-      
-      // Now have backend download from that URL and re-upload to Cloudinary
-      setStatusText('מעבד...');
-      const response = await base44.functions.invoke('uploadToCloudinary', {
-        file_url,
-        file_name: file.name,
-        file_size_bytes: file.size,
-        duration_seconds: duration,
-      });
-
-      if (!response.data?.success) {
-        throw new Error(response.data?.error || 'Upload failed');
-      }
-      
-      return response.data;
-    }
-    
-    // For larger files - upload directly using the backend proxy with FormData
-    setStatusText(`מעלה ${sizeMB}MB...`);
-    setPercent(10);
-
-    const { file_url } = await base44.integrations.Core.UploadFile({ file });
-    setPercent(50);
-    
-    setStatusText('מעבד...');
-    const response = await base44.functions.invoke('uploadToCloudinary', {
-      file_url,
-      file_name: file.name,
-      file_size_bytes: file.size,
-      duration_seconds: duration,
-    });
-
-    if (!response.data?.success) {
-      throw new Error(response.data?.error || 'Upload failed');
-    }
-    
-    return response.data;
-  };
-
   const handleUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -107,9 +53,29 @@ export default function UploadVideoButton({ onUploaded }) {
     }
 
     try {
+      // Step 1: Upload to Base44 storage directly (built-in, no external API)
       setStatus('uploading');
-      
-      const result = await uploadChunked(file, localDuration);
+      setStatusText(`מעלה ${sizeMB}MB...`);
+      setPercent(10);
+
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+
+      if (!file_url) {
+        throw new Error('לא התקבל קישור לקובץ');
+      }
+
+      setPercent(80);
+
+      // Step 2: Save recording in DB
+      setStatus('saving');
+      setStatusText('שומר...');
+
+      await base44.entities.Recording.create({
+        title: (file.name || 'video').replace(/\.[^/.]+$/, ''),
+        file_url,
+        duration_seconds: localDuration || 0,
+        file_size_bytes: file.size,
+      });
 
       setPercent(100);
       setStatus('done');
