@@ -11,9 +11,21 @@ export default function MyVideos() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
+  const { data: currentUser } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: () => base44.auth.me(),
+  });
+
   const { data: recordings = [], isLoading } = useQuery({
-    queryKey: ['recordings'],
-    queryFn: () => base44.entities.Recording.list('-created_date'),
+    queryKey: ['recordings', currentUser?.email],
+    queryFn: async () => {
+      if (!currentUser) return [];
+      if (currentUser.role === 'admin') {
+        return base44.entities.Recording.list('-created_date');
+      }
+      return base44.entities.Recording.filter({ created_by: currentUser.email }, '-created_date');
+    },
+    enabled: !!currentUser,
   });
 
   const deleteMutation = useMutation({
