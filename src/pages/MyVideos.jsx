@@ -35,11 +35,11 @@ export default function MyVideos() {
   });
 
   return (
-    <div className="min-h-screen bg-[#0e0e1a] text-white" dir="rtl">
+    <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }} dir="rtl">
       {/* Header */}
       <div 
-        className="sticky z-10 bg-[#1a1a2e]/80 backdrop-blur-xl border-b border-white/5"
-        style={{ top: 'env(safe-area-inset-top)' }}
+        className="sticky z-10 backdrop-blur-xl"
+        style={{ top: 'env(safe-area-inset-top)', backgroundColor: 'var(--nav-bg)', borderBottom: '1px solid var(--border-color)' }}
       >
         <div className="px-4 h-12 flex items-center justify-between">
           <h1 className="text-base font-bold">הסרטונים שלי</h1>
@@ -54,13 +54,14 @@ export default function MyVideos() {
           </div>
         ) : recordings.length === 0 ? (
           <div className="text-center py-20">
-            <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-4">
-              <Film className="w-8 h-8 text-white/20" />
+            <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: 'var(--chip-bg)' }}>
+              <Film className="w-8 h-8" style={{ color: 'var(--text-muted)' }} />
             </div>
-            <p className="text-white/50 text-base font-medium">אין סרטונים עדיין</p>
-            <p className="text-white/30 text-sm mt-1">הסרטונים שתצלם יופיעו כאן</p>
+            <p className="text-base font-medium" style={{ color: 'var(--text-faint)' }}>אין סרטונים עדיין</p>
+            <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>הסרטונים שתצלם יופיעו כאן</p>
             <button 
-              className="mt-6 h-10 px-6 rounded-full bg-gradient-to-r from-[#00d4aa] to-[#00a89d] text-black font-bold text-sm select-none"
+              className="mt-6 h-10 px-6 rounded-full text-black font-bold text-sm select-none"
+              style={{ background: 'linear-gradient(90deg, var(--accent), var(--accent-secondary))' }}
               onClick={() => navigate(createPageUrl('Home'))}
             >
               התחל צילום

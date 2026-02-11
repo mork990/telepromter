@@ -41,9 +41,9 @@ export default function Pricing() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#0e0e1a] text-white" dir="rtl">
+    <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }} dir="rtl">
       {/* Header */}
-      <div className="sticky z-10 bg-[#1a1a2e]/80 backdrop-blur-xl border-b border-white/5" style={{ top: 'env(safe-area-inset-top)' }}>
+      <div className="sticky z-10 backdrop-blur-xl" style={{ top: 'env(safe-area-inset-top)', backgroundColor: 'var(--nav-bg)', borderBottom: '1px solid var(--border-color)' }}>
         <div className="px-4 h-12 flex items-center gap-3">
           <button className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 select-none" onClick={() => navigate(createPageUrl('Home'))}>
             <ArrowRight className="w-5 h-5 text-white" />
@@ -54,7 +54,7 @@ export default function Pricing() {
 
       <div className="px-4 py-6 space-y-6">
         {/* Free Plan */}
-        <div className="bg-[#1a1a2e] rounded-2xl border border-white/5 p-6">
+        <div className="rounded-2xl p-6" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
             <div className="text-center mb-4">
               <h2 className="text-xl font-bold">חינמי</h2>
               <p className="text-3xl font-extrabold mt-2">₪0</p>
@@ -62,21 +62,21 @@ export default function Pricing() {
             </div>
             <ul className="space-y-3">
               {freeFeaturesArr.map((f, i) => (
-                <li key={i} className="flex items-center gap-2 text-sm text-white/70">
+                <li key={i} className="flex items-center gap-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
                   <Check className="w-4 h-4 text-green-500 shrink-0" />
                   {f}
                 </li>
               ))}
             </ul>
             {!isPremium && !loading && (
-              <button className="w-full mt-6 h-10 rounded-full bg-white/5 text-white/40 text-sm font-medium" disabled>
+              <button className="w-full mt-6 h-10 rounded-full text-sm font-medium" style={{ backgroundColor: 'var(--chip-bg)', color: 'var(--text-muted)' }} disabled>
                 התוכנית הנוכחית שלך
               </button>
             )}
         </div>
 
         {/* Premium Plan */}
-        <div className="bg-[#1a1a2e] rounded-2xl border-2 border-amber-400/50 relative overflow-hidden">
+        <div className="rounded-2xl border-2 border-amber-400/50 relative overflow-hidden" style={{ backgroundColor: 'var(--bg-card)' }}>
           <div className="bg-gradient-to-r from-amber-400 to-yellow-500 text-black text-center text-xs font-bold py-1">
             הכי פופולרי ⭐
           </div>
@@ -91,7 +91,7 @@ export default function Pricing() {
             </div>
             <ul className="space-y-3">
               {premiumFeaturesArr.map((f, i) => (
-                <li key={i} className={`flex items-center gap-2 text-sm ${i === 0 ? 'font-semibold text-[#00d4aa]' : 'text-white/70'}`}>
+                <li key={i} className="flex items-center gap-2 text-sm" style={{ color: i === 0 ? 'var(--accent)' : 'var(--text-secondary)', fontWeight: i === 0 ? 600 : 400 }}>
                   <Check className="w-4 h-4 text-amber-400 shrink-0" />
                   {f}
                 </li>
