@@ -509,6 +509,8 @@ export default function VideoEditor() {
           onUpdateSubtitle={handleUpdateSubtitle}
           onAutoTranscribe={handleAutoTranscribe}
           isTranscribing={isTranscribing}
+          onInsertVideoFile={handleInsertVideoFile}
+          onInsertAudioFile={handleInsertAudioFile}
         />
 
         {/* Style Panel */}
