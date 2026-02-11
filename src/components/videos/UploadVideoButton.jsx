@@ -104,20 +104,12 @@ export default function UploadVideoButton({ onUploaded }) {
     }
 
     try {
-      // Step 1: Get upload signature from backend
-      setStatus('signing');
-      setStatusText('מכין העלאה...');
-      setPercent(2);
-
-      const sigResponse = await base44.functions.invoke('getUploadSignature');
-      const signatureData = sigResponse.data;
-
-      // Step 2: Upload directly to Cloudinary with signed upload + real progress
+      // Step 1: Upload in chunks via backend
       setStatus('uploading');
       setStatusText(`מעלה ${sizeMB}MB...`);
       setPercent(5);
 
-      const cloudinaryResult = await uploadToCloudinary(file, signatureData);
+      const cloudinaryResult = await uploadChunked(file);
 
       if (!cloudinaryResult.secure_url) {
         throw new Error('לא התקבל קישור לקובץ');
