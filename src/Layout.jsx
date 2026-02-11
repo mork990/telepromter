@@ -41,7 +41,7 @@ export default function Layout({ children, currentPageName }) {
 
   return (
     <div 
-      className="app-container min-h-screen bg-[#0e0e1a]" 
+      className="app-container min-h-screen bg-[#1d1022]" 
       dir="rtl"
       style={{
         paddingTop: 'env(safe-area-inset-top)',
