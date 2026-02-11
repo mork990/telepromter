@@ -118,7 +118,7 @@ export default function VideoSelector({ onVideoSelected, selectedVideoUrl }) {
             return (
               <button
                 key={rec.id}
-                onClick={() => onVideoSelected({ file_url: rec.file_url, title: rec.title || 'ללא כותרת', recordingId: rec.id })}
+                onClick={() => onVideoSelected({ file_url: rec.file_url, title: rec.title || 'ללא כותרת', recordingId: rec.id, duration_seconds: rec.duration_seconds })}
                 className={`w-full flex items-center gap-3 p-3 rounded-xl transition-colors text-right ${
                   isSelected ? 'bg-[#00d4aa]/20 border border-[#00d4aa]/50' : 'bg-white/5 hover:bg-white/10'
                 }`}
