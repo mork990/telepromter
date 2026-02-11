@@ -65,11 +65,11 @@ export default function Settings() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0e0e1a] text-white" dir="rtl">
+    <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }} dir="rtl">
       {/* Header */}
       <div 
-        className="sticky z-10 bg-[#1a1a2e]/80 backdrop-blur-xl border-b border-white/5"
-        style={{ top: 'env(safe-area-inset-top)' }}
+        className="sticky z-10 backdrop-blur-xl"
+        style={{ top: 'env(safe-area-inset-top)', backgroundColor: 'var(--nav-bg)', borderBottom: '1px solid var(--border-color)' }}
       >
         <div className="px-4 h-12 flex items-center">
           <h1 className="text-base font-bold">הגדרות</h1>
@@ -78,7 +78,7 @@ export default function Settings() {
 
       <div className="px-4 py-4 pb-24 space-y-4">
         {/* Settings Panel */}
-        <div className="bg-[#1a1a2e] rounded-2xl border border-white/5 p-4">
+        <div className="rounded-2xl p-4" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
           <SettingsPanel
             fontSize={fontSize}
             setFontSize={setFontSize}
@@ -96,7 +96,7 @@ export default function Settings() {
         </div>
 
         {/* Quality */}
-        <div className="bg-[#1a1a2e] rounded-2xl border border-white/5 p-4">
+        <div className="rounded-2xl p-4" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
           <QualitySelector 
             value={videoQuality} 
             onChange={(val) => {
@@ -110,7 +110,8 @@ export default function Settings() {
         {/* Premium Upsell */}
         {!isPremium && (
           <button
-            className="w-full bg-[#1a1a2e] rounded-2xl border border-amber-500/20 p-4 flex items-center gap-3 select-none"
+            className="w-full rounded-2xl border border-amber-500/20 p-4 flex items-center gap-3 select-none"
+            style={{ backgroundColor: 'var(--bg-card)' }}
             onClick={() => navigate(createPageUrl('Pricing'))}
           >
             <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center flex-shrink-0">
@@ -126,13 +127,14 @@ export default function Settings() {
         {/* Save */}
         <button
           onClick={handleSave}
-          className="w-full h-12 rounded-full bg-gradient-to-r from-[#00d4aa] to-[#00a89d] text-black font-bold text-sm select-none active:scale-[0.98] transition-transform"
+          className="w-full h-12 rounded-full text-black font-bold text-sm select-none active:scale-[0.98] transition-transform"
+          style={{ background: 'linear-gradient(90deg, var(--accent), var(--accent-secondary))' }}
         >
           שמור הגדרות
         </button>
 
         {/* Delete Account */}
-        <div className="pt-8 border-t border-white/5">
+        <div className="pt-8" style={{ borderTop: '1px solid var(--border-color)' }}>
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <button className="w-full h-10 rounded-xl text-red-400/60 text-sm font-medium flex items-center justify-center gap-2 hover:bg-red-500/5 select-none">
@@ -140,7 +142,7 @@ export default function Settings() {
                 מחיקת חשבון
               </button>
             </AlertDialogTrigger>
-            <AlertDialogContent dir="rtl" className="bg-[#1a1a2e] border-white/10 text-white">
+            <AlertDialogContent dir="rtl" style={{ backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)', borderColor: 'var(--border-subtle)' }}>
               <AlertDialogHeader>
                 <AlertDialogTitle>האם אתה בטוח?</AlertDialogTitle>
                 <AlertDialogDescription className="text-white/50">

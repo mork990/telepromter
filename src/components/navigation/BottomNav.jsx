@@ -16,8 +16,8 @@ export default function BottomNav({ activePage }) {
 
   return (
     <div 
-      className="fixed bottom-0 left-0 right-0 z-50 bg-[#1a1a2e]/95 backdrop-blur-xl border-t border-white/10"
-      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+      className="fixed bottom-0 left-0 right-0 z-50 backdrop-blur-xl"
+      style={{ paddingBottom: 'env(safe-area-inset-bottom)', backgroundColor: 'var(--nav-bg)', borderTop: '1px solid var(--border-subtle)' }}
     >
       <div className="flex items-center justify-around h-[72px]">
         {tabs.map(({ id, icon: Icon, label }) => {
@@ -26,9 +26,8 @@ export default function BottomNav({ activePage }) {
             <button
               key={id}
               onClick={() => navigate(createPageUrl(id))}
-              className={`flex flex-col items-center justify-center gap-1 flex-1 h-full select-none transition-colors active:scale-95 ${
-                isActive ? 'text-[#00d4aa]' : 'text-white/50'
-              }`}
+              className="flex flex-col items-center justify-center gap-1 flex-1 h-full select-none transition-colors active:scale-95"
+              style={{ color: isActive ? 'var(--accent)' : 'var(--text-faint)' }}
             >
               <Icon className="w-6 h-6" />
               <span className="text-[11px] font-medium">{label}</span>
