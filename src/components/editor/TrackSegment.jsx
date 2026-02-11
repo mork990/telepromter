@@ -30,7 +30,9 @@ const colorClasses = {
 export default function TrackSegment({
   seg, index, timeToPx, trackTop, trackHeight, color,
   toolMode, onDelete, onRestore, onTrimStart, onTrimEnd,
+  onInsertFile,
 }) {
+  const fileInputRef = useRef(null);
   const c = colorClasses[color] || colorClasses.indigo;
   const segWidth = Math.max(timeToPx(seg.originalEnd - seg.originalStart), 2);
 
