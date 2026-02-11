@@ -53,6 +53,7 @@ import Pricing from './pages/Pricing';
 import Recording from './pages/Recording';
 import Settings from './pages/Settings';
 import VideoEditor from './pages/VideoEditor';
+import AdminPanel from './pages/AdminPanel';
 import __Layout from './Layout.jsx';
 
 
@@ -63,6 +64,7 @@ export const PAGES = {
     "Recording": Recording,
     "Settings": Settings,
     "VideoEditor": VideoEditor,
+    "AdminPanel": AdminPanel,
 }
 
 export const pagesConfig = {
