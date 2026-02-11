@@ -32,33 +32,27 @@ export default function UploadVideoButton({ onUploaded }) {
 
   const CHUNK_SIZE = 6 * 1024 * 1024; // 6MB chunks for direct Cloudinary upload
 
+  const CLOUD_NAME = 'dq9tkpfwm';
+  const UPLOAD_PRESET = 'base44_video_unsigned';
+
   const uploadToCloudinary = async (file) => {
     cancelledRef.current = false;
-    
-    // Get signature from backend for signed upload
-    const sigRes = await base44.functions.invoke('getUploadSignature');
-    const { signature, timestamp, folder, cloud_name, api_key } = sigRes.data;
-
     const totalSize = file.size;
 
-    // Small file - single upload with XHR for progress
+    // Small file (<20MB) - single upload with XHR for progress
     if (totalSize < 20 * 1024 * 1024) {
-      return await uploadSingleFile(file, { signature, timestamp, folder, cloud_name, api_key });
+      return await uploadSingleFile(file);
     }
 
     // Large file - chunked upload directly to Cloudinary
-    return await uploadChunkedDirect(file, { signature, timestamp, folder, cloud_name, api_key });
+    return await uploadChunkedDirect(file);
   };
 
-  const uploadSingleFile = (file, { signature, timestamp, folder, cloud_name, api_key }) => {
+  const uploadSingleFile = (file) => {
     return new Promise((resolve, reject) => {
       const fd = new FormData();
       fd.append('file', file);
-      fd.append('api_key', api_key);
-      fd.append('timestamp', String(timestamp));
-      fd.append('signature', signature);
-      fd.append('folder', folder);
-      fd.append('resource_type', 'video');
+      fd.append('upload_preset', UPLOAD_PRESET);
 
       const xhr = new XMLHttpRequest();
       xhrRef.current = xhr;
@@ -75,8 +69,7 @@ export default function UploadVideoButton({ onUploaded }) {
 
       xhr.onload = () => {
         if (xhr.status >= 200 && xhr.status < 300) {
-          const data = JSON.parse(xhr.responseText);
-          resolve(data);
+          resolve(JSON.parse(xhr.responseText));
         } else {
           let errMsg = 'Upload failed: ' + xhr.status;
           try { errMsg = JSON.parse(xhr.responseText)?.error?.message || errMsg; } catch(_) {}
@@ -84,15 +77,15 @@ export default function UploadVideoButton({ onUploaded }) {
         }
       };
 
-      xhr.onerror = () => reject(new Error('Network error during upload'));
+      xhr.onerror = () => reject(new Error('שגיאת רשת בהעלאה'));
       xhr.onabort = () => reject(new Error('ההעלאה בוטלה'));
 
-      xhr.open('POST', `https://api.cloudinary.com/v1_1/${cloud_name}/video/upload`);
+      xhr.open('POST', `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/video/upload`);
       xhr.send(fd);
     });
   };
 
-  const uploadChunkedDirect = async (file, { signature, timestamp, folder, cloud_name, api_key }) => {
+  const uploadChunkedDirect = async (file) => {
     const totalSize = file.size;
     const totalChunks = Math.ceil(totalSize / CHUNK_SIZE);
     const uploadId = `uqid-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
@@ -107,14 +100,10 @@ export default function UploadVideoButton({ onUploaded }) {
 
       const fd = new FormData();
       fd.append('file', chunk, file.name || 'video.mp4');
-      fd.append('api_key', api_key);
-      fd.append('timestamp', String(timestamp));
-      fd.append('signature', signature);
-      fd.append('folder', folder);
-      fd.append('resource_type', 'video');
+      fd.append('upload_preset', UPLOAD_PRESET);
 
       const res = await fetch(
-        `https://api.cloudinary.com/v1_1/${cloud_name}/video/upload`,
+        `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/video/upload`,
         {
           method: 'POST',
           headers: {
@@ -133,7 +122,7 @@ export default function UploadVideoButton({ onUploaded }) {
 
       // Cloudinary returns 408 for intermediate chunks, 200 for last
       if (res.status === 408) {
-        continue; // expected, next chunk
+        continue;
       }
 
       if (!res.ok) {
