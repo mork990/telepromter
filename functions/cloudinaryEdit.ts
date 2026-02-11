@@ -29,6 +29,7 @@ Deno.serve(async (req) => {
 
     const publicId = uploadResult.public_id;
     let transformations = [];
+    let outputFormat = 'mp4';
 
     switch (action) {
       case 'trim': {
