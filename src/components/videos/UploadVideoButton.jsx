@@ -8,8 +8,6 @@ export default function UploadVideoButton({ onUploaded }) {
   const [statusText, setStatusText] = useState('');
   const [percent, setPercent] = useState(0);
   const inputRef = useRef(null);
-  const xhrRef = useRef(null);
-  const cancelledRef = useRef(false);
 
   const MAX_SIZE_MB = 500;
   const MAX_DURATION_SEC = 600;
@@ -28,127 +26,6 @@ export default function UploadVideoButton({ onUploaded }) {
       video.onerror = () => { clearTimeout(timeout); resolve(0); URL.revokeObjectURL(video.src); video.remove(); };
       video.src = URL.createObjectURL(file);
     });
-  };
-
-  const CHUNK_SIZE = 20 * 1024 * 1024; // 20MB chunks
-
-  const getSignature = async () => {
-    const res = await base44.functions.invoke('getUploadSignature');
-    return res.data;
-  };
-
-  const uploadToCloudinary = async (file) => {
-    cancelledRef.current = false;
-    const totalSize = file.size;
-    const sig = await getSignature();
-
-    // Small file (<100MB) - single upload with XHR for progress
-    if (totalSize < 100 * 1024 * 1024) {
-      return await uploadSingleFile(file, sig);
-    }
-
-    // Large file - chunked signed upload directly to Cloudinary
-    return await uploadChunkedDirect(file, sig);
-  };
-
-  const uploadSingleFile = (file, sig) => {
-    return new Promise((resolve, reject) => {
-      const fd = new FormData();
-      fd.append('file', file);
-      fd.append('api_key', sig.api_key);
-      fd.append('timestamp', String(sig.timestamp));
-      fd.append('signature', sig.signature);
-      fd.append('folder', sig.folder);
-
-      const xhr = new XMLHttpRequest();
-      xhrRef.current = xhr;
-
-      xhr.upload.onprogress = (e) => {
-        if (e.lengthComputable) {
-          const pct = Math.round((e.loaded / e.total) * 90) + 5;
-          setPercent(pct);
-          const loadedMB = (e.loaded / (1024 * 1024)).toFixed(1);
-          const totalMB = (e.total / (1024 * 1024)).toFixed(0);
-          setStatusText(`מעלה ${loadedMB}/${totalMB}MB... ${pct}%`);
-        }
-      };
-
-      xhr.onload = () => {
-        if (xhr.status >= 200 && xhr.status < 300) {
-          resolve(JSON.parse(xhr.responseText));
-        } else {
-          let errMsg = 'Upload failed: ' + xhr.status;
-          try { errMsg = JSON.parse(xhr.responseText)?.error?.message || errMsg; } catch(_) {}
-          reject(new Error(errMsg));
-        }
-      };
-
-      xhr.onerror = () => reject(new Error('שגיאת רשת בהעלאה'));
-      xhr.onabort = () => reject(new Error('ההעלאה בוטלה'));
-
-      xhr.open('POST', `https://api.cloudinary.com/v1_1/${sig.cloud_name}/video/upload`);
-      xhr.send(fd);
-    });
-  };
-
-  const uploadChunkedDirect = async (file, sig) => {
-    const totalSize = file.size;
-    const totalChunks = Math.ceil(totalSize / CHUNK_SIZE);
-    const uploadId = `uqid-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-    let lastData = null;
-
-    for (let i = 0; i < totalChunks; i++) {
-      if (cancelledRef.current) throw new Error('ההעלאה בוטלה');
-
-      const start = i * CHUNK_SIZE;
-      const end = Math.min(start + CHUNK_SIZE, totalSize);
-      const chunk = file.slice(start, end);
-
-      const fd = new FormData();
-      fd.append('file', chunk, file.name || 'video.mp4');
-      fd.append('api_key', sig.api_key);
-      fd.append('timestamp', String(sig.timestamp));
-      fd.append('signature', sig.signature);
-      fd.append('folder', sig.folder);
-
-      const res = await fetch(
-        `https://api.cloudinary.com/v1_1/${sig.cloud_name}/video/upload`,
-        {
-          method: 'POST',
-          headers: {
-            'X-Unique-Upload-Id': uploadId,
-            'Content-Range': `bytes ${start}-${end - 1}/${totalSize}`,
-          },
-          body: fd,
-        }
-      );
-
-      const pct = Math.round(((i + 1) / totalChunks) * 90) + 5;
-      setPercent(pct);
-      const loadedMB = (end / (1024 * 1024)).toFixed(1);
-      const totalMB = (totalSize / (1024 * 1024)).toFixed(0);
-      setStatusText(`מעלה ${loadedMB}/${totalMB}MB... ${pct}%`);
-
-      // Cloudinary returns 408 for intermediate chunks, 200 for last
-      if (res.status === 408) {
-        continue;
-      }
-
-      if (!res.ok) {
-        const errText = await res.text();
-        let errMsg = 'Cloudinary error ' + res.status;
-        try { errMsg = JSON.parse(errText)?.error?.message || errMsg; } catch(_) {}
-        throw new Error(errMsg);
-      }
-
-      lastData = await res.json();
-    }
-
-    if (lastData?.secure_url) {
-      return lastData;
-    }
-
-    throw new Error('ההעלאה הסתיימה אבל לא התקבל קישור לסרטון');
   };
 
   const handleUpload = async (e) => {
@@ -178,23 +55,25 @@ export default function UploadVideoButton({ onUploaded }) {
     try {
       setStatus('uploading');
       setStatusText(`מעלה ${sizeMB}MB...`);
-      setPercent(5);
+      setPercent(10);
 
-      const cloudinaryResult = await uploadToCloudinary(file);
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
 
-      if (!cloudinaryResult.secure_url) {
+      setPercent(90);
+
+      if (!file_url) {
         throw new Error('לא התקבל קישור לקובץ');
       }
 
-      setPercent(95);
       setStatus('saving');
       setStatusText('שומר...');
+      setPercent(95);
 
       await base44.entities.Recording.create({
         title: (file.name || 'video').replace(/\.[^/.]+$/, ''),
-        file_url: cloudinaryResult.secure_url,
-        duration_seconds: Math.round(cloudinaryResult.duration || localDuration || 0),
-        file_size_bytes: cloudinaryResult.bytes || file.size,
+        file_url,
+        duration_seconds: localDuration || 0,
+        file_size_bytes: file.size,
       });
 
       setPercent(100);
@@ -218,11 +97,6 @@ export default function UploadVideoButton({ onUploaded }) {
 
   const resetState = () => {
     if (inputRef.current) inputRef.current.value = '';
-    cancelledRef.current = true;
-    if (xhrRef.current) {
-      xhrRef.current.abort();
-      xhrRef.current = null;
-    }
     setUploading(false);
     setStatus('');
     setStatusText('');
