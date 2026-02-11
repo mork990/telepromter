@@ -138,6 +138,9 @@ export default function VisualTimeline({
     } else if (type === 'image') {
       startVal = imageOverlays[index].start;
       endVal = imageOverlays[index].end;
+    } else if (type === 'media-layer') {
+      startVal = mediaLayers[index].start;
+      endVal = mediaLayers[index].end;
     }
 
     dragStartRef.current = { x: e.clientX, startVal, endVal };
@@ -188,6 +191,15 @@ export default function VisualTimeline({
         const newTime = edge === 'start' ? dragStartRef.current.startVal + dt : dragStartRef.current.endVal + dt;
         onTrimImage(index, edge, newTime);
       }
+    } else if (type === 'media-layer') {
+      if (edge === 'move') {
+        const dur = dragStartRef.current.endVal - dragStartRef.current.startVal;
+        const ns = Math.max(0, Math.min(duration - dur, dragStartRef.current.startVal + dt));
+        onMoveMediaLayer(index, ns);
+      } else {
+        const newTime = edge === 'start' ? dragStartRef.current.startVal + dt : dragStartRef.current.endVal + dt;
+        onTrimMediaLayer(index, edge, newTime);
+      }
     }
   };
 
@@ -229,6 +241,13 @@ export default function VisualTimeline({
       e.preventDefault();
       return;
     }
+    if (toolMode === 'media-layer') {
+      const time = pxToTime(e.clientX);
+      setPendingMediaLayerTime(time);
+      mediaLayerInputRef.current?.click();
+      e.preventDefault();
+      return;
+    }
     if (toolMode === 'delete') return;
     onSeek(pxToTime(e.clientX));
   };
@@ -239,6 +258,19 @@ export default function VisualTimeline({
     const end = Math.min(pendingImageTime + 3, duration);
     await onAddImage(file, pendingImageTime, end);
     setPendingImageTime(null);
+    setToolMode(null);
+    e.target.value = '';
+  };
+
+  const handleMediaLayerFileSelected = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file || pendingMediaLayerTime === null) return;
+    const end = Math.min(pendingMediaLayerTime + 5, duration);
+    let mediaType = 'video';
+    if (file.type.startsWith('image/')) mediaType = 'image';
+    else if (file.type.startsWith('audio/')) mediaType = 'audio';
+    await onAddMediaLayer(file, pendingMediaLayerTime, end, mediaType);
+    setPendingMediaLayerTime(null);
     setToolMode(null);
     e.target.value = '';
   };
