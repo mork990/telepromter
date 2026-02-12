@@ -49,7 +49,7 @@ Deno.serve(async (req) => {
             'Content-Type': 'application/json',
             'X-Upload-Content-Type': getMimeType(ext),
           },
-          body: JSON.stringify({ name: objectName, contentType: getMimeType(ext) }),
+          body: JSON.stringify({ name: objectName, contentType: getMimeType(ext), acl: [{ entity: 'allUsers', role: 'READER' }] }),
         }
       );
 
