@@ -561,14 +561,8 @@ export default function VideoEditor() {
           onMoveMediaLayer={handleMoveMediaLayer}
         />
 
-        {/* Effects Panel */}
-        <EffectsPanel
-          activeEffect={activeEffect}
-          onApplyEffect={(id, filter) => {
-            setActiveEffect(id);
-            setVideoFilter(filter);
-          }}
-        />
+        {/* Style Panel */}
+        <StylePanel style={style} onChange={setStyle} />
 
         {/* Templates Panel */}
         <TemplatesPanel
@@ -579,8 +573,14 @@ export default function VideoEditor() {
           }}
         />
 
-        {/* Style Panel */}
-        <StylePanel style={style} onChange={setStyle} />
+        {/* Effects Panel */}
+        <EffectsPanel
+          activeEffect={activeEffect}
+          onApplyEffect={(id, filter) => {
+            setActiveEffect(id);
+            setVideoFilter(filter);
+          }}
+        />
 
         {/* Export Button */}
         <button

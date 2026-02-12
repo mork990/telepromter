@@ -7,13 +7,50 @@ import { Palette, Type, Move } from "lucide-react";
 const colorPresets = ['#FFFFFF', '#FFFF00', '#00FF00', '#00FFFF', '#FF6B6B', '#FF69B4'];
 const bgPresets = ['#000000', '#1a1a2e', '#16213e', '#0f3460', '#533483', '#e94560'];
 
+const fontOptions = [
+  { value: 'sans-serif', label: 'ברירת מחדל' },
+  { value: "'Rubik', sans-serif", label: 'רוביק' },
+  { value: "'Heebo', sans-serif", label: 'חיבו' },
+  { value: "'Assistant', sans-serif", label: 'אסיסטנט' },
+  { value: "'Secular One', sans-serif", label: 'סקולר' },
+  { value: "'Varela Round', sans-serif", label: 'וארלה' },
+  { value: "'Frank Ruhl Libre', serif", label: 'פרנק רול' },
+  { value: "'Amatic SC', cursive", label: 'אמאטיק' },
+  { value: "'Suez One', serif", label: 'סואץ' },
+  { value: "monospace", label: 'מונו' },
+];
+
 export default function StylePanel({ style, onChange }) {
-  const { fontSize = 24, fontColor = '#FFFFFF', bgColor = '#000000', bgOpacity = 70 } = style || {};
+  const { fontSize = 24, fontColor = '#FFFFFF', bgColor = '#000000', bgOpacity = 70, fontFamily = 'sans-serif' } = style || {};
 
   const update = (field, value) => onChange({ ...style, [field]: value });
 
   return (
     <div className="bg-[#1a1a2e] rounded-2xl border border-white/5 p-4 space-y-4" dir="rtl">
+        {/* Font Family */}
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+            <Type className="w-4 h-4 text-white/40" />
+            <span className="text-sm font-medium text-white/70">פונט</span>
+          </div>
+          <div className="grid grid-cols-2 gap-1.5">
+            {fontOptions.map(f => (
+              <button
+                key={f.value}
+                onClick={() => update('fontFamily', f.value)}
+                className={`px-3 py-2 rounded-lg text-sm text-center transition-colors select-none ${
+                  fontFamily === f.value
+                    ? 'bg-purple-600/40 border border-purple-500 text-white'
+                    : 'bg-white/5 border border-white/10 text-white/60 hover:bg-white/10'
+                }`}
+                style={{ fontFamily: f.value }}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Font Size */}
         <div>
           <div className="flex items-center gap-2 mb-2">
