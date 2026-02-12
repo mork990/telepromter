@@ -226,7 +226,7 @@ Deno.serve(async (req) => {
   try {
     const body = await req.json();
     const recording_id = body.recording_id;
-    console.log('recording_id:', recording_id);
+    console.log('recording_id (v2-grpc):', recording_id);
 
     if (!recording_id) {
       return Response.json({ error: 'recording_id is required' }, { status: 400 });
