@@ -125,12 +125,24 @@ function processEyeContact(ServiceClient, apiKey, videoData) {
         reject(new Error('No video data received from NVIDIA'));
         return;
       }
-      const totalLength = outputChunks.reduce((acc, chunk) => acc + chunk.length, 0);
+      // Convert all chunks to Uint8Array first
+      const uint8Chunks = outputChunks.map(chunk => {
+        if (chunk instanceof Uint8Array) return chunk;
+        if (chunk instanceof ArrayBuffer) return new Uint8Array(chunk);
+        if (Buffer.isBuffer(chunk)) return new Uint8Array(chunk);
+        // protobufjs may return a Buffer with byteOffset
+        if (chunk.buffer && chunk.byteOffset !== undefined) {
+          return new Uint8Array(chunk.buffer, chunk.byteOffset, chunk.byteLength);
+        }
+        return new Uint8Array(chunk);
+      });
+      const totalLength = uint8Chunks.reduce((acc, chunk) => acc + chunk.byteLength, 0);
+      console.log('Total output size:', totalLength, 'bytes');
       const result = new Uint8Array(totalLength);
       let offset = 0;
-      for (const chunk of outputChunks) {
-        result.set(new Uint8Array(chunk.buffer || chunk), offset);
-        offset += chunk.length;
+      for (const chunk of uint8Chunks) {
+        result.set(chunk, offset);
+        offset += chunk.byteLength;
       }
       resolve(result);
     });
