@@ -71,11 +71,9 @@ Deno.serve(async (req) => {
         'Accept': 'application/json',
       },
       body: JSON.stringify({
-        requestBody: {
-          video_url: videoUrl,
-          gaze_angle: 0,
-          strength: 1.0,
-        }
+        video_url: videoUrl,
+        gaze_angle: 0,
+        strength: 1.0,
       }),
     });
 
