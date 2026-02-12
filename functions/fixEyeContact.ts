@@ -1,9 +1,9 @@
+import { Buffer } from 'node:buffer';
+globalThis.Buffer = globalThis.Buffer || Buffer;
+
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import * as grpc from 'npm:@grpc/grpc-js@1.12.5';
 import protobuf from 'npm:protobufjs@7.4.0';
-import { Buffer as NodeBuffer } from 'node:buffer';
-globalThis.Buffer = globalThis.Buffer || NodeBuffer;
-
 
 const NVIDIA_FUNCTION_ID = 'b75dbca7-b5a4-458c-9275-6d2effeb432a';
 const GRPC_TARGET = 'grpc.nvcf.nvidia.com:443';
@@ -13,17 +13,14 @@ const DATA_CHUNK_SIZE = 64 * 1024; // 64KB chunks per gRPC message
 function buildProtoDefinitions() {
   const root = new protobuf.Root();
 
-  // LossyEncoding
   const LossyEncoding = new protobuf.Type("LossyEncoding")
     .add(new protobuf.Field("bitrate", 1, "uint32", "optional"))
     .add(new protobuf.Field("idr_interval", 2, "uint32", "optional"));
 
-  // OutputVideoEncoding
   const OutputVideoEncoding = new protobuf.Type("OutputVideoEncoding")
     .add(new protobuf.Field("lossless", 1, "bool", "optional"))
     .add(new protobuf.Field("lossy", 2, "LossyEncoding", "optional"));
 
-  // RedirectGazeConfig
   const RedirectGazeConfig = new protobuf.Type("RedirectGazeConfig")
     .add(new protobuf.Field("temporal", 1, "uint32", "optional"))
     .add(new protobuf.Field("detect_closure", 2, "uint32", "optional"))
@@ -42,39 +39,29 @@ function buildProtoDefinitions() {
     .add(new protobuf.Field("head_yaw_threshold_high", 15, "float", "optional"))
     .add(new protobuf.Field("output_video_encoding", 16, "OutputVideoEncoding", "optional"));
 
-  // RedirectGazeRequest (oneof stream_input)
   const RedirectGazeRequest = new protobuf.Type("RedirectGazeRequest")
     .add(new protobuf.Field("config", 1, "RedirectGazeConfig", "optional"))
     .add(new protobuf.Field("video_file_data", 2, "bytes", "optional"))
     .add(new protobuf.OneOf("stream_input", ["config", "video_file_data"]));
 
-  // RedirectGazeResponse (oneof stream_output)
   const RedirectGazeResponse = new protobuf.Type("RedirectGazeResponse")
     .add(new protobuf.Field("config", 1, "RedirectGazeConfig", "optional"))
     .add(new protobuf.Field("video_file_data", 2, "bytes", "optional"))
     .add(new protobuf.Field("keepalive", 3, "bytes", "optional"))
     .add(new protobuf.OneOf("stream_output", ["config", "video_file_data", "keepalive"]));
 
-  // Add all types to root so they can reference each other
   root.add(LossyEncoding);
   root.add(OutputVideoEncoding);
   root.add(RedirectGazeConfig);
   root.add(RedirectGazeRequest);
   root.add(RedirectGazeResponse);
 
-  return {
-    root,
-    RedirectGazeRequest,
-    RedirectGazeResponse,
-    RedirectGazeConfig,
-  };
+  return { root, RedirectGazeRequest, RedirectGazeResponse, RedirectGazeConfig };
 }
 
-// Create a gRPC service client from protobufjs definitions
 function createGrpcServiceClient(proto) {
   const { RedirectGazeRequest, RedirectGazeResponse } = proto;
 
-  // Build gRPC service definition manually
   const serviceDefinition = {
     RedirectGaze: {
       path: '/nvidia.maxine.eyecontact.v1.MaxineEyeContactService/RedirectGaze',
@@ -82,12 +69,12 @@ function createGrpcServiceClient(proto) {
       responseStream: true,
       requestSerialize: (msg) => {
         const encoded = RedirectGazeRequest.encode(RedirectGazeRequest.create(msg)).finish();
-        return new Uint8Array(encoded);
+        return Buffer.from(encoded);
       },
       requestDeserialize: (buf) => RedirectGazeRequest.decode(new Uint8Array(buf)),
       responseSerialize: (msg) => {
         const encoded = RedirectGazeResponse.encode(RedirectGazeResponse.create(msg)).finish();
-        return new Uint8Array(encoded);
+        return Buffer.from(encoded);
       },
       responseDeserialize: (buf) => RedirectGazeResponse.decode(new Uint8Array(buf)),
     }
@@ -148,7 +135,6 @@ function processEyeContact(ServiceClient, apiKey, videoData) {
         reject(new Error('No video data received from NVIDIA'));
         return;
       }
-      // Combine all chunks
       const totalLength = outputChunks.reduce((acc, chunk) => acc + chunk.length, 0);
       const result = new Uint8Array(totalLength);
       let offset = 0;
@@ -165,7 +151,6 @@ function processEyeContact(ServiceClient, apiKey, videoData) {
       reject(err);
     });
 
-    // Send config first
     console.log('Sending config...');
     call.write({
       config: {
@@ -180,7 +165,6 @@ function processEyeContact(ServiceClient, apiKey, videoData) {
       }
     });
 
-    // Send video data in chunks
     const totalChunks = Math.ceil(videoData.length / DATA_CHUNK_SIZE);
     console.log(`Sending ${totalChunks} video chunks (${videoData.length} bytes)...`);
 
@@ -223,7 +207,6 @@ Deno.serve(async (req) => {
     }
     console.log('NVIDIA_API_KEY present, length:', NVIDIA_API_KEY.length);
 
-    // Get the recording
     const recordings = await base44.asServiceRole.entities.Recording.filter({ id: recording_id });
     console.log('Recordings found:', recordings.length);
     const recording = recordings[0];
@@ -231,7 +214,6 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Recording not found' }, { status: 404 });
     }
 
-    // Get a publicly accessible URL for the video
     let videoUrl = recording.file_url;
     console.log('Original video URL:', videoUrl?.substring(0, 100));
 
@@ -248,20 +230,15 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Download the video file
     const videoData = await downloadVideo(videoUrl);
 
-    // Build gRPC client from protobufjs definitions
-    // Build gRPC client
     console.log('Building gRPC client...');
     const proto = buildProtoDefinitions();
     const ServiceClient = createGrpcServiceClient(proto);
     console.log('gRPC client ready, starting eye contact processing...');
 
-    // Process via gRPC
     const outputData = await processEyeContact(ServiceClient, NVIDIA_API_KEY, videoData);
 
-    // Upload the result
     console.log('Uploading processed video...');
     const blob = new Blob([outputData], { type: 'video/mp4' });
     const uploadResult = await base44.asServiceRole.integrations.Core.UploadFile({ file: blob });
