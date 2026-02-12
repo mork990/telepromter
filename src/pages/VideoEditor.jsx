@@ -11,6 +11,7 @@ import VisualTimeline from '../components/editor/VisualTimeline';
 import DraggableImage from '../components/editor/DraggableImage';
 import EffectsPanel from '../components/editor/EffectsPanel';
 import TemplatesPanel from '../components/editor/TemplatesPanel';
+import useSignedUrl from '../components/videos/useSignedUrl';
 
 export default function VideoEditor() {
   const navigate = useNavigate();
