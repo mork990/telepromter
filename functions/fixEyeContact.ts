@@ -23,8 +23,7 @@ Deno.serve(async (req) => {
     }
 
     // Get the recording
-    const recordings = await base44.entities.Recording.filter({ id: recording_id });
-    const recording = recordings[0];
+    const recording = await base44.entities.Recording.get(recording_id);
     if (!recording) {
       return Response.json({ error: 'Recording not found' }, { status: 404 });
     }
