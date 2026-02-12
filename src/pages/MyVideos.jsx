@@ -1,7 +1,7 @@
 import React from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Film, Loader2 } from "lucide-react";
+import { Film, Loader2, Users } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import VideoCard from '../components/videos/VideoCard';
@@ -25,6 +25,25 @@ export default function MyVideos() {
         return base44.entities.Recording.list('-created_date');
       }
       return base44.entities.Recording.filter({ created_by: currentUser.email }, '-created_date');
+    },
+    enabled: !!currentUser,
+  });
+
+  const { data: sharedData = [] } = useQuery({
+    queryKey: ['sharedWithMe', currentUser?.email],
+    queryFn: async () => {
+      if (!currentUser) return [];
+      const shares = await base44.entities.VideoShare.filter({ shared_with_email: currentUser.email });
+      const results = [];
+      for (const share of shares) {
+        try {
+          const recs = await base44.entities.Recording.filter({ id: share.recording_id });
+          if (recs.length > 0) {
+            results.push({ recording: recs[0], permission: share.permission });
+          }
+        } catch {}
+      }
+      return results;
     },
     enabled: !!currentUser,
   });
