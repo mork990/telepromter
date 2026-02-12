@@ -267,10 +267,11 @@ Deno.serve(async (req) => {
     const videoData = await downloadVideo(videoUrl);
 
     // Build gRPC client from protobufjs definitions
+    // Build gRPC client
     console.log('Building gRPC client...');
     const proto = buildProtoDefinitions();
     const ServiceClient = createGrpcServiceClient(proto);
-    console.log('gRPC client built, starting eye contact processing...');
+    console.log('gRPC client ready, starting eye contact processing...');
 
     // Process via gRPC
     const outputData = await processEyeContact(ServiceClient, NVIDIA_API_KEY, videoData);
