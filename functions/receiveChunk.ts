@@ -177,7 +177,12 @@ async function getAccessToken(saKey) {
     .replace(/\n/g, '')
     .replace(/\r/g, '')
     .trim();
-  const keyBuffer = Uint8Array.from(atob(pemContent), c => c.charCodeAt(0));
+  let keyBuffer;
+  try {
+    keyBuffer = Uint8Array.from(atob(pemContent), c => c.charCodeAt(0));
+  } catch (e) {
+    throw new Error('Failed to decode base64');
+  }
 
   const cryptoKey = await crypto.subtle.importKey(
     'pkcs8',
