@@ -2,7 +2,8 @@ import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
-import { Palette, Type, Move } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Palette, Type, Move, Subtitles } from "lucide-react";
 
 const colorPresets = ['#FFFFFF', '#FFFF00', '#00FF00', '#00FFFF', '#FF6B6B', '#FF69B4'];
 const bgPresets = ['#000000', '#1a1a2e', '#16213e', '#0f3460', '#533483', '#e94560'];
@@ -27,28 +28,30 @@ export default function StylePanel({ style, onChange }) {
 
   return (
     <div className="bg-[#1a1a2e] rounded-2xl border border-white/5 p-4 space-y-4" dir="rtl">
+        {/* Title */}
+        <div className="flex items-center gap-2">
+          <Subtitles className="w-4 h-4 text-purple-400" />
+          <h3 className="text-sm font-bold text-white">כתוביות</h3>
+        </div>
+
         {/* Font Family */}
         <div>
           <div className="flex items-center gap-2 mb-2">
             <Type className="w-4 h-4 text-white/40" />
             <span className="text-sm font-medium text-white/70">פונט</span>
           </div>
-          <div className="grid grid-cols-2 gap-1.5">
-            {fontOptions.map(f => (
-              <button
-                key={f.value}
-                onClick={() => update('fontFamily', f.value)}
-                className={`px-3 py-2 rounded-lg text-sm text-center transition-colors select-none ${
-                  fontFamily === f.value
-                    ? 'bg-purple-600/40 border border-purple-500 text-white'
-                    : 'bg-white/5 border border-white/10 text-white/60 hover:bg-white/10'
-                }`}
-                style={{ fontFamily: f.value }}
-              >
-                {f.label}
-              </button>
-            ))}
-          </div>
+          <Select value={fontFamily} onValueChange={(v) => update('fontFamily', v)}>
+            <SelectTrigger className="bg-white/5 border-white/10 text-white h-10">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {fontOptions.map(f => (
+                <SelectItem key={f.value} value={f.value}>
+                  <span style={{ fontFamily: f.value }}>{f.label}</span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Font Size */}
