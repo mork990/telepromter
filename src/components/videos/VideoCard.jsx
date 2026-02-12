@@ -27,7 +27,7 @@ export default function VideoCard({ recording, onDelete, onUpdate, compact }) {
 
   const handleDownload = () => {
     const a = document.createElement('a');
-    a.href = recording.file_url;
+    a.href = signedUrl || recording.file_url;
     a.download = recording.title || `video_${recording.id}.mp4`;
     document.body.appendChild(a);
     a.click();
@@ -35,7 +35,7 @@ export default function VideoCard({ recording, onDelete, onUpdate, compact }) {
   };
 
   const handleShare = async () => {
-    const file = await fetch(recording.file_url).then(r => r.blob());
+    const file = await fetch(signedUrl || recording.file_url).then(r => r.blob());
     const f = new File([file], (recording.title || 'video') + '.mp4', { type: 'video/mp4' });
     if (navigator.canShare && navigator.canShare({ files: [f] })) {
       await navigator.share({ files: [f], title: recording.title || 'סרטון' });
