@@ -474,7 +474,7 @@ export default function VideoEditor() {
 
           <video
             ref={videoRef}
-            src={recording.file_url}
+            src={videoUrl || ''}
             className={`absolute inset-0 w-full h-full object-contain transition-opacity duration-150 ${videoHidden ? 'opacity-0' : 'opacity-100'}`}
             style={{ zIndex: 1, filter: videoFilter !== 'none' ? videoFilter : undefined }}
             playsInline
