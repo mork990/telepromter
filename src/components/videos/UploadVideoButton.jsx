@@ -60,8 +60,9 @@ export default function UploadVideoButton({ onUploaded }) {
           session_id: sessionId,
           chunk_index: chunkIndex,
           total_chunks: totalChunks,
+          file_name: file.name || 'video.mp4',
         });
-        return res.data; // includes file_uri
+        return res.data; // last chunk includes secure_url
       } catch (err) {
         console.warn(`Chunk ${chunkIndex} attempt ${attempt + 1} failed:`, err.message);
         if (attempt === 2) throw err;
@@ -138,38 +139,39 @@ export default function UploadVideoButton({ onUploaded }) {
 
       console.log(`Starting chunked upload: ${totalChunks} chunks, session: ${sessionId}`);
 
-      const chunkUris = [];
+      let finalUrl = null;
       for (let i = 0; i < totalChunks; i++) {
         if (abortRef.current) throw new Error('Upload cancelled');
 
         const result = await uploadChunk(file, sessionId, i, totalChunks);
-        chunkUris.push(result.file_uri);
+        
+        // Last chunk returns the final Cloudinary URL
+        if (result.done && result.secure_url) {
+          finalUrl = result.secure_url;
+        }
 
         const uploadedBytes = Math.min((i + 1) * CHUNK_SIZE, file.size);
         const uploadedMB = (uploadedBytes / (1024 * 1024)).toFixed(0);
-        const progress = 5 + ((i + 1) / totalChunks) * 80; // 5% to 85%
+        const progress = 5 + ((i + 1) / totalChunks) * 85; // 5% to 90%
         setPercent(progress);
         setStatusText(`מעלה ${uploadedMB}/${sizeMB}MB...`);
       }
 
-      setPercent(88);
-      setStatus('assembling');
-      setStatusText('מרכיב סרטון...');
+      if (!finalUrl) {
+        throw new Error('Upload completed but no URL received');
+      }
 
-      console.log('All chunks uploaded, assembling...');
+      console.log('Upload complete, saving recording...');
+      setPercent(92);
+      setStatus('saving');
+      setStatusText('שומר...');
 
-      const assembleRes = await base44.functions.invoke('assembleVideo', {
-        session_id: sessionId,
-        total_chunks: totalChunks,
-        chunk_uris: chunkUris,
-        file_name: file.name || 'video.mp4',
+      await base44.entities.Recording.create({
+        title: (file.name || 'video').replace(/\.[^/.]+$/, ''),
+        file_url: finalUrl,
         duration_seconds: localDuration || 0,
         file_size_bytes: file.size,
       });
-
-      if (!assembleRes.data?.success) {
-        throw new Error(assembleRes.data?.error || 'Assembly failed');
-      }
 
       setPercent(100);
       setStatus('done');
