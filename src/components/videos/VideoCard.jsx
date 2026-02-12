@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Play, Download, Share2, Trash2, Film } from "lucide-react";
+import { Play, Download, Share2, Trash2, Film, Users } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import moment from 'moment';
 import useSignedUrl from './useSignedUrl';
+import ShareDialog from './ShareDialog';
 
 function formatDuration(seconds) {
   if (!seconds) return '--:--';
@@ -20,10 +21,14 @@ function formatSize(bytes) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-export default function VideoCard({ recording, onDelete, onUpdate, compact }) {
+export default function VideoCard({ recording, onDelete, onUpdate, compact, isShared, sharedPermission }) {
   const navigate = useNavigate();
   const [showConfirm, setShowConfirm] = useState(false);
+  const [showShare, setShowShare] = useState(false);
   const signedUrl = useSignedUrl(recording.file_url);
+  const canDownload = !isShared || sharedPermission === 'download' || sharedPermission === 'edit';
+  const canEdit = !isShared || sharedPermission === 'edit';
+  const canDelete = !isShared;
 
   const handleDownload = () => {
     const a = document.createElement('a');
