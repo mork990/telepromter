@@ -82,33 +82,54 @@ export default function VideoCard({ recording, onDelete, onUpdate, compact, isSh
           {!compact && recording.file_size_bytes > 0 && ` • ${formatSize(recording.file_size_bytes)}`}
         </p>
 
-        <button
-          className={`w-full rounded-lg bg-[#00d4aa]/10 text-[#00d4aa] font-medium flex items-center justify-center gap-1 select-none hover:bg-[#00d4aa]/20 transition-colors ${compact ? 'h-7 text-[11px] mt-2 mb-1.5' : 'h-9 text-sm mt-3 mb-3'}`}
-          onClick={() => navigate(createPageUrl('VideoEditor') + '?id=' + recording.id)}
-        >
-          <Film className={compact ? 'w-3 h-3' : 'w-4 h-4'} />
-          עריכה
-        </button>
+        {isShared && (
+          <div className={`flex items-center gap-1 text-purple-400 ${compact ? 'text-[10px] mb-1' : 'text-xs mb-2'}`}>
+            <Users className="w-3 h-3" />
+            <span>שותף איתך • {sharedPermission === 'view' ? 'צפייה' : sharedPermission === 'download' ? 'הורדה' : 'עריכה'}</span>
+          </div>
+        )}
 
-        <div className={`flex items-center ${compact ? 'gap-1.5' : 'gap-2'}`}>
-          <button className={`flex-1 rounded-lg bg-white/5 text-white/70 font-medium flex items-center justify-center gap-1 select-none hover:bg-white/10 transition-colors ${compact ? 'h-7 text-[11px]' : 'h-9 text-sm'}`} onClick={handleDownload}>
-            <Download className={compact ? 'w-3 h-3' : 'w-4 h-4'} />
-            {!compact && 'הורד'}
+        {canEdit && (
+          <button
+            className={`w-full rounded-lg bg-[#00d4aa]/10 text-[#00d4aa] font-medium flex items-center justify-center gap-1 select-none hover:bg-[#00d4aa]/20 transition-colors ${compact ? 'h-7 text-[11px] mt-2 mb-1.5' : 'h-9 text-sm mt-3 mb-3'}`}
+            onClick={() => navigate(createPageUrl('VideoEditor') + '?id=' + recording.id)}
+          >
+            <Film className={compact ? 'w-3 h-3' : 'w-4 h-4'} />
+            עריכה
           </button>
-          <button className={`flex-1 rounded-lg bg-white/5 text-white/70 font-medium flex items-center justify-center gap-1 select-none hover:bg-white/10 transition-colors ${compact ? 'h-7 text-[11px]' : 'h-9 text-sm'}`} onClick={handleShare}>
-            <Share2 className={compact ? 'w-3 h-3' : 'w-4 h-4'} />
-            {!compact && 'שתף'}
-          </button>
-          {showConfirm ? (
-            <button className={`px-2 rounded-lg bg-red-600 text-white font-medium select-none ${compact ? 'h-7 text-[10px]' : 'h-9 text-sm px-3'}`} onClick={() => { onDelete(); setShowConfirm(false); }}>
-              בטוח?
-            </button>
-          ) : (
-            <button className={`rounded-lg bg-white/5 text-red-400/60 flex items-center justify-center select-none hover:bg-red-500/10 transition-colors ${compact ? 'h-7 w-7' : 'h-9 w-9'}`} onClick={() => setShowConfirm(true)}>
-              <Trash2 className={compact ? 'w-3 h-3' : 'w-4 h-4'} />
+        )}
+
+        <div className={`flex items-center ${compact ? 'gap-1.5' : 'gap-2'} ${!canEdit ? (compact ? 'mt-2' : 'mt-3') : ''}`}>
+          {canDownload && (
+            <button className={`flex-1 rounded-lg bg-white/5 text-white/70 font-medium flex items-center justify-center gap-1 select-none hover:bg-white/10 transition-colors ${compact ? 'h-7 text-[11px]' : 'h-9 text-sm'}`} onClick={handleDownload}>
+              <Download className={compact ? 'w-3 h-3' : 'w-4 h-4'} />
+              {!compact && 'הורד'}
             </button>
           )}
+          {!isShared && (
+            <button className={`flex-1 rounded-lg bg-purple-500/10 text-purple-400 font-medium flex items-center justify-center gap-1 select-none hover:bg-purple-500/20 transition-colors ${compact ? 'h-7 text-[11px]' : 'h-9 text-sm'}`} onClick={() => setShowShare(true)}>
+              <Users className={compact ? 'w-3 h-3' : 'w-4 h-4'} />
+              {!compact && 'שיתוף'}
+            </button>
+          )}
+          <button className={`flex-1 rounded-lg bg-white/5 text-white/70 font-medium flex items-center justify-center gap-1 select-none hover:bg-white/10 transition-colors ${compact ? 'h-7 text-[11px]' : 'h-9 text-sm'}`} onClick={handleShare}>
+            <Share2 className={compact ? 'w-3 h-3' : 'w-4 h-4'} />
+            {!compact && 'שלח'}
+          </button>
+          {canDelete && (
+            showConfirm ? (
+              <button className={`px-2 rounded-lg bg-red-600 text-white font-medium select-none ${compact ? 'h-7 text-[10px]' : 'h-9 text-sm px-3'}`} onClick={() => { onDelete(); setShowConfirm(false); }}>
+                בטוח?
+              </button>
+            ) : (
+              <button className={`rounded-lg bg-white/5 text-red-400/60 flex items-center justify-center select-none hover:bg-red-500/10 transition-colors ${compact ? 'h-7 w-7' : 'h-9 w-9'}`} onClick={() => setShowConfirm(true)}>
+                <Trash2 className={compact ? 'w-3 h-3' : 'w-4 h-4'} />
+              </button>
+            )
+          )}
         </div>
+
+        <ShareDialog open={showShare} onOpenChange={setShowShare} recording={recording} />
       </div>
     </div>
   );
