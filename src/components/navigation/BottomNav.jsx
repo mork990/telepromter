@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { Home, Film, FileText, Sparkles, User } from 'lucide-react';
+import { Home, Film, FileText, Sparkles, Settings } from 'lucide-react';
 
 export default function BottomNav({ activePage }) {
   const navigate = useNavigate();
@@ -11,7 +11,7 @@ export default function BottomNav({ activePage }) {
     { id: 'MyVideos', icon: Film, label: 'עריכה' },
     { id: 'Teleprompter', icon: FileText, label: 'טלפרומפטר' },
     { id: 'AIEditor', icon: Sparkles, label: 'כלי AI' },
-    { id: 'Settings', icon: User, label: 'פרופיל' },
+    { id: 'Settings', icon: Settings, label: 'הגדרות' },
   ];
 
   return (
