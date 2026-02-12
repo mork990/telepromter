@@ -33,10 +33,14 @@ Deno.serve(async (req) => {
     let videoUrl = recording.file_url;
     if (videoUrl.startsWith('https://storage.googleapis.com/')) {
       const signedRes = await base44.functions.invoke('getSignedGcsUrl', { file_url: videoUrl });
-      if (signedRes?.signed_url) {
+      if (signedRes?.data?.signed_url) {
+        videoUrl = signedRes.data.signed_url;
+      } else if (signedRes?.signed_url) {
         videoUrl = signedRes.signed_url;
       }
     }
+
+    console.log('Calling NVIDIA NVCF with video URL length:', videoUrl.length);
 
     // Call NVIDIA NVCF invoke endpoint
     const invokeResponse = await fetch(NVCF_INVOKE_URL, {
