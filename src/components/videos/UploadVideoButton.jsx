@@ -2,15 +2,17 @@ import React, { useState, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Upload, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 
+const CHUNK_SIZE = 5 * 1024 * 1024; // 5MB per chunk
+const MAX_SIZE_MB = 500;
+const MAX_DURATION_SEC = 600;
+
 export default function UploadVideoButton({ onUploaded }) {
   const [uploading, setUploading] = useState(false);
   const [status, setStatus] = useState('');
   const [statusText, setStatusText] = useState('');
   const [percent, setPercent] = useState(0);
   const inputRef = useRef(null);
-
-  const MAX_SIZE_MB = 500;
-  const MAX_DURATION_SEC = 600;
+  const abortRef = useRef(false);
 
   const getFileDuration = (file) => {
     return new Promise((resolve) => {
@@ -26,6 +28,34 @@ export default function UploadVideoButton({ onUploaded }) {
       video.onerror = () => { clearTimeout(timeout); resolve(0); URL.revokeObjectURL(video.src); video.remove(); };
       video.src = URL.createObjectURL(file);
     });
+  };
+
+  const generateSessionId = () => {
+    return Date.now().toString(36) + Math.random().toString(36).substring(2, 8);
+  };
+
+  const uploadChunk = async (file, sessionId, chunkIndex, totalChunks) => {
+    const start = chunkIndex * CHUNK_SIZE;
+    const end = Math.min(start + CHUNK_SIZE, file.size);
+    const chunk = file.slice(start, end);
+
+    const formData = new FormData();
+    formData.append('chunk', chunk, `chunk_${chunkIndex}`);
+    formData.append('session_id', sessionId);
+    formData.append('chunk_index', chunkIndex.toString());
+    formData.append('total_chunks', totalChunks.toString());
+
+    // Retry up to 3 times per chunk
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const res = await base44.functions.invoke('receiveChunk', formData);
+        return res.data;
+      } catch (err) {
+        console.warn(`Chunk ${chunkIndex} attempt ${attempt + 1} failed:`, err.message);
+        if (attempt === 2) throw err;
+        await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
+      }
+    }
   };
 
   const handleUpload = async (e) => {
@@ -44,6 +74,7 @@ export default function UploadVideoButton({ onUploaded }) {
     setStatus('checking');
     setStatusText('בודק סרטון...');
     setPercent(0);
+    abortRef.current = false;
 
     const localDuration = await getFileDuration(file);
     if (localDuration > MAX_DURATION_SEC) {
@@ -52,58 +83,86 @@ export default function UploadVideoButton({ onUploaded }) {
       return;
     }
 
+    const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+    const sessionId = generateSessionId();
+
+    // For small files (< 50MB), use direct upload
+    if (file.size < 50 * 1024 * 1024) {
+      try {
+        setStatus('uploading');
+        setStatusText(`מעלה ${sizeMB}MB...`);
+        setPercent(20);
+
+        const result = await base44.integrations.Core.UploadFile({ file });
+        if (!result.file_url) throw new Error('לא התקבל קישור לקובץ');
+
+        setPercent(90);
+        setStatus('saving');
+        setStatusText('שומר...');
+
+        await base44.entities.Recording.create({
+          title: (file.name || 'video').replace(/\.[^/.]+$/, ''),
+          file_url: result.file_url,
+          duration_seconds: localDuration || 0,
+          file_size_bytes: file.size,
+        });
+
+        setPercent(100);
+        setStatus('done');
+        setStatusText('הועלה בהצלחה!');
+        setTimeout(() => { onUploaded?.(); resetState(); }, 1200);
+        return;
+      } catch (err) {
+        console.warn('Direct upload failed, falling back to chunked:', err.message);
+        // Fall through to chunked upload
+      }
+    }
+
+    // Chunked upload for larger files
     try {
       setStatus('uploading');
-      setStatusText(`מעלה ${sizeMB}MB...`);
-      setPercent(10);
+      setStatusText(`מעלה 0/${sizeMB}MB...`);
+      setPercent(5);
 
-      // Simulate progress - slower for larger files
-      const estimatedSec = Math.max(5, Math.round(file.size / (1024 * 1024) / 2));
-      const incrementPerTick = 75 / (estimatedSec * 2); // reach ~85% by estimated time
-      const progressInterval = setInterval(() => {
-        setPercent(prev => {
-          if (prev >= 85) { clearInterval(progressInterval); return 85; }
-          const newVal = prev + incrementPerTick;
-          const loadedMB = ((newVal / 90) * file.size / (1024 * 1024)).toFixed(0);
-          setStatusText(`מעלה ${loadedMB}/${sizeMB}MB...`);
-          return newVal;
-        });
-      }, 500);
+      console.log(`Starting chunked upload: ${totalChunks} chunks, session: ${sessionId}`);
 
-      let file_url;
-      try {
-        const result = await base44.integrations.Core.UploadFile({ file });
-        file_url = result.file_url;
-      } finally {
-        clearInterval(progressInterval);
+      for (let i = 0; i < totalChunks; i++) {
+        if (abortRef.current) throw new Error('Upload cancelled');
+
+        await uploadChunk(file, sessionId, i, totalChunks);
+
+        const uploadedBytes = Math.min((i + 1) * CHUNK_SIZE, file.size);
+        const uploadedMB = (uploadedBytes / (1024 * 1024)).toFixed(0);
+        const progress = 5 + ((i + 1) / totalChunks) * 80; // 5% to 85%
+        setPercent(progress);
+        setStatusText(`מעלה ${uploadedMB}/${sizeMB}MB...`);
       }
 
-      setPercent(90);
+      setPercent(88);
+      setStatus('assembling');
+      setStatusText('מרכיב סרטון...');
 
-      if (!file_url) {
-        throw new Error('לא התקבל קישור לקובץ');
-      }
+      console.log('All chunks uploaded, assembling...');
 
-      setStatus('saving');
-      setStatusText('שומר...');
-      setPercent(95);
-
-      await base44.entities.Recording.create({
-        title: (file.name || 'video').replace(/\.[^/.]+$/, ''),
-        file_url,
+      const assembleRes = await base44.functions.invoke('assembleVideo', {
+        session_id: sessionId,
+        total_chunks: totalChunks,
+        file_name: file.name || 'video.mp4',
         duration_seconds: localDuration || 0,
         file_size_bytes: file.size,
       });
 
+      if (!assembleRes.data?.success) {
+        throw new Error(assembleRes.data?.error || 'Assembly failed');
+      }
+
       setPercent(100);
       setStatus('done');
       setStatusText('הועלה בהצלחה!');
-      setTimeout(() => {
-        onUploaded?.();
-        resetState();
-      }, 1200);
+      setTimeout(() => { onUploaded?.(); resetState(); }, 1200);
+
     } catch (err) {
-      console.error('Upload failed:', err?.message || err);
+      console.error('Chunked upload failed:', err?.message || err);
       setStatus('error');
       setStatusText('ההעלאה נכשלה');
       setPercent(0);
@@ -120,6 +179,7 @@ export default function UploadVideoButton({ onUploaded }) {
     setStatus('');
     setStatusText('');
     setPercent(0);
+    abortRef.current = false;
   };
 
   const getIcon = () => {
@@ -132,6 +192,7 @@ export default function UploadVideoButton({ onUploaded }) {
   const getProgressColor = () => {
     if (status === 'done') return 'bg-green-500';
     if (status === 'error') return 'bg-red-500';
+    if (status === 'assembling') return 'bg-amber-500';
     return 'bg-purple-500';
   };
 
