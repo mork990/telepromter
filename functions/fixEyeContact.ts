@@ -202,17 +202,16 @@ function processEyeContact(ServiceClient, apiKey, videoData) {
 }
 
 Deno.serve(async (req) => {
-  const clonedReq = req.clone();
-  const base44 = createClientFromRequest(req);
-
   try {
+    const base44 = createClientFromRequest(req);
+
     const user = await base44.auth.me();
     if (!user) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
     console.log('User authenticated:', user.email);
 
-    const body = await clonedReq.json();
+    const { recording_id } = await req.json();
     const recording_id = body.recording_id;
     console.log('recording_id (v2-grpc):', recording_id);
 
