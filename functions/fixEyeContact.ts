@@ -1,89 +1,110 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import * as grpc from 'npm:@grpc/grpc-js@1.12.5';
-import * as protoLoader from 'npm:@grpc/proto-loader@0.7.13';
+import * as protobuf from 'npm:protobufjs@7.4.0';
 
 const NVIDIA_FUNCTION_ID = 'b75dbca7-b5a4-458c-9275-6d2effeb432a';
 const GRPC_TARGET = 'grpc.nvcf.nvidia.com:443';
 const DATA_CHUNK_SIZE = 64 * 1024; // 64KB chunks
 
-// Write proto file to /tmp and load it
-async function getProtoClient() {
-  const protoContent = `
-syntax = "proto3";
-package nvidia.maxine.eyecontact.v1;
+// Build proto definitions programmatically (no file system needed)
+function buildProtoDefinitions() {
+  const root = new protobuf.Root();
 
-import "google/protobuf/any.proto";
-import "google/protobuf/empty.proto";
+  // LossyEncoding
+  const LossyEncoding = new protobuf.Type("LossyEncoding")
+    .add(new protobuf.Field("bitrate", 1, "uint32", "optional"))
+    .add(new protobuf.Field("idr_interval", 2, "uint32", "optional"));
 
-service MaxineEyeContactService {
-  rpc RedirectGaze(stream RedirectGazeRequest) returns (stream RedirectGazeResponse) {}
+  // OutputVideoEncoding
+  const OutputVideoEncoding = new protobuf.Type("OutputVideoEncoding")
+    .add(new protobuf.Field("lossless", 1, "bool", "optional"))
+    .add(new protobuf.Field("lossy", 2, "LossyEncoding", "optional"));
+
+  // RedirectGazeConfig
+  const RedirectGazeConfig = new protobuf.Type("RedirectGazeConfig")
+    .add(new protobuf.Field("temporal", 1, "uint32", "optional"))
+    .add(new protobuf.Field("detect_closure", 2, "uint32", "optional"))
+    .add(new protobuf.Field("eye_size_sensitivity", 3, "uint32", "optional"))
+    .add(new protobuf.Field("enable_lookaway", 4, "uint32", "optional"))
+    .add(new protobuf.Field("lookaway_max_offset", 5, "uint32", "optional"))
+    .add(new protobuf.Field("lookaway_interval_min", 6, "uint32", "optional"))
+    .add(new protobuf.Field("lookaway_interval_range", 7, "uint32", "optional"))
+    .add(new protobuf.Field("gaze_pitch_threshold_low", 8, "float", "optional"))
+    .add(new protobuf.Field("gaze_pitch_threshold_high", 9, "float", "optional"))
+    .add(new protobuf.Field("gaze_yaw_threshold_low", 10, "float", "optional"))
+    .add(new protobuf.Field("gaze_yaw_threshold_high", 11, "float", "optional"))
+    .add(new protobuf.Field("head_pitch_threshold_low", 12, "float", "optional"))
+    .add(new protobuf.Field("head_pitch_threshold_high", 13, "float", "optional"))
+    .add(new protobuf.Field("head_yaw_threshold_low", 14, "float", "optional"))
+    .add(new protobuf.Field("head_yaw_threshold_high", 15, "float", "optional"))
+    .add(new protobuf.Field("output_video_encoding", 16, "OutputVideoEncoding", "optional"));
+
+  // RedirectGazeRequest (oneof stream_input)
+  const RedirectGazeRequest = new protobuf.Type("RedirectGazeRequest")
+    .add(new protobuf.Field("config", 1, "RedirectGazeConfig", "optional"))
+    .add(new protobuf.Field("video_file_data", 2, "bytes", "optional"))
+    .add(new protobuf.OneOf("stream_input", ["config", "video_file_data"]));
+
+  // RedirectGazeResponse (oneof stream_output)
+  const RedirectGazeResponse = new protobuf.Type("RedirectGazeResponse")
+    .add(new protobuf.Field("config", 1, "RedirectGazeConfig", "optional"))
+    .add(new protobuf.Field("video_file_data", 2, "bytes", "optional"))
+    .add(new protobuf.Field("keepalive", 3, "bytes", "optional"))
+    .add(new protobuf.OneOf("stream_output", ["config", "video_file_data", "keepalive"]));
+
+  // Service definition
+  const MaxineEyeContactService = new protobuf.Service("MaxineEyeContactService")
+    .add(new protobuf.Method(
+      "RedirectGaze",
+      "RedirectGazeRequest",
+      "RedirectGazeResponse",
+      true, // request stream
+      true  // response stream
+    ));
+
+  const ns = new protobuf.Namespace("nvidia")
+    .add(new protobuf.Namespace("maxine")
+      .add(new protobuf.Namespace("eyecontact")
+        .add(new protobuf.Namespace("v1")
+          .add(LossyEncoding)
+          .add(OutputVideoEncoding)
+          .add(RedirectGazeConfig)
+          .add(RedirectGazeRequest)
+          .add(RedirectGazeResponse)
+          .add(MaxineEyeContactService)
+        )
+      )
+    );
+
+  root.add(ns);
+
+  return {
+    root,
+    RedirectGazeRequest,
+    RedirectGazeResponse,
+    RedirectGazeConfig,
+  };
 }
 
-message LossyEncoding {
-  optional uint32 bitrate = 1;
-  optional uint32 idr_interval = 2;
-}
+// Create a gRPC service client from protobufjs definitions
+function createGrpcServiceClient(proto) {
+  const { RedirectGazeRequest, RedirectGazeResponse } = proto;
 
-message CustomEncodingParams {
-  map<string, google.protobuf.Any> custom = 1;
-}
+  // Build gRPC service definition manually
+  const serviceDefinition = {
+    RedirectGaze: {
+      path: '/nvidia.maxine.eyecontact.v1.MaxineEyeContactService/RedirectGaze',
+      requestStream: true,
+      responseStream: true,
+      requestSerialize: (msg) => Buffer.from(RedirectGazeRequest.encode(RedirectGazeRequest.create(msg)).finish()),
+      requestDeserialize: (buf) => RedirectGazeRequest.decode(buf),
+      responseSerialize: (msg) => Buffer.from(RedirectGazeResponse.encode(RedirectGazeResponse.create(msg)).finish()),
+      responseDeserialize: (buf) => RedirectGazeResponse.decode(buf),
+    }
+  };
 
-message OutputVideoEncoding {
-  oneof encoding_type {
-    bool lossless = 1;
-    LossyEncoding lossy = 2;
-    CustomEncodingParams custom_encoding = 3;
-  }
-}
-
-message RedirectGazeConfig {
-  optional uint32 temporal = 1;
-  optional uint32 detect_closure = 2;
-  optional uint32 eye_size_sensitivity = 3;
-  optional uint32 enable_lookaway = 4;
-  optional uint32 lookaway_max_offset = 5;
-  optional uint32 lookaway_interval_min = 6;
-  optional uint32 lookaway_interval_range = 7;
-  optional float gaze_pitch_threshold_low = 8;
-  optional float gaze_pitch_threshold_high = 9;
-  optional float gaze_yaw_threshold_low = 10;
-  optional float gaze_yaw_threshold_high = 11;
-  optional float head_pitch_threshold_low = 12;
-  optional float head_pitch_threshold_high = 13;
-  optional float head_yaw_threshold_low = 14;
-  optional float head_yaw_threshold_high = 15;
-  optional OutputVideoEncoding output_video_encoding = 16;
-}
-
-message RedirectGazeRequest {
-  oneof stream_input {
-    RedirectGazeConfig config = 1;
-    bytes video_file_data = 2;
-  }
-}
-
-message RedirectGazeResponse {
-  oneof stream_output {
-    RedirectGazeConfig config = 1;
-    bytes video_file_data = 2;
-    google.protobuf.Empty keepalive = 3;
-  }
-}
-`;
-
-  const protoPath = '/tmp/eyecontact.proto';
-  await Deno.writeTextFile(protoPath, protoContent);
-
-  const packageDefinition = protoLoader.loadSync(protoPath, {
-    keepCase: true,
-    longs: String,
-    enums: String,
-    defaults: true,
-    oneofs: true,
-  });
-
-  const proto = grpc.loadPackageDefinition(packageDefinition);
-  return proto.nvidia.maxine.eyecontact.v1.MaxineEyeContactService;
+  const ServiceClient = grpc.makeClientConstructor(serviceDefinition, 'MaxineEyeContactService');
+  return ServiceClient;
 }
 
 async function downloadVideo(url) {
