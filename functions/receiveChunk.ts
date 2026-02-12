@@ -169,10 +169,14 @@ async function getAccessToken(saKey) {
   const unsignedToken = `${headerB64}.${claimB64}`;
 
   // Import the private key
-  const pemContent = saKey.private_key
+  // Handle escaped newlines from secrets storage
+  const rawKey = saKey.private_key.replace(/\\n/g, '\n');
+  const pemContent = rawKey
     .replace(/-----BEGIN PRIVATE KEY-----/, '')
     .replace(/-----END PRIVATE KEY-----/, '')
-    .replace(/\n/g, '');
+    .replace(/\n/g, '')
+    .replace(/\r/g, '')
+    .trim();
   const keyBuffer = Uint8Array.from(atob(pemContent), c => c.charCodeAt(0));
 
   const cryptoKey = await crypto.subtle.importKey(
