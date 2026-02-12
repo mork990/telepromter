@@ -210,12 +210,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
     console.log('User authenticated:', user.email);
-  } catch (e) {
-    console.error('Auth error:', e.message);
-    return Response.json({ error: 'Unauthorized' }, { status: 401 });
-  }
 
-  try {
     const body = await req.json();
     const recording_id = body.recording_id;
     console.log('recording_id (v2-grpc):', recording_id);
