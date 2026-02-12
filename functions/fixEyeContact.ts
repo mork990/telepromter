@@ -185,7 +185,7 @@ function processEyeContact(ServiceClient, apiKey, videoData) {
     let sentChunks = 0;
     for (let i = 0; i < videoData.length; i += DATA_CHUNK_SIZE) {
       const chunk = videoData.slice(i, i + DATA_CHUNK_SIZE);
-      call.write({ video_file_data: Buffer.from(chunk) });
+      call.write({ video_file_data: chunk });
       sentChunks++;
       if (sentChunks % 50 === 0) {
         console.log(`Sent ${sentChunks}/${totalChunks} chunks...`);
