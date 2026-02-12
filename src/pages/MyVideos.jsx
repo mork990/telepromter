@@ -37,14 +37,13 @@ export default function MyVideos() {
     queryFn: async () => {
       if (!currentUser) return [];
       const shares = await base44.entities.VideoShare.filter({ shared_with_email: currentUser.email });
+      const allRecordings = await base44.entities.Recording.list('-created_date');
       const results = [];
       for (const share of shares) {
-        try {
-          const recs = await base44.entities.Recording.filter({ id: share.recording_id });
-          if (recs.length > 0) {
-            results.push({ recording: recs[0], permission: share.permission });
-          }
-        } catch {}
+        const rec = allRecordings.find(r => r.id === share.recording_id);
+        if (rec) {
+          results.push({ recording: rec, permission: share.permission });
+        }
       }
       return results;
     },
