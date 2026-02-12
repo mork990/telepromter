@@ -58,6 +58,8 @@ export default function VideoEditor() {
     enabled: !!recordingId,
   });
 
+  const videoUrl = useSignedUrl(recording?.file_url);
+
   useEffect(() => {
     if (recording) {
       setSubtitles(recording.subtitles || []);
