@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { LogIn, User, Shield } from 'lucide-react';
+import { LogIn, Shield } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { motion } from 'framer-motion';
 import ActionCards from '../components/home/ActionCards';
 import RecentVideos from '../components/home/RecentVideos';
 import TemplatesSection from '../components/home/TemplatesSection';
 import BottomNav from '../components/navigation/BottomNav';
+import ProfileMenu from '../components/navigation/ProfileMenu';
 
 export default function Home() {
   const navigate = useNavigate();
@@ -66,12 +67,7 @@ export default function Home() {
                   <Shield className="w-4 h-4" />
                 </button>
               )}
-              <button className="relative shrink-0 rounded-full p-0.5 border-2 border-purple-500/20 hover:border-purple-500 transition-colors">
-                <div className="h-9 w-9 rounded-full bg-[#2a1b30] flex items-center justify-center">
-                  <User className="w-4 h-4 text-white/60" />
-                </div>
-                <span className="absolute bottom-0 right-0 block h-2.5 w-2.5 rounded-full ring-2 ring-[#1d1022] bg-green-400"></span>
-              </button>
+              <ProfileMenu user={currentUser} />
             </div>
           )}
         </div>
