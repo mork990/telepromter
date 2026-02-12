@@ -98,6 +98,29 @@ export default function MyVideos() {
             ))}
           </div>
         )}
+
+        {/* Shared with me */}
+        {sharedData.length > 0 && (
+          <div className="mt-8">
+            <div className="flex items-center gap-2 mb-3">
+              <Users className="w-4 h-4 text-purple-400" />
+              <h2 className="text-sm font-bold text-white">שותפו איתי</h2>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {sharedData.map(({ recording: rec, permission }) => (
+                <VideoCard
+                  key={'shared-' + rec.id}
+                  recording={rec}
+                  isShared
+                  sharedPermission={permission}
+                  onDelete={() => {}}
+                  onUpdate={() => {}}
+                  compact
+                />
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       <BottomNav activePage="MyVideos" />
