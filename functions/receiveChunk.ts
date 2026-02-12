@@ -8,27 +8,29 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const formData = await req.formData();
-    const chunk = formData.get('chunk');
-    const sessionId = formData.get('session_id');
-    const chunkIndex = formData.get('chunk_index');
-    const totalChunks = formData.get('total_chunks');
+    const { chunk_base64, session_id, chunk_index, total_chunks } = await req.json();
 
-    if (!chunk || !sessionId || chunkIndex === null || !totalChunks) {
+    if (!chunk_base64 || !session_id || chunk_index === undefined || !total_chunks) {
       return Response.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    // Save chunk to /tmp with session_id and index
-    const chunkPath = `/tmp/${sessionId}_chunk_${chunkIndex}`;
-    const arrayBuffer = await chunk.arrayBuffer();
-    await Deno.writeFile(chunkPath, new Uint8Array(arrayBuffer));
+    // Decode base64 to binary
+    const binaryString = atob(chunk_base64);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
 
-    console.log(`Saved chunk ${chunkIndex}/${totalChunks} for session ${sessionId}, size: ${arrayBuffer.byteLength}`);
+    // Save chunk to /tmp
+    const chunkPath = `/tmp/${session_id}_chunk_${chunk_index}`;
+    await Deno.writeFile(chunkPath, bytes);
+
+    console.log(`Saved chunk ${chunk_index}/${total_chunks} for session ${session_id}, size: ${bytes.byteLength}`);
 
     return Response.json({ 
       success: true, 
-      chunk_index: parseInt(chunkIndex),
-      size: arrayBuffer.byteLength
+      chunk_index: parseInt(chunk_index),
+      size: bytes.byteLength
     });
   } catch (error) {
     console.error('receiveChunk error:', error);

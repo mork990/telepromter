@@ -34,21 +34,33 @@ export default function UploadVideoButton({ onUploaded }) {
     return Date.now().toString(36) + Math.random().toString(36).substring(2, 8);
   };
 
+  const arrayBufferToBase64 = (buffer) => {
+    const bytes = new Uint8Array(buffer);
+    let binary = '';
+    const chunkSize = 8192;
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+      const slice = bytes.subarray(i, i + chunkSize);
+      binary += String.fromCharCode.apply(null, slice);
+    }
+    return btoa(binary);
+  };
+
   const uploadChunk = async (file, sessionId, chunkIndex, totalChunks) => {
     const start = chunkIndex * CHUNK_SIZE;
     const end = Math.min(start + CHUNK_SIZE, file.size);
     const chunk = file.slice(start, end);
-
-    const formData = new FormData();
-    formData.append('chunk', chunk, `chunk_${chunkIndex}`);
-    formData.append('session_id', sessionId);
-    formData.append('chunk_index', chunkIndex.toString());
-    formData.append('total_chunks', totalChunks.toString());
+    const buffer = await chunk.arrayBuffer();
+    const base64 = arrayBufferToBase64(buffer);
 
     // Retry up to 3 times per chunk
     for (let attempt = 0; attempt < 3; attempt++) {
       try {
-        const res = await base44.functions.invoke('receiveChunk', formData);
+        const res = await base44.functions.invoke('receiveChunk', {
+          chunk_base64: base64,
+          session_id: sessionId,
+          chunk_index: chunkIndex,
+          total_chunks: totalChunks,
+        });
         return res.data;
       } catch (err) {
         console.warn(`Chunk ${chunkIndex} attempt ${attempt + 1} failed:`, err.message);
