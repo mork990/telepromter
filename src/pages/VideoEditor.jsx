@@ -562,6 +562,13 @@ export default function VideoEditor() {
           onMoveMediaLayer={handleMoveMediaLayer}
         />
 
+        {/* Eye Contact */}
+        <EyeContactButton recordingId={recordingId} onComplete={(data) => {
+          if (data.file_url) {
+            window.open(data.file_url, '_blank');
+          }
+        }} />
+
         {/* Style Panel */}
         <StylePanel style={style} onChange={setStyle} />
 
