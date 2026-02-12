@@ -118,10 +118,10 @@ async function downloadVideo(url) {
   return new Uint8Array(arrayBuffer);
 }
 
-function processEyeContact(ServiceClass, apiKey, videoData) {
+function processEyeContact(ServiceClient, apiKey, videoData) {
   return new Promise((resolve, reject) => {
     const credentials = grpc.credentials.createSsl();
-    const client = new ServiceClass(GRPC_TARGET, credentials);
+    const client = new ServiceClient(GRPC_TARGET, credentials);
 
     const metadata = new grpc.Metadata();
     metadata.add('authorization', `Bearer ${apiKey}`);
