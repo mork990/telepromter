@@ -274,8 +274,9 @@ Deno.serve(async (req) => {
     });
 
   } catch (error) {
+    console.error('fixEyeContact FULL error:', JSON.stringify(error, Object.getOwnPropertyNames(error || {})));
     const errMsg = error?.message || error?.details || String(error);
-    console.error('fixEyeContact error:', errMsg, error?.stack || '');
+    console.error('fixEyeContact error:', errMsg);
     return Response.json({ error: errMsg }, { status: 500 });
   }
 });
