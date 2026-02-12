@@ -7,9 +7,8 @@ import protobuf from 'npm:protobufjs@7.4.0';
 
 const NVIDIA_FUNCTION_ID = 'b75dbca7-b5a4-458c-9275-6d2effeb432a';
 const GRPC_TARGET = 'grpc.nvcf.nvidia.com:443';
-const DATA_CHUNK_SIZE = 64 * 1024; // 64KB chunks per gRPC message
+const DATA_CHUNK_SIZE = 64 * 1024;
 
-// Build proto definitions programmatically (no file system needed)
 function buildProtoDefinitions() {
   const root = new protobuf.Root();
 
@@ -87,9 +86,7 @@ function createGrpcServiceClient(proto) {
 async function downloadVideo(url) {
   console.log('Downloading video from:', url.substring(0, 80));
   const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`Failed to download video: ${response.status} ${response.statusText}`);
-  }
+  if (!response.ok) throw new Error(`Failed to download video: ${response.status}`);
   const arrayBuffer = await response.arrayBuffer();
   console.log('Downloaded video size:', arrayBuffer.byteLength, 'bytes');
   return new Uint8Array(arrayBuffer);
@@ -113,19 +110,12 @@ function processEyeContact(ServiceClient, apiKey, videoData) {
     call.on('data', (response) => {
       if (response.stream_output === 'config' && !receivedConfig) {
         receivedConfig = true;
-        console.log('Received config echo from server');
         return;
       }
-      if (response.stream_output === 'keepalive') {
-        console.log('Received keepalive');
-        return;
-      }
+      if (response.stream_output === 'keepalive') return;
       if (response.stream_output === 'video_file_data' && response.video_file_data) {
         chunkCount++;
         outputChunks.push(response.video_file_data);
-        if (chunkCount % 50 === 0) {
-          console.log(`Received ${chunkCount} output chunks...`);
-        }
       }
     });
 
@@ -142,7 +132,6 @@ function processEyeContact(ServiceClient, apiKey, videoData) {
         result.set(new Uint8Array(chunk.buffer || chunk), offset);
         offset += chunk.length;
       }
-      console.log('Total output size:', totalLength, 'bytes');
       resolve(result);
     });
 
@@ -151,51 +140,73 @@ function processEyeContact(ServiceClient, apiKey, videoData) {
       reject(err);
     });
 
-    console.log('Sending config...');
     call.write({
       config: {
         eye_size_sensitivity: 3,
         detect_closure: 0,
-        output_video_encoding: {
-          lossy: {
-            bitrate: 3000000,
-            idr_interval: 8,
-          }
-        }
+        output_video_encoding: { lossy: { bitrate: 3000000, idr_interval: 8 } }
       }
     });
 
-    const totalChunks = Math.ceil(videoData.length / DATA_CHUNK_SIZE);
-    console.log(`Sending ${totalChunks} video chunks (${videoData.length} bytes)...`);
-
-    let sentChunks = 0;
     for (let i = 0; i < videoData.length; i += DATA_CHUNK_SIZE) {
-      const chunk = videoData.slice(i, i + DATA_CHUNK_SIZE);
-      call.write({ video_file_data: chunk });
-      sentChunks++;
-      if (sentChunks % 50 === 0) {
-        console.log(`Sent ${sentChunks}/${totalChunks} chunks...`);
-      }
+      call.write({ video_file_data: videoData.slice(i, i + DATA_CHUNK_SIZE) });
     }
-
-    console.log('All chunks sent, ending write stream...');
     call.end();
   });
+}
+
+// The actual long-running processing - runs in background
+async function runProcessing(base44, recording_id, videoUrl) {
+  try {
+    console.log('Background processing started for:', recording_id);
+
+    // Mark as processing
+    await base44.asServiceRole.entities.Recording.update(recording_id, {
+      eye_contact_status: 'processing',
+      eye_contact_error: '',
+    });
+
+    const NVIDIA_API_KEY = Deno.env.get('NVIDIA_API_KEY');
+    const videoData = await downloadVideo(videoUrl);
+
+    const proto = buildProtoDefinitions();
+    const ServiceClient = createGrpcServiceClient(proto);
+    const outputData = await processEyeContact(ServiceClient, NVIDIA_API_KEY, videoData);
+
+    console.log('Uploading processed video...');
+    const blob = new Blob([outputData], { type: 'video/mp4' });
+    const uploadResult = await base44.asServiceRole.integrations.Core.UploadFile({ file: blob });
+    console.log('Upload complete:', uploadResult.file_url?.substring(0, 80));
+
+    await base44.asServiceRole.entities.Recording.update(recording_id, {
+      eye_contact_status: 'done',
+      eye_contact_url: uploadResult.file_url,
+      eye_contact_error: '',
+    });
+    console.log('Background processing completed successfully');
+  } catch (error) {
+    console.error('Background processing failed:', error.message);
+    try {
+      await base44.asServiceRole.entities.Recording.update(recording_id, {
+        eye_contact_status: 'error',
+        eye_contact_error: error.message || 'Unknown error',
+      });
+    } catch (e2) {
+      console.error('Failed to update error status:', e2.message);
+    }
+  }
 }
 
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-
     const user = await base44.auth.me();
     if (!user) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    console.log('User authenticated:', user.email);
 
     const body = await req.json();
     const recording_id = body.recording_id;
-    console.log('recording_id (v2-grpc):', recording_id);
 
     if (!recording_id) {
       return Response.json({ error: 'recording_id is required' }, { status: 400 });
@@ -205,55 +216,38 @@ Deno.serve(async (req) => {
     if (!NVIDIA_API_KEY) {
       return Response.json({ error: 'NVIDIA_API_KEY not configured' }, { status: 500 });
     }
-    console.log('NVIDIA_API_KEY present, length:', NVIDIA_API_KEY.length);
 
     const recordings = await base44.asServiceRole.entities.Recording.filter({ id: recording_id });
-    console.log('Recordings found:', recordings.length);
     const recording = recordings[0];
     if (!recording) {
       return Response.json({ error: 'Recording not found' }, { status: 404 });
     }
 
-    let videoUrl = recording.file_url;
-    console.log('Original video URL:', videoUrl?.substring(0, 100));
+    // Check if already processing
+    if (recording.eye_contact_status === 'processing') {
+      return Response.json({ status: 'already_processing' });
+    }
 
+    let videoUrl = recording.file_url;
     if (videoUrl && videoUrl.includes('storage.googleapis.com')) {
       try {
         const signedRes = await base44.functions.invoke('getSignedGcsUrl', { file_url: videoUrl });
-        if (signedRes?.data?.signed_url) {
-          videoUrl = signedRes.data.signed_url;
-        } else if (signedRes?.signed_url) {
-          videoUrl = signedRes.signed_url;
-        }
+        if (signedRes?.data?.signed_url) videoUrl = signedRes.data.signed_url;
+        else if (signedRes?.signed_url) videoUrl = signedRes.signed_url;
       } catch (e) {
         console.error('Error getting signed URL:', e.message);
       }
     }
 
-    const videoData = await downloadVideo(videoUrl);
+    // Fire and forget - start processing in background
+    // We DON'T await this - it runs after the response is sent
+    runProcessing(base44, recording_id, videoUrl);
 
-    console.log('Building gRPC client...');
-    const proto = buildProtoDefinitions();
-    const ServiceClient = createGrpcServiceClient(proto);
-    console.log('gRPC client ready, starting eye contact processing...');
-
-    const outputData = await processEyeContact(ServiceClient, NVIDIA_API_KEY, videoData);
-
-    console.log('Uploading processed video...');
-    const blob = new Blob([outputData], { type: 'video/mp4' });
-    const uploadResult = await base44.asServiceRole.integrations.Core.UploadFile({ file: blob });
-    console.log('Upload complete:', uploadResult.file_url?.substring(0, 80));
-
-    return Response.json({
-      success: true,
-      file_url: uploadResult.file_url,
-      message: 'Eye contact fixed successfully',
-    });
+    // Immediately return success
+    return Response.json({ status: 'started', message: 'Eye contact processing started' });
 
   } catch (error) {
-    console.error('fixEyeContact FULL error:', JSON.stringify(error, Object.getOwnPropertyNames(error || {})));
-    const errMsg = error?.message || error?.details || String(error);
-    console.error('fixEyeContact error:', errMsg);
-    return Response.json({ error: errMsg }, { status: 500 });
+    console.error('fixEyeContact error:', error.message);
+    return Response.json({ error: error.message }, { status: 500 });
   }
 });
