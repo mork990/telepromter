@@ -5,6 +5,7 @@ import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { Film, Play, MoreVertical } from 'lucide-react';
 import moment from 'moment';
+import useSignedUrl from '../videos/useSignedUrl';
 
 export default function RecentVideos() {
   const navigate = useNavigate();
