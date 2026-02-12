@@ -203,16 +203,7 @@ function processEyeContact(ServiceClient, apiKey, videoData) {
 
 Deno.serve(async (req) => {
   try {
-    const bodyText = await req.text();
-    const body = JSON.parse(bodyText);
-    
-    // Reconstruct request with body for base44 SDK
-    const newReq = new Request(req.url, {
-      method: req.method,
-      headers: req.headers,
-      body: bodyText,
-    });
-    const base44 = createClientFromRequest(newReq);
+    const base44 = createClientFromRequest(req);
 
     const user = await base44.auth.me();
     if (!user) {
@@ -220,6 +211,7 @@ Deno.serve(async (req) => {
     }
     console.log('User authenticated:', user.email);
 
+    const body = await req.json();
     const recording_id = body.recording_id;
     console.log('recording_id (v2-grpc):', recording_id);
 
