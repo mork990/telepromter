@@ -15,19 +15,14 @@ Deno.serve(async (req) => {
     }
 
     const bucketName = (Deno.env.get("GCS_BUCKET_NAME") || "").trim();
-    const serviceAccountKey = Deno.env.get("GCS_SERVICE_ACCOUNT_KEY") || "";
+    const clientEmail = (Deno.env.get("GCS_CLIENT_EMAIL") || "").trim();
+    const privateKey = (Deno.env.get("GCS_PRIVATE_KEY") || "").trim();
 
-    if (!bucketName || !serviceAccountKey) {
+    if (!bucketName || !clientEmail || !privateKey) {
       return Response.json({ error: 'GCS not configured' }, { status: 500 });
     }
 
-    // Parse service account key
-    let saKey;
-    try {
-      saKey = JSON.parse(serviceAccountKey);
-    } catch (e) {
-      return Response.json({ error: 'Invalid GCS service account key' }, { status: 500 });
-    }
+    const saKey = { client_email: clientEmail, private_key: privateKey };
 
     // Generate OAuth2 access token from service account
     const accessToken = await getAccessToken(saKey);
