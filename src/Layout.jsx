@@ -15,6 +15,17 @@ const pageTransition = {
 
 export default function Layout({ children, currentPageName }) {
   useEffect(() => {
+    // Load Hebrew Google Fonts
+    if (!document.getElementById('google-fonts-hebrew')) {
+      const link = document.createElement('link');
+      link.id = 'google-fonts-hebrew';
+      link.rel = 'stylesheet';
+      link.href = 'https://fonts.googleapis.com/css2?family=Rubik:wght@400;600;700&family=Heebo:wght@400;600;700&family=Assistant:wght@400;600;700&family=Secular+One&family=Varela+Round&family=Frank+Ruhl+Libre:wght@400;700&family=Amatic+SC:wght@400;700&family=Suez+One&display=swap';
+      document.head.appendChild(link);
+    }
+  }, []);
+
+  useEffect(() => {
     // Ensure proper viewport for mobile
     let viewport = document.querySelector('meta[name="viewport"]');
     if (!viewport) {
