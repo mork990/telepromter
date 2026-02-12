@@ -29,9 +29,20 @@ export default function EyeContactButton({ recordingId, onComplete }) {
     return () => stopPolling();
   }, [recordingId]);
 
+  const pollCountRef = useRef(0);
+  const MAX_POLLS = 60; // 5 minutes max (60 * 5s)
+
   const startPolling = () => {
     stopPolling();
+    pollCountRef.current = 0;
     pollRef.current = setInterval(async () => {
+      pollCountRef.current++;
+      if (pollCountRef.current > MAX_POLLS) {
+        setStatus('error');
+        setErrorMsg('העיבוד לקח יותר מדי זמן, נסה שוב');
+        stopPolling();
+        return;
+      }
       const list = await base44.entities.Recording.filter({ id: recordingId });
       const rec = list[0];
       if (!rec) return;
@@ -46,7 +57,7 @@ export default function EyeContactButton({ recordingId, onComplete }) {
         setErrorMsg(rec.eye_contact_error || 'שגיאה לא ידועה');
         stopPolling();
       }
-    }, 5000); // Poll every 5 seconds
+    }, 5000);
   };
 
   const stopPolling = () => {
