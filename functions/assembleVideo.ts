@@ -8,34 +8,33 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { session_id, total_chunks, file_name, duration_seconds, file_size_bytes } = await req.json();
+    const { session_id, total_chunks, file_name, duration_seconds, file_size_bytes, chunk_uris } = await req.json();
 
-    if (!session_id || !total_chunks) {
-      return Response.json({ error: 'Missing session_id or total_chunks' }, { status: 400 });
+    if (!session_id || !total_chunks || !chunk_uris || chunk_uris.length !== total_chunks) {
+      return Response.json({ error: 'Missing or invalid parameters' }, { status: 400 });
     }
 
     console.log(`Assembling ${total_chunks} chunks for session ${session_id}`);
 
-    // Read all chunks and combine them
+    // Download all chunks and combine
     const chunks = [];
     let totalSize = 0;
 
     for (let i = 0; i < total_chunks; i++) {
-      const chunkPath = `/tmp/${session_id}_chunk_${i}`;
-      try {
-        const chunkData = await Deno.readFile(chunkPath);
-        chunks.push(chunkData);
-        totalSize += chunkData.byteLength;
-        console.log(`Read chunk ${i}, size: ${chunkData.byteLength}`);
-      } catch (e) {
-        console.error(`Failed to read chunk ${i}:`, e.message);
-        return Response.json({ error: `Missing chunk ${i}` }, { status: 400 });
+      const { signed_url } = await base44.integrations.Core.CreateFileSignedUrl({ file_uri: chunk_uris[i] });
+      const response = await fetch(signed_url);
+      if (!response.ok) {
+        return Response.json({ error: `Failed to download chunk ${i}` }, { status: 500 });
       }
+      const buffer = await response.arrayBuffer();
+      chunks.push(new Uint8Array(buffer));
+      totalSize += buffer.byteLength;
+      console.log(`Downloaded chunk ${i}, size: ${buffer.byteLength}`);
     }
 
     console.log(`Total assembled size: ${totalSize} bytes`);
 
-    // Combine all chunks into one buffer
+    // Combine all chunks
     const combined = new Uint8Array(totalSize);
     let offset = 0;
     for (const chunk of chunks) {
@@ -43,7 +42,7 @@ Deno.serve(async (req) => {
       offset += chunk.byteLength;
     }
 
-    // Determine mime type from file name
+    // Determine mime type
     const ext = (file_name || 'video.mp4').split('.').pop().toLowerCase();
     const mimeTypes = {
       'mp4': 'video/mp4',
@@ -54,7 +53,7 @@ Deno.serve(async (req) => {
     };
     const mimeType = mimeTypes[ext] || 'video/mp4';
 
-    // Upload the combined file using Base44
+    // Upload combined file
     const file = new File([combined], file_name || 'video.mp4', { type: mimeType });
     const { file_url } = await base44.integrations.Core.UploadFile({ file });
 
@@ -64,7 +63,7 @@ Deno.serve(async (req) => {
 
     console.log(`Uploaded assembled file: ${file_url}`);
 
-    // Create recording entity
+    // Create recording
     const title = (file_name || 'video').replace(/\.[^/.]+$/, '');
     const recording = await base44.entities.Recording.create({
       title,
@@ -72,15 +71,6 @@ Deno.serve(async (req) => {
       duration_seconds: duration_seconds || 0,
       file_size_bytes: file_size_bytes || totalSize,
     });
-
-    // Cleanup temp chunks
-    for (let i = 0; i < total_chunks; i++) {
-      try {
-        await Deno.remove(`/tmp/${session_id}_chunk_${i}`);
-      } catch (_) {
-        // ignore cleanup errors
-      }
-    }
 
     console.log(`Recording created: ${recording.id}`);
 
