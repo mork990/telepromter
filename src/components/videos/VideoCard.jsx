@@ -50,7 +50,7 @@ export default function VideoCard({ recording, onDelete, onUpdate, compact }) {
         {recording.thumbnail_url ? (
           <img src={recording.thumbnail_url} alt="" className="w-full h-full object-cover" />
         ) : (
-          <video src={recording.file_url} className="w-full h-full object-cover" preload="metadata" />
+          <video src={signedUrl || ''} className="w-full h-full object-cover" preload="metadata" />
         )}
         <div className="absolute inset-0 flex items-center justify-center">
           <div className={`bg-black/50 rounded-full ${compact ? 'p-2' : 'p-3'}`}>
