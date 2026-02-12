@@ -212,7 +212,6 @@ Deno.serve(async (req) => {
     console.log('User authenticated:', user.email);
 
     const { recording_id } = await req.json();
-    const recording_id = body.recording_id;
     console.log('recording_id (v2-grpc):', recording_id);
 
     if (!recording_id) {
