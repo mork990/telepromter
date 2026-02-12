@@ -1,7 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import * as grpc from 'npm:@grpc/grpc-js@1.12.5';
 import protobuf from 'npm:protobufjs@7.4.0';
-import { Buffer } from 'node:buffer';
+const { Buffer } = globalThis.process?.versions ? globalThis : await import('node:buffer');
 
 const NVIDIA_FUNCTION_ID = 'b75dbca7-b5a4-458c-9275-6d2effeb432a';
 const GRPC_TARGET = 'grpc.nvcf.nvidia.com:443';
