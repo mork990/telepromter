@@ -1,7 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 const NVIDIA_FUNCTION_ID = 'b75dbca7-b5a4-458c-9275-6d2effeb432a';
-const NVCF_INVOKE_URL = `https://api.nvcf.nvidia.com/v2/nvcf/pex/functions/${NVIDIA_FUNCTION_ID}/invoke`;
+const NVCF_INVOKE_URL = `https://api.nvcf.nvidia.com/v2/nvcf/exec/functions/${NVIDIA_FUNCTION_ID}`;
 const NVCF_STATUS_URL = `https://api.nvcf.nvidia.com/v2/nvcf/pex/status/`;
 
 Deno.serve(async (req) => {
