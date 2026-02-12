@@ -52,31 +52,12 @@ function buildProtoDefinitions() {
     .add(new protobuf.Field("keepalive", 3, "bytes", "optional"))
     .add(new protobuf.OneOf("stream_output", ["config", "video_file_data", "keepalive"]));
 
-  // Service definition
-  const MaxineEyeContactService = new protobuf.Service("MaxineEyeContactService")
-    .add(new protobuf.Method(
-      "RedirectGaze",
-      "RedirectGazeRequest",
-      "RedirectGazeResponse",
-      true, // request stream
-      true  // response stream
-    ));
-
-  const ns = new protobuf.Namespace("nvidia")
-    .add(new protobuf.Namespace("maxine")
-      .add(new protobuf.Namespace("eyecontact")
-        .add(new protobuf.Namespace("v1")
-          .add(LossyEncoding)
-          .add(OutputVideoEncoding)
-          .add(RedirectGazeConfig)
-          .add(RedirectGazeRequest)
-          .add(RedirectGazeResponse)
-          .add(MaxineEyeContactService)
-        )
-      )
-    );
-
-  root.add(ns);
+  // Add all types to root so they can reference each other
+  root.add(LossyEncoding);
+  root.add(OutputVideoEncoding);
+  root.add(RedirectGazeConfig);
+  root.add(RedirectGazeRequest);
+  root.add(RedirectGazeResponse);
 
   return {
     root,
