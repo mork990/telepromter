@@ -145,7 +145,7 @@ export default function UploadVideoButton({ onUploaded }) {
 
         const result = await uploadChunk(file, sessionId, i, totalChunks);
         
-        // Last chunk returns the final Cloudinary URL
+        // Last chunk returns the final GCS URL
         if (result.done && result.secure_url) {
           finalUrl = result.secure_url;
         }
