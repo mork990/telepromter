@@ -22,10 +22,13 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'NVIDIA_API_KEY not configured' }, { status: 500 });
     }
 
-    // Get the recording using service role to avoid permission issues
-    const recording = await base44.asServiceRole.entities.Recording.get(recording_id);
-    if (!recording) {
-      return Response.json({ error: 'Recording not found' }, { status: 404 });
+    let recording;
+    try {
+      recording = await base44.asServiceRole.entities.Recording.get(recording_id);
+      console.log('Recording found:', recording?.id, 'file_url:', recording?.file_url?.substring(0, 80));
+    } catch (e) {
+      console.error('Error getting recording:', e.message);
+      return Response.json({ error: 'Recording not found: ' + e.message }, { status: 404 });
     }
 
     // Get a signed URL if it's a GCS file
