@@ -61,7 +61,7 @@ export default function UploadVideoButton({ onUploaded }) {
           chunk_index: chunkIndex,
           total_chunks: totalChunks,
         });
-        return res.data;
+        return res.data; // includes file_uri
       } catch (err) {
         console.warn(`Chunk ${chunkIndex} attempt ${attempt + 1} failed:`, err.message);
         if (attempt === 2) throw err;
@@ -138,10 +138,12 @@ export default function UploadVideoButton({ onUploaded }) {
 
       console.log(`Starting chunked upload: ${totalChunks} chunks, session: ${sessionId}`);
 
+      const chunkUris = [];
       for (let i = 0; i < totalChunks; i++) {
         if (abortRef.current) throw new Error('Upload cancelled');
 
-        await uploadChunk(file, sessionId, i, totalChunks);
+        const result = await uploadChunk(file, sessionId, i, totalChunks);
+        chunkUris.push(result.file_uri);
 
         const uploadedBytes = Math.min((i + 1) * CHUNK_SIZE, file.size);
         const uploadedMB = (uploadedBytes / (1024 * 1024)).toFixed(0);
@@ -159,6 +161,7 @@ export default function UploadVideoButton({ onUploaded }) {
       const assembleRes = await base44.functions.invoke('assembleVideo', {
         session_id: sessionId,
         total_chunks: totalChunks,
+        chunk_uris: chunkUris,
         file_name: file.name || 'video.mp4',
         duration_seconds: localDuration || 0,
         file_size_bytes: file.size,
