@@ -22,8 +22,8 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'NVIDIA_API_KEY not configured' }, { status: 500 });
     }
 
-    // Get the recording
-    const recording = await base44.entities.Recording.get(recording_id);
+    // Get the recording using service role to avoid permission issues
+    const recording = await base44.asServiceRole.entities.Recording.get(recording_id);
     if (!recording) {
       return Response.json({ error: 'Recording not found' }, { status: 404 });
     }
