@@ -5,6 +5,7 @@ import { Play, Download, Share2, Trash2, Film } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import moment from 'moment';
+import useSignedUrl from './useSignedUrl';
 
 function formatDuration(seconds) {
   if (!seconds) return '--:--';
