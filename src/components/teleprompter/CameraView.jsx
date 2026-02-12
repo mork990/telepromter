@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Square, Play, Download, Scissors, Share2, Loader2, Lock } from "lucide-react";
 import Watermark from './Watermark';
 import DraggableTextFrame from './DraggableTextFrame';
+import { useSubscription } from '../subscription/useSubscription';
 
 const qualityMap = {
   '720': { width: 1280, height: 720 },
