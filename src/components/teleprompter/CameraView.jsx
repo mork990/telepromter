@@ -47,6 +47,8 @@ export default function CameraView({
   const [elapsedTime, setElapsedTime] = useState(0);
   const elapsedIntervalRef = useRef(null);
   const [textFrame, setTextFrame] = useState({ left: 5, top: 10, width: 90, height: 60 });
+  const { isPremium: subscriptionPremium } = useSubscription();
+  const effectivePremium = isPremium || subscriptionPremium;
 
   useEffect(() => {
     startCamera();
