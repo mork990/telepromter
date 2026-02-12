@@ -131,9 +131,10 @@ Deno.serve(async (req) => {
       }
     } else {
       const errorText = await invokeResponse.text();
+      console.error('NVIDIA API error:', invokeResponse.status, errorText);
       return Response.json({ 
         error: `NVIDIA API error (${invokeResponse.status}): ${errorText}` 
-      }, { status: 500 });
+      }, { status: invokeResponse.status });
     }
 
   } catch (error) {
