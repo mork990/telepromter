@@ -4,7 +4,7 @@ import * as protobuf from 'npm:protobufjs@7.4.0';
 
 const NVIDIA_FUNCTION_ID = 'b75dbca7-b5a4-458c-9275-6d2effeb432a';
 const GRPC_TARGET = 'grpc.nvcf.nvidia.com:443';
-const DATA_CHUNK_SIZE = 64 * 1024; // 64KB chunks
+const DATA_CHUNK_SIZE = 64 * 1024; // 64KB chunks per gRPC message
 
 // Build proto definitions programmatically (no file system needed)
 function buildProtoDefinitions() {
