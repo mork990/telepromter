@@ -21,10 +21,13 @@ export default function MyVideos() {
     queryKey: ['recordings', currentUser?.email],
     queryFn: async () => {
       if (!currentUser) return [];
+      let recs;
       if (currentUser.role === 'admin') {
-        return base44.entities.Recording.list('-created_date');
+        recs = await base44.entities.Recording.list('-created_date');
+      } else {
+        recs = await base44.entities.Recording.filter({ created_by: currentUser.email }, '-created_date');
       }
-      return base44.entities.Recording.filter({ created_by: currentUser.email }, '-created_date');
+      return recs.filter(r => !r.title?.startsWith('__upload_session_'));
     },
     enabled: !!currentUser,
   });
