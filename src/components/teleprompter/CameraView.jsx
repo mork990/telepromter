@@ -415,7 +415,7 @@ export default function CameraView({
       </div>
 
       {/* Watermark for free users */}
-      <Watermark show={!isPremium && isRecording} />
+      <Watermark show={!effectivePremium && isRecording} />
 
       {/* Teleprompter Overlay */}
       <div 
@@ -487,7 +487,7 @@ export default function CameraView({
               { label: '60 שנ׳', value: 60, premium: false },
               { label: '3 דק׳', value: 180, premium: true },
             ].map(opt => {
-              const locked = opt.premium && !isPremium;
+              const locked = opt.premium && !effectivePremium;
               const active = maxDuration === opt.value;
               return (
                 <button
