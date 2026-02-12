@@ -5,14 +5,24 @@ const NVCF_INVOKE_URL = `https://api.nvcf.nvidia.com/v2/nvcf/pex/functions/${NVI
 const NVCF_STATUS_URL = `https://api.nvcf.nvidia.com/v2/nvcf/pex/status/`;
 
 Deno.serve(async (req) => {
+  const base44 = createClientFromRequest(req);
+
   try {
-    const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
     if (!user) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
+    console.log('User authenticated:', user.email);
+  } catch (e) {
+    console.error('Auth error:', e.message);
+    return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  }
 
-    const { recording_id } = await req.json();
+  try {
+    const body = await req.json();
+    const recording_id = body.recording_id;
+    console.log('recording_id:', recording_id);
+
     if (!recording_id) {
       return Response.json({ error: 'recording_id is required' }, { status: 400 });
     }
@@ -21,28 +31,36 @@ Deno.serve(async (req) => {
     if (!NVIDIA_API_KEY) {
       return Response.json({ error: 'NVIDIA_API_KEY not configured' }, { status: 500 });
     }
+    console.log('NVIDIA_API_KEY present, length:', NVIDIA_API_KEY.length);
 
-    let recording;
-    try {
-      recording = await base44.asServiceRole.entities.Recording.get(recording_id);
-      console.log('Recording found:', recording?.id, 'file_url:', recording?.file_url?.substring(0, 80));
-    } catch (e) {
-      console.error('Error getting recording:', e.message);
-      return Response.json({ error: 'Recording not found: ' + e.message }, { status: 404 });
+    // Get the recording
+    const recordings = await base44.asServiceRole.entities.Recording.filter({ id: recording_id });
+    console.log('Recordings found:', recordings.length);
+    const recording = recordings[0];
+    if (!recording) {
+      return Response.json({ error: 'Recording not found' }, { status: 404 });
     }
 
-    // Get a signed URL if it's a GCS file
+    // Get a publicly accessible URL for the video
     let videoUrl = recording.file_url;
-    if (videoUrl.startsWith('https://storage.googleapis.com/')) {
-      const signedRes = await base44.functions.invoke('getSignedGcsUrl', { file_url: videoUrl });
-      if (signedRes?.data?.signed_url) {
-        videoUrl = signedRes.data.signed_url;
-      } else if (signedRes?.signed_url) {
-        videoUrl = signedRes.signed_url;
+    console.log('Original video URL:', videoUrl?.substring(0, 100));
+
+    if (videoUrl && videoUrl.startsWith('https://storage.googleapis.com/')) {
+      try {
+        const signedRes = await base44.functions.invoke('getSignedGcsUrl', { file_url: videoUrl });
+        console.log('Signed URL response keys:', Object.keys(signedRes || {}));
+        if (signedRes?.data?.signed_url) {
+          videoUrl = signedRes.data.signed_url;
+        } else if (signedRes?.signed_url) {
+          videoUrl = signedRes.signed_url;
+        }
+      } catch (e) {
+        console.error('Error getting signed URL:', e.message);
+        // Continue with original URL
       }
     }
 
-    console.log('Calling NVIDIA NVCF with video URL length:', videoUrl.length);
+    console.log('Final video URL length:', videoUrl?.length);
 
     // Call NVIDIA NVCF invoke endpoint
     const invokeResponse = await fetch(NVCF_INVOKE_URL, {
@@ -61,16 +79,19 @@ Deno.serve(async (req) => {
       }),
     });
 
+    console.log('NVIDIA response status:', invokeResponse.status);
+
     // NVCF may return 200 (completed) or 202 (accepted, needs polling)
     if (invokeResponse.status === 202) {
       const requestId = invokeResponse.headers.get('NVCF-REQID');
+      console.log('NVIDIA request ID:', requestId);
       if (!requestId) {
         return Response.json({ error: 'No request ID returned from NVIDIA' }, { status: 500 });
       }
 
       // Poll for completion
       let result = null;
-      const maxAttempts = 120; // 10 minutes max (5s intervals)
+      const maxAttempts = 120;
       for (let i = 0; i < maxAttempts; i++) {
         await new Promise(r => setTimeout(r, 5000));
 
@@ -81,17 +102,16 @@ Deno.serve(async (req) => {
           },
         });
 
+        console.log(`Poll attempt ${i + 1}: status ${statusResponse.status}`);
+
         if (statusResponse.status === 200) {
           const contentType = statusResponse.headers.get('content-type') || '';
           if (contentType.includes('application/json')) {
             result = await statusResponse.json();
           } else {
-            // Binary response - the processed video
             const videoBytes = await statusResponse.arrayBuffer();
-            // Upload the processed video
             const blob = new Blob([videoBytes], { type: 'video/mp4' });
-            const uploadResult = await base44.integrations.Core.UploadFile({ file: blob });
-            
+            const uploadResult = await base44.asServiceRole.integrations.Core.UploadFile({ file: blob });
             return Response.json({
               success: true,
               file_url: uploadResult.file_url,
@@ -100,7 +120,6 @@ Deno.serve(async (req) => {
           }
           break;
         } else if (statusResponse.status === 202) {
-          // Still processing, continue polling
           continue;
         } else {
           const errorText = await statusResponse.text();
@@ -120,11 +139,9 @@ Deno.serve(async (req) => {
         const result = await invokeResponse.json();
         return Response.json({ success: true, result });
       } else {
-        // Binary video response
         const videoBytes = await invokeResponse.arrayBuffer();
         const blob = new Blob([videoBytes], { type: 'video/mp4' });
-        const uploadResult = await base44.integrations.Core.UploadFile({ file: blob });
-        
+        const uploadResult = await base44.asServiceRole.integrations.Core.UploadFile({ file: blob });
         return Response.json({
           success: true,
           file_url: uploadResult.file_url,
@@ -136,7 +153,7 @@ Deno.serve(async (req) => {
       console.error('NVIDIA API error:', invokeResponse.status, errorText);
       return Response.json({ 
         error: `NVIDIA API error (${invokeResponse.status}): ${errorText}` 
-      }, { status: invokeResponse.status });
+      }, { status: 500 });
     }
 
   } catch (error) {
