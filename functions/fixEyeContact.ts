@@ -78,10 +78,16 @@ function createGrpcServiceClient(proto) {
       path: '/nvidia.maxine.eyecontact.v1.MaxineEyeContactService/RedirectGaze',
       requestStream: true,
       responseStream: true,
-      requestSerialize: (msg) => Buffer.from(RedirectGazeRequest.encode(RedirectGazeRequest.create(msg)).finish()),
-      requestDeserialize: (buf) => RedirectGazeRequest.decode(buf),
-      responseSerialize: (msg) => Buffer.from(RedirectGazeResponse.encode(RedirectGazeResponse.create(msg)).finish()),
-      responseDeserialize: (buf) => RedirectGazeResponse.decode(buf),
+      requestSerialize: (msg) => {
+        const encoded = RedirectGazeRequest.encode(RedirectGazeRequest.create(msg)).finish();
+        return new Uint8Array(encoded);
+      },
+      requestDeserialize: (buf) => RedirectGazeRequest.decode(new Uint8Array(buf)),
+      responseSerialize: (msg) => {
+        const encoded = RedirectGazeResponse.encode(RedirectGazeResponse.create(msg)).finish();
+        return new Uint8Array(encoded);
+      },
+      responseDeserialize: (buf) => RedirectGazeResponse.decode(new Uint8Array(buf)),
     }
   };
 
