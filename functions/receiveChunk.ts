@@ -41,7 +41,7 @@ Deno.serve(async (req) => {
     if (chunk_index === 0) {
       // Start a resumable upload session
       const initRes = await fetch(
-        `https://storage.googleapis.com/upload/storage/v1/b/${bucketName}/o?uploadType=resumable&name=${encodeURIComponent(objectName)}`,
+        `https://storage.googleapis.com/upload/storage/v1/b/${bucketName}/o?uploadType=resumable&name=${encodeURIComponent(objectName)}&predefinedAcl=publicRead`,
         {
           method: 'POST',
           headers: {
@@ -49,7 +49,7 @@ Deno.serve(async (req) => {
             'Content-Type': 'application/json',
             'X-Upload-Content-Type': getMimeType(ext),
           },
-          body: JSON.stringify({ name: objectName, contentType: getMimeType(ext), acl: [{ entity: 'allUsers', role: 'READER' }] }),
+          body: JSON.stringify({ name: objectName, contentType: getMimeType(ext) }),
         }
       );
 
