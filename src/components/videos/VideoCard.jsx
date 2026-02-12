@@ -23,6 +23,7 @@ function formatSize(bytes) {
 export default function VideoCard({ recording, onDelete, onUpdate, compact }) {
   const navigate = useNavigate();
   const [showConfirm, setShowConfirm] = useState(false);
+  const signedUrl = useSignedUrl(recording.file_url);
 
   const handleDownload = () => {
     const a = document.createElement('a');
