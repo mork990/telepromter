@@ -193,7 +193,9 @@ export function useAutoScroll({ text, enabled, onScrollTo }) {
     }
 
     // Open WebSocket to Deepgram
-    const wsUrl = 'wss://api.deepgram.com/v1/listen?language=he&model=nova-3&smart_format=true&interim_results=true&punctuate=true';
+    // Optimized Deepgram config: shorter endpointing for faster final results, 
+    // no_delay for lower latency, utterance_end for better sentence boundaries
+    const wsUrl = 'wss://api.deepgram.com/v1/listen?language=he&model=nova-3&smart_format=true&interim_results=true&punctuate=true&endpointing=300&no_delay=true&vad_events=true';
 
     const socket = new WebSocket(wsUrl, ['token', token]);
     socketRef.current = socket;
@@ -225,7 +227,7 @@ export function useAutoScroll({ text, enabled, onScrollTo }) {
         }
       };
 
-      recorder.start(250); // Send every 250ms
+      recorder.start(100); // Send every 100ms for lower latency
     };
 
     socket.onmessage = (message) => {
