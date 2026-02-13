@@ -118,18 +118,33 @@ export default function CameraView({
     }
   };
 
+  const animFrameRef = useRef(null);
+  const lastTimeRef = useRef(null);
+
   const startScrolling = () => {
     stopScrolling();
-    scrollIntervalRef.current = setInterval(() => {
-      setScrollPosition(prev => prev + 1);
-    }, 100 - scrollSpeed / 2);
+    lastTimeRef.current = null;
+    const tick = (timestamp) => {
+      if (lastTimeRef.current === null) {
+        lastTimeRef.current = timestamp;
+      }
+      const delta = timestamp - lastTimeRef.current;
+      lastTimeRef.current = timestamp;
+      // scrollSpeed: 0-100, map to ~0.3-3 px per frame at 60fps
+      const speed = 0.3 + (scrollSpeed / 100) * 2.7;
+      const pxPerMs = speed / 16.67; // normalize to per-ms
+      setScrollPosition(prev => prev + pxPerMs * delta);
+      animFrameRef.current = requestAnimationFrame(tick);
+    };
+    animFrameRef.current = requestAnimationFrame(tick);
   };
 
   const stopScrolling = () => {
-    if (scrollIntervalRef.current) {
-      clearInterval(scrollIntervalRef.current);
-      scrollIntervalRef.current = null;
+    if (animFrameRef.current) {
+      cancelAnimationFrame(animFrameRef.current);
+      animFrameRef.current = null;
     }
+    lastTimeRef.current = null;
   };
 
   const startRecording = async () => {
