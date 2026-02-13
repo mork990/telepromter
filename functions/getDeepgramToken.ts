@@ -36,13 +36,14 @@ Deno.serve(async (req) => {
       body: JSON.stringify({ ttl_seconds: 3600 }) // 1 hour max
     });
 
+    const responseText = await response.text();
+    console.log('Deepgram response:', response.status, responseText);
+
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Deepgram token error:', response.status, errorText);
-      return Response.json({ error: 'Failed to get Deepgram token' }, { status: 500 });
+      return Response.json({ error: 'Failed to get Deepgram token: ' + responseText }, { status: 500 });
     }
 
-    const data = await response.json();
+    const data = JSON.parse(responseText);
     return Response.json({ token: data.access_token, expires_in: data.expires_in });
 
   } catch (error) {
