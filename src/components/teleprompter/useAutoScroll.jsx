@@ -62,14 +62,15 @@ function indexWords(text) {
 }
 
 // Stable lookahead window search with fuzzy matching
-const WINDOW_SIZE = 50;
-const SIMILARITY_THRESHOLD = 0.75;
+const EXACT_WINDOW = 25;      // Wider window for exact matches
+const FUZZY_WINDOW = 15;      // Tighter window for fuzzy matches
+const SIMILARITY_THRESHOLD = 0.7;
 
 function findNextMatch(recognizedWord, textWords, searchFrom) {
   const normalized = normalizeWord(recognizedWord);
   if (!normalized || normalized.length < 2) return -1;
 
-  const end = Math.min(searchFrom + WINDOW_SIZE, textWords.length);
+  const end = Math.min(searchFrom + EXACT_WINDOW, textWords.length);
 
   // Pass 1: exact match in window
   for (let i = searchFrom; i < end; i++) {
@@ -78,14 +79,14 @@ function findNextMatch(recognizedWord, textWords, searchFrom) {
     }
   }
 
-  // Pass 2: fuzzy match in window (only within closer range for safety)
-  const fuzzyEnd = Math.min(searchFrom + 30, textWords.length);
+  // Pass 2: fuzzy match in tighter window
+  const fuzzyEnd = Math.min(searchFrom + FUZZY_WINDOW, textWords.length);
   let bestIndex = -1;
   let bestScore = 0;
 
   for (let i = searchFrom; i < fuzzyEnd; i++) {
     const score = similarity(normalized, textWords[i].normalized);
-    if (score > SIMILARITY_THRESHOLD && score > bestScore) {
+    if (score >= SIMILARITY_THRESHOLD && score > bestScore) {
       bestScore = score;
       bestIndex = i;
     }
@@ -123,24 +124,24 @@ export function useAutoScroll({ text, enabled, onScrollTo }) {
     const transcript = alt.transcript;
     if (!transcript) return;
 
-    const isInterim = !parsed.is_final;
+    const isFinal = parsed.is_final;
     const confidence = alt.confidence || 0;
 
-    // For interim results, only process if high confidence
-    if (isInterim && confidence < 0.8) return;
+    // Skip very low confidence interim results
+    if (!isFinal && confidence < 0.6) return;
 
     const words = alt.words || [];
     if (words.length === 0) return;
 
-    // For interim: only use last word. For final: use all words but conservatively.
-    const recentWords = isInterim ? words.slice(-1) : words;
+    // For interim: use last 2 words for responsiveness. For final: use all.
+    const recentWords = isFinal ? words : words.slice(-2);
 
-    let advanced = false;
     let lastMatchedIndex = currentWordIndexRef.current;
+    let bestMatchIndex = lastMatchedIndex;
 
     for (const word of recentWords) {
-      // Skip low-confidence individual words
-      if (word.confidence !== undefined && word.confidence < 0.75) continue;
+      // Skip very low-confidence individual words
+      if (word.confidence !== undefined && word.confidence < 0.5) continue;
 
       const matchIndex = findNextMatch(
         word.punctuated_word || word.word,
@@ -149,25 +150,24 @@ export function useAutoScroll({ text, enabled, onScrollTo }) {
       );
 
       if (matchIndex >= 0) {
-        // Sanity: don't allow jumping more than 10 words at once
-        if (matchIndex - lastMatchedIndex > 10) continue;
+        // For exact window matches allow bigger jumps, for safety cap at 20
+        if (matchIndex - lastMatchedIndex > 20) continue;
 
         lastMatchedIndex = matchIndex + 1;
-        advanced = true;
+        bestMatchIndex = matchIndex;
       }
     }
 
     // Only update scroll if we actually advanced forward
-    if (advanced && lastMatchedIndex > currentWordIndexRef.current) {
+    if (lastMatchedIndex > currentWordIndexRef.current) {
       currentWordIndexRef.current = lastMatchedIndex;
-      const matchIdx = lastMatchedIndex - 1;
-      setCurrentWordIndex(matchIdx);
+      setCurrentWordIndex(bestMatchIndex);
 
-      if (onScrollTo && textWordsRef.current[matchIdx]) {
-        const totalChars = text.length;
-        const wordCharIndex = textWordsRef.current[matchIdx].charIndex;
-        const progress = wordCharIndex / totalChars;
-        onScrollTo(progress, matchIdx);
+      if (onScrollTo && textWordsRef.current[bestMatchIndex]) {
+        // Progress based on word index (more accurate than char position)
+        const totalWords = textWordsRef.current.length;
+        const progress = bestMatchIndex / totalWords;
+        onScrollTo(progress, bestMatchIndex);
       }
     }
   }, [text, onScrollTo]);

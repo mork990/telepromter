@@ -58,19 +58,28 @@ export default function CameraView({
   const autoScrollAnimRef = useRef(null);
   const lastAutoScrollTimeRef = useRef(0);
 
-  // Smooth easing animation loop - always runs while auto-scroll is active
+  // Smooth easing animation loop - runs continuously while auto-scroll is active
   const startAutoScrollAnim = useCallback(() => {
     if (autoScrollAnimRef.current) return;
+    let lastTimestamp = null;
     
-    const tick = () => {
+    const tick = (timestamp) => {
+      if (!lastTimestamp) lastTimestamp = timestamp;
+      const dt = timestamp - lastTimestamp;
+      lastTimestamp = timestamp;
+      
       const current = scrollPositionRef.current;
       const dest = autoScrollTargetRef.current;
       const diff = dest - current;
       
-      if (Math.abs(diff) > 0.3) {
-        // Very gentle easing: 5% per frame = ultra smooth
-        const step = diff * 0.05;
-        const next = current + step;
+      if (Math.abs(diff) > 0.5) {
+        // Adaptive easing: faster when far, slower when close
+        // ~10% per frame at 60fps, time-corrected
+        const factor = Math.min(0.15, 0.008 * (dt || 16));
+        const step = diff * factor;
+        // Minimum movement of 0.5px to avoid getting stuck
+        const move = Math.abs(step) < 0.5 ? Math.sign(diff) * 0.5 : step;
+        const next = current + move;
         scrollPositionRef.current = next;
         setScrollPosition(next);
       }
@@ -89,26 +98,30 @@ export default function CameraView({
   const handleAutoScrollTo = useCallback((progress, wordIndex) => {
     if (!containerRef.current) return;
     
-    // Throttle: max 1 update per 300ms to prevent jitter
+    // Throttle: max 1 update per 150ms - fast enough to follow speech
     const now = Date.now();
-    if (now - lastAutoScrollTimeRef.current < 300) return;
+    if (now - lastAutoScrollTimeRef.current < 150) return;
     lastAutoScrollTimeRef.current = now;
     
     const containerHeight = containerRef.current.scrollHeight;
-    const newTarget = Math.max(0, containerHeight * progress - 50);
+    // Offset: keep current word ~40% from top of visible area
+    const viewportHeight = containerRef.current.parentElement?.clientHeight || 400;
+    const newTarget = Math.max(0, containerHeight * progress - viewportHeight * 0.4);
     
-    // Safety: don't allow target to jump more than 200px at once
-    const maxJump = 200;
     const currentTarget = autoScrollTargetRef.current;
+    
+    // Never scroll backwards
+    if (newTarget < currentTarget) return;
+    
+    // Cap maximum jump per update to ~4 lines worth (fontSize * lineHeight * 4)
+    const maxJump = fontSize * 1.6 * 4;
     if (newTarget > currentTarget + maxJump) {
+      // Gradually approach - take a big step but not the full jump
       autoScrollTargetRef.current = currentTarget + maxJump;
-    } else if (newTarget < currentTarget) {
-      // Never scroll backwards
-      return;
     } else {
       autoScrollTargetRef.current = newTarget;
     }
-  }, []);
+  }, [fontSize]);
 
   const autoScroll = useAutoScroll({
     text,
