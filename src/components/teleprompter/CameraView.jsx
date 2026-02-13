@@ -72,13 +72,17 @@ export default function CameraView({
   }, [cameraFacing]);
 
   useEffect(() => {
+    if (useAutoScrollMode) {
+      stopScrolling(); // Don't use manual scroll when auto-scroll is on
+      return;
+    }
     if (!isPaused && isRecording) {
       startScrolling();
     } else {
       stopScrolling();
     }
     return () => stopScrolling();
-  }, [isPaused, isRecording, scrollSpeed]);
+  }, [isPaused, isRecording, scrollSpeed, useAutoScrollMode]);
 
   const startCamera = async () => {
     try {
@@ -189,6 +193,11 @@ export default function CameraView({
           if (!isDragging) {
             setIsPaused(false);
           }
+
+          // Start auto-scroll if enabled
+          if (useAutoScrollMode && streamRef.current) {
+            autoScroll.start(streamRef.current);
+          }
     } catch (error) {
       console.error('Error starting recording:', error);
       alert('שגיאה בהתחלת ההקלטה: ' + error.message);
@@ -203,6 +212,10 @@ export default function CameraView({
   }, [elapsedTime, maxDuration, isRecording, isRecordingPaused]);
 
   const stopRecording = () => {
+    // Stop auto-scroll
+    if (useAutoScrollMode) {
+      autoScroll.stop();
+    }
     if (elapsedIntervalRef.current) {
       clearInterval(elapsedIntervalRef.current);
       elapsedIntervalRef.current = null;
