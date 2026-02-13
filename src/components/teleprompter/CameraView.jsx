@@ -508,6 +508,23 @@ export default function CameraView({
         className="absolute inset-x-0 pointer-events-auto z-10"
         style={{ bottom: 'calc(1.5rem + env(safe-area-inset-bottom))' }}
       >
+        {/* Auto-scroll toggle for premium users - above duration */}
+        {!isRecording && !recordedVideo && countdown === null && effectivePremium && (
+          <div className="flex items-center justify-center mb-3 px-6">
+            <button
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-medium transition-all select-none ${
+                useAutoScrollMode
+                  ? 'bg-[#00d4aa] text-black shadow-lg'
+                  : 'bg-white/15 text-white/70 border border-white/20'
+              }`}
+              onClick={() => setUseAutoScrollMode(!useAutoScrollMode)}
+            >
+              <Mic className="w-4 h-4" />
+              {useAutoScrollMode ? 'גלילה אוטומטית: פעיל' : 'גלילה אוטומטית'}
+            </button>
+          </div>
+        )}
+
         {/* Duration selector - above controls */}
         {!isRecording && !recordedVideo && countdown === null && (
           <div className="flex items-center justify-center gap-2 mb-4 px-6">
@@ -639,6 +656,19 @@ export default function CameraView({
           )}
         </div>
       </div>
+
+      {/* Auto-scroll status indicator */}
+      {isRecording && useAutoScrollMode && autoScroll.isListening && (
+        <div className="absolute top-6 left-6 flex items-center gap-2 bg-[#00d4aa] text-black px-3 py-1.5 rounded-full pointer-events-none z-20">
+          <Mic className="w-3 h-3" />
+          <span className="text-xs font-medium">גלילה אוטומטית</span>
+        </div>
+      )}
+      {isRecording && useAutoScrollMode && autoScroll.error && (
+        <div className="absolute top-6 left-6 flex items-center gap-2 bg-red-500 text-white px-3 py-1.5 rounded-full pointer-events-none z-20">
+          <span className="text-xs font-medium">{autoScroll.error}</span>
+        </div>
+      )}
 
       {/* Recording Indicator */}
       {isRecording && !isRecordingPaused && (
