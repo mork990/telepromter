@@ -1,11 +1,11 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Button } from "@/components/ui/button";
-import { Square, Play, Download, Scissors, Share2, Loader2, Lock, Mic } from "lucide-react";
+import { Square, Play, Download, Scissors, Share2, Loader2, Lock } from "lucide-react";
 import Watermark from './Watermark';
 import DraggableTextFrame from './DraggableTextFrame';
 import { useSubscription } from '../subscription/useSubscription';
-import { useAutoScroll } from './useAutoScroll';
+
 
 const qualityMap = {
   '720': { width: 1280, height: 720 },
@@ -24,7 +24,6 @@ export default function CameraView({
   backgroundOpacity,
   videoQuality = '1080',
   isPremium = false,
-  autoScrollEnabled = false,
   onStop 
 }) {
   const videoRef = useRef(null);
@@ -52,82 +51,7 @@ export default function CameraView({
   const [textFrame, setTextFrame] = useState({ left: 5, top: 10, width: 90, height: 60 });
   const { isPremium: subscriptionPremium } = useSubscription();
   const effectivePremium = isPremium || subscriptionPremium;
-  const [useAutoScrollMode, setUseAutoScrollMode] = useState(autoScrollEnabled && effectivePremium);
 
-  const autoScrollTargetRef = useRef(0);
-  const autoScrollAnimRef = useRef(null);
-  const lastAutoScrollTimeRef = useRef(0);
-
-  // Smooth easing animation loop - runs continuously while auto-scroll is active
-  const startAutoScrollAnim = useCallback(() => {
-    if (autoScrollAnimRef.current) return;
-    let lastTimestamp = null;
-    
-    const tick = (timestamp) => {
-      if (!lastTimestamp) lastTimestamp = timestamp;
-      const dt = timestamp - lastTimestamp;
-      lastTimestamp = timestamp;
-      
-      const current = scrollPositionRef.current;
-      const dest = autoScrollTargetRef.current;
-      const diff = dest - current;
-      
-      if (Math.abs(diff) > 0.5) {
-        // Adaptive easing: faster when far, slower when close
-        // ~10% per frame at 60fps, time-corrected
-        const factor = Math.min(0.15, 0.008 * (dt || 16));
-        const step = diff * factor;
-        // Minimum movement of 0.5px to avoid getting stuck
-        const move = Math.abs(step) < 0.5 ? Math.sign(diff) * 0.5 : step;
-        const next = current + move;
-        scrollPositionRef.current = next;
-        setScrollPosition(next);
-      }
-      autoScrollAnimRef.current = requestAnimationFrame(tick);
-    };
-    autoScrollAnimRef.current = requestAnimationFrame(tick);
-  }, []);
-
-  const stopAutoScrollAnim = useCallback(() => {
-    if (autoScrollAnimRef.current) {
-      cancelAnimationFrame(autoScrollAnimRef.current);
-      autoScrollAnimRef.current = null;
-    }
-  }, []);
-
-  const handleAutoScrollTo = useCallback((progress, wordIndex) => {
-    if (!containerRef.current) return;
-    
-    // Throttle: max 1 update per 150ms - fast enough to follow speech
-    const now = Date.now();
-    if (now - lastAutoScrollTimeRef.current < 150) return;
-    lastAutoScrollTimeRef.current = now;
-    
-    const containerHeight = containerRef.current.scrollHeight;
-    // Offset: keep current word ~40% from top of visible area
-    const viewportHeight = containerRef.current.parentElement?.clientHeight || 400;
-    const newTarget = Math.max(0, containerHeight * progress - viewportHeight * 0.4);
-    
-    const currentTarget = autoScrollTargetRef.current;
-    
-    // Never scroll backwards
-    if (newTarget < currentTarget) return;
-    
-    // Cap maximum jump per update to ~4 lines worth (fontSize * lineHeight * 4)
-    const maxJump = fontSize * 1.6 * 4;
-    if (newTarget > currentTarget + maxJump) {
-      // Gradually approach - take a big step but not the full jump
-      autoScrollTargetRef.current = currentTarget + maxJump;
-    } else {
-      autoScrollTargetRef.current = newTarget;
-    }
-  }, [fontSize]);
-
-  const autoScroll = useAutoScroll({
-    text,
-    enabled: useAutoScrollMode,
-    onScrollTo: handleAutoScrollTo,
-  });
 
   useEffect(() => {
     startCamera();
@@ -135,17 +59,13 @@ export default function CameraView({
   }, [cameraFacing]);
 
   useEffect(() => {
-    if (useAutoScrollMode) {
-      stopScrolling(); // Don't use manual scroll when auto-scroll is on
-      return;
-    }
     if (!isPaused && isRecording) {
       startScrolling();
     } else {
       stopScrolling();
     }
     return () => stopScrolling();
-  }, [isPaused, isRecording, scrollSpeed, useAutoScrollMode]);
+  }, [isPaused, isRecording, scrollSpeed]);
 
   const startCamera = async () => {
     try {
@@ -276,12 +196,7 @@ export default function CameraView({
             setIsPaused(false);
           }
 
-          // Start auto-scroll if enabled
-          if (useAutoScrollMode && streamRef.current) {
-            autoScrollTargetRef.current = scrollPositionRef.current;
-            startAutoScrollAnim();
-            autoScroll.start(streamRef.current);
-          }
+
     } catch (error) {
       console.error('Error starting recording:', error);
       alert('שגיאה בהתחלת ההקלטה: ' + error.message);
@@ -296,11 +211,6 @@ export default function CameraView({
   }, [elapsedTime, maxDuration, isRecording, isRecordingPaused]);
 
   const stopRecording = () => {
-    // Stop auto-scroll
-    if (useAutoScrollMode) {
-      autoScroll.stop();
-    }
-    stopAutoScrollAnim();
     if (elapsedIntervalRef.current) {
       clearInterval(elapsedIntervalRef.current);
       elapsedIntervalRef.current = null;
@@ -594,23 +504,6 @@ export default function CameraView({
         className="absolute inset-x-0 pointer-events-auto z-10"
         style={{ bottom: 'calc(1.5rem + env(safe-area-inset-bottom))' }}
       >
-        {/* Auto-scroll toggle for premium users - above duration */}
-        {!isRecording && !recordedVideo && countdown === null && effectivePremium && (
-          <div className="flex items-center justify-center mb-3 px-6">
-            <button
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-medium transition-all select-none ${
-                useAutoScrollMode
-                  ? 'bg-[#00d4aa] text-black shadow-lg'
-                  : 'bg-white/15 text-white/70 border border-white/20'
-              }`}
-              onClick={() => setUseAutoScrollMode(!useAutoScrollMode)}
-            >
-              <Mic className="w-4 h-4" />
-              {useAutoScrollMode ? 'גלילה אוטומטית: פעיל' : 'גלילה אוטומטית'}
-            </button>
-          </div>
-        )}
-
         {/* Duration selector - above controls */}
         {!isRecording && !recordedVideo && countdown === null && (
           <div className="flex items-center justify-center gap-2 mb-4 px-6">
@@ -742,19 +635,6 @@ export default function CameraView({
           )}
         </div>
       </div>
-
-      {/* Auto-scroll status indicator */}
-      {isRecording && useAutoScrollMode && autoScroll.isListening && (
-        <div className="absolute top-6 left-6 flex items-center gap-2 bg-[#00d4aa] text-black px-3 py-1.5 rounded-full pointer-events-none z-20">
-          <Mic className="w-3 h-3" />
-          <span className="text-xs font-medium">גלילה אוטומטית</span>
-        </div>
-      )}
-      {isRecording && useAutoScrollMode && autoScroll.error && (
-        <div className="absolute top-6 left-6 flex items-center gap-2 bg-red-500 text-white px-3 py-1.5 rounded-full pointer-events-none z-20">
-          <span className="text-xs font-medium">{autoScroll.error}</span>
-        </div>
-      )}
 
       {/* Recording Indicator */}
       {isRecording && !isRecordingPaused && (
