@@ -1,10 +1,11 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Button } from "@/components/ui/button";
-import { Square, Play, Download, Scissors, Share2, Loader2, Lock } from "lucide-react";
+import { Square, Play, Download, Scissors, Share2, Loader2, Lock, Mic } from "lucide-react";
 import Watermark from './Watermark';
 import DraggableTextFrame from './DraggableTextFrame';
 import { useSubscription } from '../subscription/useSubscription';
+import { useAutoScroll } from './useAutoScroll';
 
 const qualityMap = {
   '720': { width: 1280, height: 720 },
@@ -23,6 +24,7 @@ export default function CameraView({
   backgroundOpacity,
   videoQuality = '1080',
   isPremium = false,
+  autoScrollEnabled = false,
   onStop 
 }) {
   const videoRef = useRef(null);
@@ -49,6 +51,20 @@ export default function CameraView({
   const [textFrame, setTextFrame] = useState({ left: 5, top: 10, width: 90, height: 60 });
   const { isPremium: subscriptionPremium } = useSubscription();
   const effectivePremium = isPremium || subscriptionPremium;
+  const [useAutoScrollMode, setUseAutoScrollMode] = useState(autoScrollEnabled && effectivePremium);
+
+  const handleAutoScrollTo = useCallback((progress, wordIndex) => {
+    if (!containerRef.current) return;
+    const containerHeight = containerRef.current.scrollHeight;
+    const newScroll = Math.max(0, containerHeight * progress - 50);
+    setScrollPosition(newScroll);
+  }, []);
+
+  const autoScroll = useAutoScroll({
+    text,
+    enabled: useAutoScrollMode,
+    onScrollTo: handleAutoScrollTo,
+  });
 
   useEffect(() => {
     startCamera();
