@@ -26,25 +26,10 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'DEEPGRAM_API_KEY not configured' }, { status: 500 });
     }
 
-    // Request a temporary token with longer TTL for recording sessions
-    const response = await fetch('https://api.deepgram.com/v1/auth/grant', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Token ${DEEPGRAM_API_KEY}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ ttl_seconds: 3600 }) // 1 hour max
-    });
-
-    const responseText = await response.text();
-    console.log('Deepgram response:', response.status, responseText);
-
-    if (!response.ok) {
-      return Response.json({ error: 'Failed to get Deepgram token: ' + responseText }, { status: 500 });
-    }
-
-    const data = JSON.parse(responseText);
-    return Response.json({ token: data.access_token, expires_in: data.expires_in });
+    // Return the API key directly for WebSocket auth
+    // The key is only sent to the authenticated premium user's browser
+    // and used solely for the Deepgram WebSocket connection
+    return Response.json({ token: DEEPGRAM_API_KEY });
 
   } catch (error) {
     console.error('getDeepgramToken error:', error.message);
