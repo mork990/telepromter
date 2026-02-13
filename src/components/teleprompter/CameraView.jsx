@@ -53,12 +53,41 @@ export default function CameraView({
   const effectivePremium = isPremium || subscriptionPremium;
   const [useAutoScrollMode, setUseAutoScrollMode] = useState(autoScrollEnabled && effectivePremium);
 
+  const autoScrollTargetRef = useRef(null);
+  const autoScrollAnimRef = useRef(null);
+
+  const animateToScroll = useCallback((target) => {
+    autoScrollTargetRef.current = target;
+    if (autoScrollAnimRef.current) return; // already animating
+
+    const tick = () => {
+      const current = scrollPositionRef.current;
+      const dest = autoScrollTargetRef.current;
+      if (dest === null) { autoScrollAnimRef.current = null; return; }
+      
+      const diff = dest - current;
+      if (Math.abs(diff) < 0.5) {
+        setScrollPosition(dest);
+        scrollPositionRef.current = dest;
+        autoScrollAnimRef.current = null;
+        return;
+      }
+      // Ease toward target: 8-12% per frame for smooth feel
+      const step = diff * 0.1;
+      const next = current + step;
+      setScrollPosition(next);
+      scrollPositionRef.current = next;
+      autoScrollAnimRef.current = requestAnimationFrame(tick);
+    };
+    autoScrollAnimRef.current = requestAnimationFrame(tick);
+  }, []);
+
   const handleAutoScrollTo = useCallback((progress, wordIndex) => {
     if (!containerRef.current) return;
     const containerHeight = containerRef.current.scrollHeight;
     const newScroll = Math.max(0, containerHeight * progress - 50);
-    setScrollPosition(newScroll);
-  }, []);
+    animateToScroll(newScroll);
+  }, [animateToScroll]);
 
   const autoScroll = useAutoScroll({
     text,
