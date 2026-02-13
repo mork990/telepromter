@@ -1,13 +1,49 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 
-// Normalize Hebrew text for matching - remove punctuation, diacritics, etc.
+// Normalize Hebrew text - remove punctuation, diacritics, prefixes
 function normalizeWord(word) {
-  return word
+  let w = word
     .replace(/[\u0591-\u05C7]/g, '') // Remove Hebrew diacritics (nikkud)
     .replace(/[^\u05D0-\u05EA\w]/g, '') // Keep only Hebrew letters and alphanumeric
     .toLowerCase()
     .trim();
+  // Strip common Hebrew prefixes (ו, ה, ב, כ, ל, מ, ש)
+  if (w.length > 2) {
+    const prefixes = ['ו', 'ה', 'ב', 'כ', 'ל', 'מ', 'ש'];
+    if (prefixes.includes(w[0])) {
+      w = w.slice(1);
+    }
+  }
+  return w;
+}
+
+// Levenshtein distance for fuzzy matching
+function levenshtein(a, b) {
+  if (!a.length) return b.length;
+  if (!b.length) return a.length;
+  const matrix = [];
+  for (let i = 0; i <= b.length; i++) matrix[i] = [i];
+  for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
+  for (let i = 1; i <= b.length; i++) {
+    for (let j = 1; j <= a.length; j++) {
+      const cost = b[i - 1] === a[j - 1] ? 0 : 1;
+      matrix[i][j] = Math.min(
+        matrix[i - 1][j] + 1,
+        matrix[i][j - 1] + 1,
+        matrix[i - 1][j - 1] + cost
+      );
+    }
+  }
+  return matrix[b.length][a.length];
+}
+
+// Calculate similarity ratio (0 to 1)
+function similarity(a, b) {
+  if (!a || !b) return 0;
+  const maxLen = Math.max(a.length, b.length);
+  if (maxLen === 0) return 1;
+  return 1 - levenshtein(a, b) / maxLen;
 }
 
 // Split text into words with their character positions
@@ -25,29 +61,37 @@ function indexWords(text) {
   return words;
 }
 
-// Find best matching position in text for a recognized word
+// Stable lookahead window search with fuzzy matching
+const WINDOW_SIZE = 50;
+const SIMILARITY_THRESHOLD = 0.75;
+
 function findNextMatch(recognizedWord, textWords, searchFrom) {
   const normalized = normalizeWord(recognizedWord);
-  if (!normalized) return -1;
+  if (!normalized || normalized.length < 2) return -1;
 
-  // Search forward within a window of 15 words
-  const windowSize = 15;
-  const end = Math.min(searchFrom + windowSize, textWords.length);
+  const end = Math.min(searchFrom + WINDOW_SIZE, textWords.length);
 
+  // Pass 1: exact match in window
   for (let i = searchFrom; i < end; i++) {
     if (textWords[i].normalized === normalized) {
       return i;
     }
   }
 
-  // Partial match - if recognized word starts with or contains text word
-  for (let i = searchFrom; i < end; i++) {
-    if (textWords[i].normalized.startsWith(normalized) || normalized.startsWith(textWords[i].normalized)) {
-      return i;
+  // Pass 2: fuzzy match in window (only within closer range for safety)
+  const fuzzyEnd = Math.min(searchFrom + 30, textWords.length);
+  let bestIndex = -1;
+  let bestScore = 0;
+
+  for (let i = searchFrom; i < fuzzyEnd; i++) {
+    const score = similarity(normalized, textWords[i].normalized);
+    if (score > SIMILARITY_THRESHOLD && score > bestScore) {
+      bestScore = score;
+      bestIndex = i;
     }
   }
 
-  return -1;
+  return bestIndex;
 }
 
 export function useAutoScroll({ text, enabled, onScrollTo }) {
