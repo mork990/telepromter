@@ -265,6 +265,10 @@ export default function CameraView({
     if (useAutoScrollMode) {
       autoScroll.stop();
     }
+    if (autoScrollAnimRef.current) {
+      cancelAnimationFrame(autoScrollAnimRef.current);
+      autoScrollAnimRef.current = null;
+    }
     if (elapsedIntervalRef.current) {
       clearInterval(elapsedIntervalRef.current);
       elapsedIntervalRef.current = null;
