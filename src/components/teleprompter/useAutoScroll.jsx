@@ -117,31 +117,55 @@ export function useAutoScroll({ text, enabled, onScrollTo }) {
 
   const handleTranscript = useCallback((data) => {
     const parsed = JSON.parse(data);
-    const transcript = parsed?.channel?.alternatives?.[0]?.transcript;
+    const alt = parsed?.channel?.alternatives?.[0];
+    if (!alt) return;
+
+    const transcript = alt.transcript;
     if (!transcript) return;
 
-    const words = parsed?.channel?.alternatives?.[0]?.words || [];
+    const isInterim = !parsed.is_final;
+    const confidence = alt.confidence || 0;
+
+    // For interim results, only process if high confidence
+    if (isInterim && confidence < 0.8) return;
+
+    const words = alt.words || [];
     if (words.length === 0) return;
 
-    // Match each recognized word to the teleprompter text
-    for (const word of words) {
+    // Only use the last few words for matching (most recent speech)
+    const recentWords = isInterim ? words.slice(-2) : words;
+
+    let lastMatchedIndex = currentWordIndexRef.current;
+
+    for (const word of recentWords) {
+      // Skip low-confidence individual words
+      if (word.confidence !== undefined && word.confidence < 0.7) continue;
+
       const matchIndex = findNextMatch(
         word.punctuated_word || word.word,
         textWordsRef.current,
-        currentWordIndexRef.current
+        lastMatchedIndex
       );
 
       if (matchIndex >= 0) {
-        currentWordIndexRef.current = matchIndex + 1;
-        setCurrentWordIndex(matchIndex);
+        // Sanity: don't allow jumping more than 50 words at once
+        if (matchIndex - lastMatchedIndex > WINDOW_SIZE) continue;
 
-        // Calculate scroll position based on word's character position
-        if (onScrollTo) {
-          const totalChars = text.length;
-          const wordCharIndex = textWordsRef.current[matchIndex].charIndex;
-          const progress = wordCharIndex / totalChars;
-          onScrollTo(progress, matchIndex);
-        }
+        lastMatchedIndex = matchIndex + 1;
+      }
+    }
+
+    // Only update if we actually advanced
+    if (lastMatchedIndex > currentWordIndexRef.current) {
+      currentWordIndexRef.current = lastMatchedIndex;
+      const matchIdx = lastMatchedIndex - 1;
+      setCurrentWordIndex(matchIdx);
+
+      if (onScrollTo && textWordsRef.current[matchIdx]) {
+        const totalChars = text.length;
+        const wordCharIndex = textWordsRef.current[matchIdx].charIndex;
+        const progress = wordCharIndex / totalChars;
+        onScrollTo(progress, matchIdx);
       }
     }
   }, [text, onScrollTo]);
