@@ -132,14 +132,15 @@ export function useAutoScroll({ text, enabled, onScrollTo }) {
     const words = alt.words || [];
     if (words.length === 0) return;
 
-    // Only use the last few words for matching (most recent speech)
-    const recentWords = isInterim ? words.slice(-2) : words;
+    // For interim: only use last word. For final: use all words but conservatively.
+    const recentWords = isInterim ? words.slice(-1) : words;
 
+    let advanced = false;
     let lastMatchedIndex = currentWordIndexRef.current;
 
     for (const word of recentWords) {
       // Skip low-confidence individual words
-      if (word.confidence !== undefined && word.confidence < 0.7) continue;
+      if (word.confidence !== undefined && word.confidence < 0.75) continue;
 
       const matchIndex = findNextMatch(
         word.punctuated_word || word.word,
@@ -148,15 +149,16 @@ export function useAutoScroll({ text, enabled, onScrollTo }) {
       );
 
       if (matchIndex >= 0) {
-        // Sanity: don't allow jumping more than 50 words at once
-        if (matchIndex - lastMatchedIndex > WINDOW_SIZE) continue;
+        // Sanity: don't allow jumping more than 10 words at once
+        if (matchIndex - lastMatchedIndex > 10) continue;
 
         lastMatchedIndex = matchIndex + 1;
+        advanced = true;
       }
     }
 
-    // Only update if we actually advanced
-    if (lastMatchedIndex > currentWordIndexRef.current) {
+    // Only update scroll if we actually advanced forward
+    if (advanced && lastMatchedIndex > currentWordIndexRef.current) {
       currentWordIndexRef.current = lastMatchedIndex;
       const matchIdx = lastMatchedIndex - 1;
       setCurrentWordIndex(matchIdx);
