@@ -163,7 +163,11 @@ export default function CameraView({
       // scrollSpeed: 0-100, map to ~0.3-3 px per frame at 60fps
       const speed = 0.3 + (scrollSpeed / 100) * 2.7;
       const pxPerMs = speed / 16.67; // normalize to per-ms
-      setScrollPosition(prev => prev + pxPerMs * delta);
+      setScrollPosition(prev => {
+        const next = prev + pxPerMs * delta;
+        scrollPositionRef.current = next;
+        return next;
+      });
       animFrameRef.current = requestAnimationFrame(tick);
     };
     animFrameRef.current = requestAnimationFrame(tick);
