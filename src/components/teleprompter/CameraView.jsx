@@ -495,10 +495,11 @@ export default function CameraView({
           >
             <div
               ref={containerRef}
-              className="absolute inset-x-0 p-4 transition-transform duration-100"
+              className="absolute inset-x-0 p-4"
               style={{
                 transform: `translateY(-${scrollPosition}px)`,
-                top: '50%'
+                top: '50%',
+                willChange: 'transform'
               }}
             >
               <div
