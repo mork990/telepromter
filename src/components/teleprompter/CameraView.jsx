@@ -54,41 +54,61 @@ export default function CameraView({
   const effectivePremium = isPremium || subscriptionPremium;
   const [useAutoScrollMode, setUseAutoScrollMode] = useState(autoScrollEnabled && effectivePremium);
 
-  const autoScrollTargetRef = useRef(null);
+  const autoScrollTargetRef = useRef(0);
   const autoScrollAnimRef = useRef(null);
+  const lastAutoScrollTimeRef = useRef(0);
 
-  const animateToScroll = useCallback((target) => {
-    autoScrollTargetRef.current = target;
-    if (autoScrollAnimRef.current) return; // already animating
-
+  // Smooth easing animation loop - always runs while auto-scroll is active
+  const startAutoScrollAnim = useCallback(() => {
+    if (autoScrollAnimRef.current) return;
+    
     const tick = () => {
       const current = scrollPositionRef.current;
       const dest = autoScrollTargetRef.current;
-      if (dest === null) { autoScrollAnimRef.current = null; return; }
-      
       const diff = dest - current;
-      if (Math.abs(diff) < 0.5) {
-        setScrollPosition(dest);
-        scrollPositionRef.current = dest;
-        autoScrollAnimRef.current = null;
-        return;
+      
+      if (Math.abs(diff) > 0.3) {
+        // Very gentle easing: 5% per frame = ultra smooth
+        const step = diff * 0.05;
+        const next = current + step;
+        scrollPositionRef.current = next;
+        setScrollPosition(next);
       }
-      // Ease toward target: 8-12% per frame for smooth feel
-      const step = diff * 0.1;
-      const next = current + step;
-      setScrollPosition(next);
-      scrollPositionRef.current = next;
       autoScrollAnimRef.current = requestAnimationFrame(tick);
     };
     autoScrollAnimRef.current = requestAnimationFrame(tick);
   }, []);
 
+  const stopAutoScrollAnim = useCallback(() => {
+    if (autoScrollAnimRef.current) {
+      cancelAnimationFrame(autoScrollAnimRef.current);
+      autoScrollAnimRef.current = null;
+    }
+  }, []);
+
   const handleAutoScrollTo = useCallback((progress, wordIndex) => {
     if (!containerRef.current) return;
+    
+    // Throttle: max 1 update per 300ms to prevent jitter
+    const now = Date.now();
+    if (now - lastAutoScrollTimeRef.current < 300) return;
+    lastAutoScrollTimeRef.current = now;
+    
     const containerHeight = containerRef.current.scrollHeight;
-    const newScroll = Math.max(0, containerHeight * progress - 50);
-    animateToScroll(newScroll);
-  }, [animateToScroll]);
+    const newTarget = Math.max(0, containerHeight * progress - 50);
+    
+    // Safety: don't allow target to jump more than 200px at once
+    const maxJump = 200;
+    const currentTarget = autoScrollTargetRef.current;
+    if (newTarget > currentTarget + maxJump) {
+      autoScrollTargetRef.current = currentTarget + maxJump;
+    } else if (newTarget < currentTarget) {
+      // Never scroll backwards
+      return;
+    } else {
+      autoScrollTargetRef.current = newTarget;
+    }
+  }, []);
 
   const autoScroll = useAutoScroll({
     text,
