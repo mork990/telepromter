@@ -265,6 +265,8 @@ export default function CameraView({
 
           // Start auto-scroll if enabled
           if (useAutoScrollMode && streamRef.current) {
+            autoScrollTargetRef.current = scrollPositionRef.current;
+            startAutoScrollAnim();
             autoScroll.start(streamRef.current);
           }
     } catch (error) {
