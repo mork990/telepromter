@@ -252,7 +252,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
       }
     }
 
-    // Read output
+    // Read output and upload to cloud storage
     const outputBytes = await Deno.readFile(outputPath);
 
     // Cleanup tmp files
@@ -260,6 +260,75 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
     try { await Deno.remove(assPath); } catch {}
     try { await Deno.remove(outputPath); } catch {}
 
+    // Upload to GCS so we can return a URL (works on all devices including iOS)
+    const bucketName = Deno.env.get("GCS_BUCKET_NAME");
+    const serviceAccountKey = Deno.env.get("GCS_SERVICE_ACCOUNT_KEY");
+    
+    if (bucketName && serviceAccountKey) {
+      const keyData = JSON.parse(serviceAccountKey);
+      
+      // Create JWT for GCS auth
+      const header = btoa(JSON.stringify({ alg: "RS256", typ: "JWT" }));
+      const now = Math.floor(Date.now() / 1000);
+      const claimSet = {
+        iss: keyData.client_email,
+        scope: "https://www.googleapis.com/auth/devstorage.read_write",
+        aud: "https://oauth2.googleapis.com/token",
+        exp: now + 3600,
+        iat: now,
+      };
+      const claims = btoa(JSON.stringify(claimSet));
+      
+      // Import private key and sign
+      const pemContent = keyData.private_key
+        .replace(/-----BEGIN PRIVATE KEY-----/, '')
+        .replace(/-----END PRIVATE KEY-----/, '')
+        .replace(/\n/g, '');
+      const binaryKey = Uint8Array.from(atob(pemContent), c => c.charCodeAt(0));
+      
+      const cryptoKey = await crypto.subtle.importKey(
+        'pkcs8', binaryKey,
+        { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
+        false, ['sign']
+      );
+      
+      const signInput = new TextEncoder().encode(`${header}.${claims}`);
+      const signature = await crypto.subtle.sign('RSASSA-PKCS1-v1_5', cryptoKey, signInput);
+      const sig = btoa(String.fromCharCode(...new Uint8Array(signature)))
+        .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+      const jwt = `${header}.${claims}.${sig}`;
+      
+      // Get access token
+      const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${jwt}`,
+      });
+      const tokenData = await tokenRes.json();
+      const accessToken = tokenData.access_token;
+      
+      if (accessToken) {
+        const fileName = `exports/export_${recording_id}_${Date.now()}.mp4`;
+        const uploadRes = await fetch(
+          `https://storage.googleapis.com/upload/storage/v1/b/${bucketName}/o?uploadType=media&name=${encodeURIComponent(fileName)}`,
+          {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${accessToken}`,
+              'Content-Type': 'video/mp4',
+            },
+            body: outputBytes,
+          }
+        );
+        
+        if (uploadRes.ok) {
+          const fileUrl = `https://storage.googleapis.com/${bucketName}/${fileName}`;
+          return Response.json({ file_url: fileUrl });
+        }
+      }
+    }
+    
+    // Fallback: return binary if GCS upload fails
     return new Response(outputBytes, {
       status: 200,
       headers: {
