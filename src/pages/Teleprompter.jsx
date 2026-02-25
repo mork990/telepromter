@@ -22,7 +22,7 @@ export default function Teleprompter() {
   };
 
   return (
-    <div className="min-h-screen bg-[#1d1022] text-white" dir="rtl">
+    <div className="min-h-screen bg-[#1d1022] text-white overflow-x-hidden" dir="rtl">
       <header
         className="sticky top-0 z-10 bg-[#1d1022]/90 backdrop-blur-xl border-b border-purple-500/10"
         style={{ paddingTop: 'env(safe-area-inset-top)' }}

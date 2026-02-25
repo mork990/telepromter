@@ -16,7 +16,7 @@ export default function BottomNav({ activePage }) {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-50 bg-[#1d1022]/95 backdrop-blur-lg border-t border-white/5"
+      className="fixed bottom-0 left-0 right-0 z-50 bg-[#1d1022]/95 backdrop-blur-lg border-t border-white/5 max-w-[100vw]"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
       <div className="flex justify-around items-center px-2 py-3" dir="rtl">
