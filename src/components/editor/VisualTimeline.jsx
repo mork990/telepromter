@@ -281,11 +281,6 @@ export default function VisualTimeline({
   };
 
   const handleTimelineMouseMove = (e) => {
-    if (toolMode === 'split-video' || toolMode === 'split-audio') {
-      setSplitCursorTime(pxToTime(e.clientX));
-    } else {
-      setSplitCursorTime(null);
-    }
     handlePointerMove(e);
   };
 
@@ -306,9 +301,7 @@ export default function VisualTimeline({
   const subtitleTrackTop = imageTrackTop + TRACK_HEIGHT + TRACK_GAP + LABEL_HEIGHT;
   const totalHeight = subtitleTrackTop + TRACK_HEIGHT + 4;
 
-  // Split cursor height range
-  const splitCursorTop = toolMode === 'split-video' ? videoTrackTop : audioTrackTop;
-  const splitCursorH = TRACK_HEIGHT;
+  // Split cursor is no longer used (split happens at playhead)
 
   // Split at playhead (instant action, not a mode)
   const handleSplitAtPlayhead = useCallback(() => {
@@ -356,6 +349,30 @@ export default function VisualTimeline({
 
       {/* Toolbar */}
       <div className="flex items-center gap-1 bg-[#1a1a2e] rounded-xl p-1.5 border border-white/5 flex-wrap">
+        {/* Split at playhead button */}
+        <Button
+          size="sm"
+          variant="ghost"
+          className="gap-1 text-[11px] px-2 text-indigo-500"
+          onClick={handleSplitAtPlayhead}
+        >
+          <Scissors className="w-3.5 h-3.5" />
+          פיצול
+        </Button>
+
+        {/* Link/Unlink video+audio */}
+        <Button
+          size="sm"
+          variant="ghost"
+          className={`gap-1 text-[11px] px-2 ${tracksLinked ? 'text-cyan-500' : 'text-orange-500'}`}
+          onClick={() => setTracksLinked(prev => !prev)}
+        >
+          <Unlink className="w-3.5 h-3.5" />
+          {tracksLinked ? 'הפרד וידאו/אודיו' : 'חבר וידאו/אודיו'}
+        </Button>
+
+        <div className="h-5 w-px bg-white/10 mx-0.5" />
+
         {toolButtons.map(({ mode, icon: Icon, label, color }) => (
           <Button
             key={mode}
@@ -364,7 +381,7 @@ export default function VisualTimeline({
             className={`gap-1 text-[11px] px-2 ${toolMode === mode ? '' : color}`}
             onClick={() => {
               setToolMode(prev => prev === mode ? null : mode);
-              setRangeSelection(null); setIsSelectingRange(false); setSplitCursorTime(null);
+              setRangeSelection(null); setIsSelectingRange(false);
             }}
           >
             <Icon className="w-3.5 h-3.5" />
@@ -398,7 +415,7 @@ export default function VisualTimeline({
 
         {toolMode && (
           <Button size="sm" variant="ghost" className="text-xs text-gray-500 mr-1 px-2"
-            onClick={() => { setToolMode(null); setRangeSelection(null); setIsSelectingRange(false); setSplitCursorTime(null); }}
+            onClick={() => { setToolMode(null); setRangeSelection(null); setIsSelectingRange(false); }}
           >
             ביטול
           </Button>
@@ -428,7 +445,6 @@ export default function VisualTimeline({
             <div 
               ref={containerRef}
               className={`relative select-none touch-none ${
-                toolMode?.startsWith('split') ? 'cursor-crosshair' : 
                 toolMode === 'subtitle' || toolMode === 'image' ? 'cursor-crosshair' : 'cursor-pointer'
               }`}
               style={{ height: `${totalHeight}px`, width: `${timelineWidth}px`, minWidth: '100%' }}
@@ -588,16 +604,7 @@ export default function VisualTimeline({
                 ))}
               </div>
 
-              {/* Split cursor */}
-              {(toolMode === 'split-video' || toolMode === 'split-audio') && splitCursorTime !== null && (
-                <div className="absolute pointer-events-none z-30"
-                  style={{ left: `${timeToPx(splitCursorTime)}px`, top: `${splitCursorTop}px`, height: `${splitCursorH}px` }}>
-                  <div className="w-0.5 h-full bg-red-500 opacity-70" />
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <Scissors className="w-3.5 h-3.5 text-red-500" />
-                  </div>
-                </div>
-              )}
+              {/* Split cursor removed - split happens at playhead */}
 
               {/* Playhead */}
               <div className="absolute top-0 bottom-0 z-20 pointer-events-none" style={{ left: `${timeToPx(currentTime)}px` }}>
