@@ -53,10 +53,31 @@ export default function CameraView({
   const effectivePremium = isPremium || subscriptionPremium;
 
 
+  const [availableCameras, setAvailableCameras] = useState([]);
+  const [selectedCameraId, setSelectedCameraId] = useState(null);
+
+  // Enumerate cameras to find cinematic/depth cameras
+  useEffect(() => {
+    async function listCameras() {
+      try {
+        // Need initial permission to enumerate
+        const tempStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        tempStream.getTracks().forEach(t => t.stop());
+        
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const cameras = devices.filter(d => d.kind === 'videoinput');
+        setAvailableCameras(cameras);
+      } catch (e) {
+        console.log('Could not enumerate cameras:', e);
+      }
+    }
+    listCameras();
+  }, []);
+
   useEffect(() => {
     startCamera();
     return () => stopCamera();
-  }, [cameraFacing]);
+  }, [cameraFacing, selectedCameraId]);
 
   useEffect(() => {
     if (!isPaused && isRecording) {
@@ -70,13 +91,23 @@ export default function CameraView({
   const startCamera = async () => {
     try {
       const qSettings = qualityMap[videoQuality] || qualityMap['1080'];
+      
+      const videoConstraints = selectedCameraId 
+        ? {
+            deviceId: { exact: selectedCameraId },
+            width: { ideal: qSettings.width },
+            height: { ideal: qSettings.height },
+            frameRate: { ideal: 30, max: 30 }
+          }
+        : {
+            facingMode: cameraFacing,
+            width: { ideal: qSettings.width },
+            height: { ideal: qSettings.height },
+            frameRate: { ideal: 30, max: 30 }
+          };
+
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { 
-          facingMode: cameraFacing,
-          width: { ideal: qSettings.width },
-          height: { ideal: qSettings.height },
-          frameRate: { ideal: 30, max: 30 }
-        },
+        video: videoConstraints,
         audio: {
           echoCancellation: true,
           noiseSuppression: true,
@@ -504,6 +535,43 @@ export default function CameraView({
         className="absolute inset-x-0 pointer-events-auto z-10"
         style={{ bottom: 'calc(1.5rem + env(safe-area-inset-bottom))' }}
       >
+        {/* Camera selector - show if multiple cameras available */}
+        {!isRecording && !recordedVideo && countdown === null && availableCameras.length > 1 && (
+          <div className="flex items-center justify-center gap-1.5 mb-3 px-6 flex-wrap">
+            {availableCameras
+              .filter(cam => {
+                const label = (cam.label || '').toLowerCase();
+                // Show front-facing if cameraFacing is 'user', back if 'environment'
+                if (cameraFacing === 'user') return label.includes('front') || label.includes('facetime') || label.includes('קדמ');
+                return !label.includes('front') && !label.includes('facetime');
+              })
+              .map(cam => {
+                const label = cam.label || 'מצלמה';
+                const isCinematic = label.toLowerCase().includes('cinematic') || label.toLowerCase().includes('depth');
+                const isActive = selectedCameraId === cam.deviceId;
+                // Shorten label
+                let shortLabel = label.replace(/\s*\(.*?\)/g, '').trim();
+                if (shortLabel.length > 20) shortLabel = shortLabel.slice(0, 20) + '…';
+                
+                return (
+                  <button
+                    key={cam.deviceId}
+                    className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all select-none ${
+                      isActive
+                        ? 'bg-white text-black shadow-lg scale-105'
+                        : isCinematic
+                        ? 'bg-purple-500/30 text-purple-200 border border-purple-400/30 hover:bg-purple-500/40'
+                        : 'bg-white/15 text-white/70 border border-white/15 hover:bg-white/25'
+                    }`}
+                    onClick={() => setSelectedCameraId(isActive ? null : cam.deviceId)}
+                  >
+                    {isCinematic && '🎬 '}{shortLabel}
+                  </button>
+                );
+              })}
+          </div>
+        )}
+
         {/* Duration selector - above controls */}
         {!isRecording && !recordedVideo && countdown === null && (
           <div className="flex items-center justify-center gap-2 mb-4 px-6">
