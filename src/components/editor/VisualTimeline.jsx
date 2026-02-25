@@ -370,6 +370,27 @@ export default function VisualTimeline({
           פיצול
         </Button>
 
+        {/* When unlinked, show split target selector */}
+        {!tracksLinked && (
+          <div className="flex items-center gap-0.5 bg-white/5 rounded-lg p-0.5">
+            {[
+              { val: 'both', label: 'הכל' },
+              { val: 'video', label: '🎬' },
+              { val: 'audio', label: '🔊' },
+            ].map(t => (
+              <button
+                key={t.val}
+                className={`px-1.5 py-0.5 rounded text-[10px] transition-colors ${
+                  splitTarget === t.val ? 'bg-white/15 text-white' : 'text-white/40 hover:text-white/60'
+                }`}
+                onClick={() => setSplitTarget(t.val)}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+        )}
+
         {/* Link/Unlink video+audio */}
         <Button
           size="sm"
