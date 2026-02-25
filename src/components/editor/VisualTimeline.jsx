@@ -307,15 +307,25 @@ export default function VisualTimeline({
   const handleSplitAtPlayhead = useCallback(() => {
     if (!currentTime || currentTime <= 0) return;
     if (tracksLinked) {
+      // Split both video and audio at the same point
       onSplitVideoSegment(currentTime);
       onSplitAudioSegment(currentTime);
     } else {
-      // When unlinked, show split-video/split-audio as separate modes
-      // But for simplicity, split both anyway - user can delete individually
-      onSplitVideoSegment(currentTime);
-      onSplitAudioSegment(currentTime);
+      // When unlinked, use splitTarget to decide which track to split
+      if (splitTarget === 'video') {
+        onSplitVideoSegment(currentTime);
+      } else if (splitTarget === 'audio') {
+        onSplitAudioSegment(currentTime);
+      } else {
+        // 'both' or default
+        onSplitVideoSegment(currentTime);
+        onSplitAudioSegment(currentTime);
+      }
     }
   }, [currentTime, tracksLinked, onSplitVideoSegment, onSplitAudioSegment]);
+
+  // When tracks are unlinked, allow choosing which to split
+  const [splitTarget, setSplitTarget] = useState('both'); // 'video', 'audio', 'both'
 
   const toolButtons = [
     { mode: 'media-layer', icon: Film, label: 'שכבה', color: 'text-purple-500' },
