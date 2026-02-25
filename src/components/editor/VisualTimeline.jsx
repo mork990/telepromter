@@ -228,15 +228,14 @@ export default function VisualTimeline({
     if (toolMode === 'image') {
       const time = pxToTime(e.clientX);
       setPendingImageTime(time);
-      fileInputRef.current?.click();
-      e.preventDefault();
+      // Use setTimeout to escape pointer event context - needed for mobile file input
+      setTimeout(() => fileInputRef.current?.click(), 0);
       return;
     }
     if (toolMode === 'media-layer') {
       const time = pxToTime(e.clientX);
       setPendingMediaLayerTime(time);
-      mediaLayerInputRef.current?.click();
-      e.preventDefault();
+      setTimeout(() => mediaLayerInputRef.current?.click(), 0);
       return;
     }
     if (toolMode === 'delete') return;
