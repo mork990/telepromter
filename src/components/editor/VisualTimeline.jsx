@@ -248,7 +248,6 @@ export default function VisualTimeline({
     const end = Math.min(pendingImageTime + 3, duration);
     await onAddImage(file, pendingImageTime, end);
     setPendingImageTime(null);
-    setToolMode(null);
     e.target.value = '';
   };
 
@@ -261,7 +260,6 @@ export default function VisualTimeline({
     else if (file.type.startsWith('audio/')) mediaType = 'audio';
     await onAddMediaLayer(file, pendingMediaLayerTime, end, mediaType);
     setPendingMediaLayerTime(null);
-    setToolMode(null);
     e.target.value = '';
   };
 
