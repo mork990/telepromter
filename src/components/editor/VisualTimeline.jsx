@@ -413,6 +413,28 @@ export default function VisualTimeline({
 
         <div className="h-5 w-px bg-white/10 mx-0.5" />
 
+        {/* Image - instant action at playhead */}
+        <Button
+          size="sm"
+          variant="ghost"
+          className="gap-1 text-[11px] px-2 text-pink-500"
+          onClick={handleAddImageAtPlayhead}
+        >
+          <Image className="w-3.5 h-3.5" />
+          תמונה
+        </Button>
+
+        {/* Media layer - instant action at playhead */}
+        <Button
+          size="sm"
+          variant="ghost"
+          className="gap-1 text-[11px] px-2 text-purple-500"
+          onClick={handleAddMediaLayerAtPlayhead}
+        >
+          <Film className="w-3.5 h-3.5" />
+          שכבה
+        </Button>
+
         {toolButtons.map(({ mode, icon: Icon, label, color }) => (
           <Button
             key={mode}
