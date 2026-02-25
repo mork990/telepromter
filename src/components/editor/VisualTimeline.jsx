@@ -217,16 +217,6 @@ export default function VisualTimeline({
   };
 
   const handleTimelinePointerDown = (e) => {
-    if (toolMode === 'split-video') {
-      onSplitVideoSegment(pxToTime(e.clientX));
-      e.preventDefault();
-      return;
-    }
-    if (toolMode === 'split-audio') {
-      onSplitAudioSegment(pxToTime(e.clientX));
-      e.preventDefault();
-      return;
-    }
     if (toolMode === 'subtitle') {
       const time = pxToTime(e.clientX);
       rangeStartRef.current = time;
@@ -320,9 +310,21 @@ export default function VisualTimeline({
   const splitCursorTop = toolMode === 'split-video' ? videoTrackTop : audioTrackTop;
   const splitCursorH = TRACK_HEIGHT;
 
+  // Split at playhead (instant action, not a mode)
+  const handleSplitAtPlayhead = useCallback(() => {
+    if (!currentTime || currentTime <= 0) return;
+    if (tracksLinked) {
+      onSplitVideoSegment(currentTime);
+      onSplitAudioSegment(currentTime);
+    } else {
+      // When unlinked, show split-video/split-audio as separate modes
+      // But for simplicity, split both anyway - user can delete individually
+      onSplitVideoSegment(currentTime);
+      onSplitAudioSegment(currentTime);
+    }
+  }, [currentTime, tracksLinked, onSplitVideoSegment, onSplitAudioSegment]);
+
   const toolButtons = [
-    { mode: 'split-video', icon: Scissors, label: 'פיצול וידאו', color: 'text-indigo-500' },
-    { mode: 'split-audio', icon: Scissors, label: 'פיצול אודיו', color: 'text-green-500' },
     { mode: 'media-layer', icon: Film, label: 'שכבה', color: 'text-purple-500' },
     { mode: 'image', icon: Image, label: 'תמונה', color: 'text-pink-500' },
     { mode: 'subtitle', icon: Type, label: 'כתובית', color: 'text-amber-500' },
@@ -330,8 +332,6 @@ export default function VisualTimeline({
   ];
 
   const toolHints = {
-    'split-video': 'לחץ על הטיימליין לפיצול הוידאו',
-    'split-audio': 'לחץ על הטיימליין לפיצול האודיו',
     'media-layer': 'לחץ על הטיימליין להוספת שכבת מדיה (וידאו/תמונה/אודיו)',
     'image': 'לחץ על הטיימליין להוספת תמונה',
     'subtitle': 'גרור על הטיימליין להוספת כתובית',
