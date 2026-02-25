@@ -1,6 +1,6 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { Scissors, Type, Trash2, ZoomIn, ZoomOut, Undo2, Image, Volume2, Subtitles, Loader2, Film } from "lucide-react";
+import { Scissors, Type, Trash2, ZoomIn, ZoomOut, Undo2, Image, Volume2, Subtitles, Loader2, Film, Unlink } from "lucide-react";
 import SubtitleBubble from './SubtitleBubble';
 import TrackSegment from './TrackSegment';
 import ImageTrackItem from './ImageTrackItem';
@@ -71,6 +71,7 @@ export default function VisualTimeline({
   const [editingSubIndex, setEditingSubIndex] = useState(null);
   const [bubblePosition, setBubblePosition] = useState({ x: 50 });
   const [splitCursorTime, setSplitCursorTime] = useState(null);
+  const [tracksLinked, setTracksLinked] = useState(true); // video+audio linked by default
 
   const fileInputRef = useRef(null);
   const mediaLayerInputRef = useRef(null);
