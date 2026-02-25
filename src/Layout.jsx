@@ -52,14 +52,16 @@ export default function Layout({ children, currentPageName }) {
 
   return (
     <div 
-      className="app-container min-h-screen bg-[#1d1022]" 
+      className="app-container min-h-screen bg-[#1d1022] overflow-x-hidden" 
       dir="rtl"
       style={{
         paddingTop: 'env(safe-area-inset-top)',
         paddingBottom: 'env(safe-area-inset-bottom)',
         paddingLeft: 'env(safe-area-inset-left)',
         paddingRight: 'env(safe-area-inset-right)',
-        overscrollBehavior: 'none'
+        overscrollBehavior: 'none',
+        maxWidth: '100vw',
+        width: '100%',
       }}
     >
       <AnimatePresence mode="wait">

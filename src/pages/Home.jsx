@@ -26,7 +26,7 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#1d1022] text-white font-sans" dir="rtl">
+    <div className="min-h-screen bg-[#1d1022] text-white font-sans overflow-x-hidden" dir="rtl">
       {/* Header */}
       <header
         className="sticky top-0 z-50 bg-[#1d1022]/90 backdrop-blur-md border-b border-purple-500/10"

@@ -417,46 +417,28 @@ export default function VideoEditor() {
     // Check if the response contains a URL (string) or binary data
     const resData = response.data;
     if (typeof resData === 'object' && resData.file_url) {
-      // Backend returned a URL - open it directly (works on all devices)
-      window.open(resData.file_url, '_blank');
+      // Backend returned a URL - use link with download attribute, fallback to window.location for iOS
+      const a = document.createElement('a');
+      a.href = resData.file_url;
+      a.download = `${recording?.title || 'video'}_edited.mp4`;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
       setIsExporting(false);
       return;
     }
     
     const blob = new Blob([resData], { type: 'video/mp4' });
     const url = URL.createObjectURL(blob);
-    
-    // iOS Safari doesn't support programmatic <a> click downloads
-    // Use Web Share API if available, otherwise open in new tab
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-    
-    if (isIOS) {
-      // On iOS, try share API first, then fallback to opening in new tab
-      if (navigator.share && navigator.canShare) {
-        const file = new File([blob], `${recording?.title || 'video'}_edited.mp4`, { type: 'video/mp4' });
-        const shareData = { files: [file] };
-        if (navigator.canShare(shareData)) {
-          try {
-            await navigator.share(shareData);
-            URL.revokeObjectURL(url);
-            setIsExporting(false);
-            return;
-          } catch (e) {
-            // User cancelled share or share failed, fallback to opening
-          }
-        }
-      }
-      // Fallback: open blob URL in new tab - Safari will show video with save option
-      window.open(url, '_blank');
-    } else {
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${recording?.title || 'video'}_edited.mp4`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-    }
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${recording?.title || 'video'}_edited.mp4`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
     setIsExporting(false);
   };
 
@@ -478,7 +460,7 @@ export default function VideoEditor() {
   }
 
   return (
-    <div className="min-h-screen bg-[#1d1022] text-white" dir="rtl">
+    <div className="min-h-screen bg-[#1d1022] text-white overflow-x-hidden" dir="rtl">
       {/* Header */}
       <div className="sticky z-10 bg-[#1d1022]/90 backdrop-blur-xl border-b border-purple-500/10" style={{ top: 'env(safe-area-inset-top)' }}>
         <div className="max-w-lg mx-auto px-4 h-12 flex items-center justify-between">

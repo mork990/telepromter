@@ -365,7 +365,7 @@ export default function VisualTimeline({
       )}
 
       {/* Toolbar */}
-      <div className="flex items-center gap-1 bg-[#1a1a2e] rounded-xl p-1.5 border border-white/5 flex-wrap">
+      <div className="flex items-center gap-1 bg-[#1a1a2e] rounded-xl p-1.5 border border-white/5 flex-wrap overflow-hidden">
         {/* Split at playhead button */}
         <Button
           size="sm"

@@ -56,7 +56,7 @@ export default function MyVideos() {
   });
 
   return (
-    <div className="min-h-screen bg-[#0e0e1a] text-white" dir="rtl">
+    <div className="min-h-screen bg-[#0e0e1a] text-white overflow-x-hidden" dir="rtl">
       {/* Header */}
       <div 
         className="sticky z-10 bg-[#1a1a2e]/80 backdrop-blur-xl border-b border-white/5"

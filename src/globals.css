@@ -1,4 +1,4 @@
-css
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -22,6 +22,14 @@ body {
   min-width: 0;
   max-width: 100vw;
   overflow-x: hidden;
+  width: 100%;
+  position: relative;
+}
+
+#root {
+  overflow-x: hidden;
+  max-width: 100vw;
+  width: 100%;
 }
 
 /* Disable text selection on interactive elements */
