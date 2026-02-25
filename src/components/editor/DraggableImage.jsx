@@ -14,7 +14,7 @@ export default function DraggableImage({ img, index, containerRef, onUpdatePosit
   const handleDragStart = useCallback((e) => {
     e.stopPropagation();
     e.preventDefault();
-    onSelect();
+    onSelect?.();
     setIsDragging(true);
     startRef.current = { x: e.clientX, y: e.clientY, imgX: img.x || 5, imgY: img.y || 5, imgW: img.width || 30, imgH: img.height || 30 };
     

@@ -23,24 +23,27 @@ export default function SubtitleOverlay({
 
   const handlePointerDown = (e) => {
     e.preventDefault();
+    e.stopPropagation();
     setIsDragging(true);
     dragStartRef.current = { x: e.clientX, y: e.clientY };
     posStartRef.current = { x: positionX, y: positionY };
-    e.target.setPointerCapture(e.pointerId);
-  };
-
-  const handlePointerMove = (e) => {
-    if (!isDragging || !containerRef?.current) return;
-    const rect = containerRef.current.getBoundingClientRect();
-    const dx = ((e.clientX - dragStartRef.current.x) / rect.width) * 100;
-    const dy = ((e.clientY - dragStartRef.current.y) / rect.height) * 100;
-    const newX = Math.max(5, Math.min(95, posStartRef.current.x + dx));
-    const newY = Math.max(5, Math.min(95, posStartRef.current.y + dy));
-    onPositionChange(newX, newY);
-  };
-
-  const handlePointerUp = () => {
-    setIsDragging(false);
+    
+    const onMove = (ev) => {
+      if (!containerRef?.current) return;
+      const rect = containerRef.current.getBoundingClientRect();
+      const dx = ((ev.clientX - dragStartRef.current.x) / rect.width) * 100;
+      const dy = ((ev.clientY - dragStartRef.current.y) / rect.height) * 100;
+      const newX = Math.max(5, Math.min(95, posStartRef.current.x + dx));
+      const newY = Math.max(5, Math.min(95, posStartRef.current.y + dy));
+      onPositionChange(newX, newY);
+    };
+    const onUp = () => {
+      setIsDragging(false);
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+    };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
   };
 
   return (
@@ -55,8 +58,6 @@ export default function SubtitleOverlay({
         maxWidth: '90%',
       }}
       onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
     >
       <div
         className="px-3 py-1.5 rounded-lg text-center whitespace-pre-wrap leading-snug"
