@@ -129,6 +129,42 @@ export default function StylePanel({ style, onChange }) {
           />
         </div>
 
+        {/* Stroke Color */}
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+            <Type className="w-4 h-4 text-white/40" />
+            <span className="text-sm font-medium text-white/70">צבע קו מתאר (Stroke)</span>
+          </div>
+          <div className="flex gap-2 flex-wrap">
+            {['#000000', '#FFFFFF', '#FF0000', '#0000FF', '#FFFF00', '#00FF00'].map(c => (
+              <button
+                key={c}
+                className={`w-7 h-7 rounded-full border-2 ${(style?.strokeColor || '#000000') === c ? 'border-[#00d4aa] scale-110' : 'border-white/20'}`}
+                style={{ backgroundColor: c }}
+                onClick={() => update('strokeColor', c)}
+              />
+            ))}
+            <Input
+              type="color"
+              value={style?.strokeColor || '#000000'}
+              onChange={(e) => update('strokeColor', e.target.value)}
+              className="w-7 h-7 p-0 border-0 cursor-pointer"
+            />
+          </div>
+        </div>
+
+        {/* Stroke Width */}
+        <div>
+          <span className="text-sm font-medium text-white/70">עובי קו מתאר: {style?.strokeWidth ?? 0}px</span>
+          <Slider
+            value={[style?.strokeWidth ?? 0]}
+            onValueChange={([v]) => update('strokeWidth', v)}
+            min={0}
+            max={8}
+            step={0.5}
+          />
+        </div>
+
         <div className="flex items-center gap-2 text-xs text-white/30">
           <Move className="w-3 h-3" />
           <span>גרור את הכתובית על הווידאו למיקום הרצוי</span>

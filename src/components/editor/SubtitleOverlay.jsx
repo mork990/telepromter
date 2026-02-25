@@ -12,7 +12,7 @@ export default function SubtitleOverlay({
 
   if (!currentSubtitle) return null;
 
-  const { fontSize = 24, fontColor = '#FFFFFF', bgColor = '#000000', bgOpacity = 70, positionX = 50, positionY = 85, fontFamily = 'sans-serif' } = style || {};
+  const { fontSize = 24, fontColor = '#FFFFFF', bgColor = '#000000', bgOpacity = 70, positionX = 50, positionY = 85, fontFamily = 'sans-serif', strokeColor = '#000000', strokeWidth = 0 } = style || {};
 
   const hexToRgba = (hex, opacity) => {
     const r = parseInt(hex.slice(1, 3), 16);
@@ -64,7 +64,9 @@ export default function SubtitleOverlay({
           fontSize: `${fontSize}px`,
           color: fontColor,
           backgroundColor: hexToRgba(bgColor, bgOpacity),
-          textShadow: '1px 1px 3px rgba(0,0,0,0.8)',
+          textShadow: strokeWidth > 0 ? 'none' : '1px 1px 3px rgba(0,0,0,0.8)',
+          WebkitTextStroke: strokeWidth > 0 ? `${strokeWidth}px ${strokeColor}` : 'none',
+          paintOrder: 'stroke fill',
           fontWeight: 600,
           fontFamily,
           direction: 'rtl',
