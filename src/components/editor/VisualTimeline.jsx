@@ -326,9 +326,19 @@ export default function VisualTimeline({
   // When tracks are unlinked, allow choosing which to split
   const [splitTarget, setSplitTarget] = useState('both'); // 'video', 'audio', 'both'
 
+  // Add image at playhead (instant action - opens file picker immediately)
+  const handleAddImageAtPlayhead = useCallback(() => {
+    setPendingImageTime(currentTime || 0);
+    setTimeout(() => fileInputRef.current?.click(), 0);
+  }, [currentTime]);
+
+  // Add media layer at playhead (instant action)
+  const handleAddMediaLayerAtPlayhead = useCallback(() => {
+    setPendingMediaLayerTime(currentTime || 0);
+    setTimeout(() => mediaLayerInputRef.current?.click(), 0);
+  }, [currentTime]);
+
   const toolButtons = [
-    { mode: 'media-layer', icon: Film, label: 'שכבה', color: 'text-purple-500' },
-    { mode: 'image', icon: Image, label: 'תמונה', color: 'text-pink-500' },
     { mode: 'subtitle', icon: Type, label: 'כתובית', color: 'text-amber-500' },
     { mode: 'delete', icon: Trash2, label: 'מחק', color: 'text-rose-500' },
   ];
